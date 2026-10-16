@@ -397,7 +397,7 @@ const PLACES = [
 ];
 
 const PACK = {
- '공통':['여권 (유효기간 확인)','귀국 항공권 · 일본 내 연락처 출력','Visit Japan Web QR 캡처 또는 PDF','eSIM / 로밍','스튜디오 & 일반인용 사진 자료','보조배터리','서류 인쇄'],
+ '공통':['여권 (유효기간 확인)','귀국 항공권 · 일본 내 연락처 출력','Visit Japan Web QR 캡처 또는 PDF','eSIM (구매 완료 · 로밍도깨비 S 5일 ×2, 출발 전 설치)','스튜디오 & 일반인용 사진 자료','보조배터리','서류 인쇄'],
  '구니':['개인약','머리빗','에스트라 크림','헤어 에센스','비상약: 타이레놀, 대일밴드','약국: 부스코판'],
  '으뉴':['헤어: 판고데기, 헤어오일, 왁스','기초: 제로이드, 선크림 (얼굴+바디), 바디로션','화장품: 코스 메이크업 도구, 디올 코렉터 + 비비','씻기: 폼클렌징, 클렌징 밀크','개인약: 정신과약, 수면약, 지르텍, 탁센, 비타민 C·D, 유산균','코스: 가발, 가발걸이, 실핀, 가발망, 렌즈, 안경, 셔츠, 넥타이, 망토, 바지','그 외: 파우더 시트, 휴족시간, 발바닥 패치']
 };
@@ -406,6 +406,8 @@ const PACK = {
 const KEY='tokyo1024.v1';
 let state={tab:'plan', day:null, farea:'전체', ftype:'전체', pgroup:'전체', done:{}, pack:{}, open:{}};
 try{ Object.assign(state, JSON.parse(localStorage.getItem(KEY)||'{}')); }catch(e){}
+/* 공동 결정 사항은 기본 체크 (한 번만) */
+if(!state.pack['pk:공통:3'] && !state.packAuto){ state.pack['pk:공통:3']=true; state.packAuto=1; }
 /* 저장된 필터가 사라진 지역을 가리키면 전체로 복구 */
 if(!['전체',...FOOD_AREAS].includes(state.farea)) state.farea='전체';
 if(!FOOD_TYPES.some(t=>t.id===state.ftype)) state.ftype='전체';
