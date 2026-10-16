@@ -1,0 +1,622 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1B1F28" media="(prefers-color-scheme: dark)">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>도쿄 덕질 여행 10.24</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: phone-first single column, sticky top strip, fixed 4-tab bar at the bottom like a transit app. */
+:root{
+  --bg:#F4F5F8; --surface:#FFFFFF; --fg:#171C28; --muted:#6B7280; --line:#E2E5EC;
+  --accent:#D9372B; --accent-fg:#FFFFFF; --accent-soft:#FBE9E6;
+  --ok:#1E8E5A; --ok-soft:#E3F3EA; --warn:#B7791F; --warn-soft:#FBF1DC;
+  --chip:#EBEDF2; --shadow:0 1px 2px rgba(23,28,40,.06),0 6px 16px rgba(23,28,40,.05);
+  --sans:"IBM Plex Sans KR",-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --tab-h:64px;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#12151C; --surface:#1B1F28; --fg:#E9EBF1; --muted:#9AA1B0; --line:#2B3140;
+  --accent:#F05A4D; --accent-fg:#FFFFFF; --accent-soft:#3A1F1D;
+  --ok:#4CC38A; --ok-soft:#173226; --warn:#E0A94B; --warn-soft:#352A14;
+  --chip:#262B36; --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 16px rgba(0,0,0,.25);
+  color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#12151C; --surface:#1B1F28; --fg:#E9EBF1; --muted:#9AA1B0; --line:#2B3140;
+  --accent:#F05A4D; --accent-fg:#FFFFFF; --accent-soft:#3A1F1D;
+  --ok:#4CC38A; --ok-soft:#173226; --warn:#E0A94B; --warn-soft:#352A14;
+  --chip:#262B36; --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 16px rgba(0,0,0,.25);
+  color-scheme:dark }
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:15px;line-height:1.5;-webkit-text-size-adjust:100%}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+a{color:inherit}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* top strip */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--surface);border-bottom:1px solid var(--line)}
+.top-in{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:10px 0;display:flex;flex-direction:column;gap:8px}
+.brand{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.brand h1{margin:0;font-size:17px;font-weight:700;letter-spacing:-.01em}
+.brand .dates{font-family:var(--mono);font-size:12px;color:var(--muted);font-weight:500}
+.dday{font-family:var(--mono);font-size:12px;font-weight:600;background:var(--accent);color:var(--accent-fg);padding:2px 8px;border-radius:999px}
+.chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:10px;-webkit-overflow-scrolling:touch}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto;padding:6px 12px;border-radius:999px;background:var(--chip);font-size:13px;font-weight:500;white-space:nowrap;border:1px solid transparent}
+.chip[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
+.chip .sub{font-family:var(--mono);font-size:11px;opacity:.7;margin-left:4px}
+
+/* main */
+main{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:14px calc(var(--tab-h) + env(safe-area-inset-bottom,0px) + 20px);max-width:720px;margin:0 auto}
+.panel[hidden]{display:none}
+.sec-h{display:flex;align-items:baseline;justify-content:space-between;margin:18px 0 8px}
+.sec-h:first-child{margin-top:0}
+.sec-h h2{margin:0;font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.sec-h .cnt{font-family:var(--mono);font-size:12px;color:var(--muted)}
+
+/* timeline */
+.tl{display:flex;flex-direction:column;gap:10px}
+.ev{display:grid;grid-template-columns:58px 1fr;gap:10px;background:var(--surface);border-radius:14px;box-shadow:var(--shadow);padding:12px 12px 12px 10px;min-width:0}
+.ev .t{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--accent);line-height:1.3;padding-top:2px}
+.ev .t small{display:block;font-size:10px;color:var(--muted);font-weight:500}
+.ev .b{min-width:0}
+.ev .place{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.ev .title{font-weight:600;font-size:15px;margin-top:1px;white-space:pre-line}
+.ev.big .title{font-size:16px}
+.ev .more{margin-top:6px;font-size:13px;color:var(--muted);text-align:left;display:inline-flex;align-items:center;gap:4px}
+.ev .more::before{content:"▸";font-size:11px}
+.ev .more[aria-expanded="true"]::before{content:"▾"}
+.det{margin-top:8px;padding-top:8px;border-top:1px dashed var(--line);font-size:13.5px;display:flex;flex-direction:column;gap:6px}
+.det p{margin:0;white-space:pre-line;overflow-wrap:anywhere}
+.det .k{font-weight:600;font-size:12px;color:var(--muted);margin-top:4px}
+.det a{color:var(--accent);text-decoration:none;font-weight:500;overflow-wrap:anywhere}
+.pill{font-size:11px;font-weight:600;padding:1px 7px;border-radius:999px;background:var(--chip);color:var(--fg)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}
+.pill.acc{background:var(--accent-soft);color:var(--accent)}
+
+/* cards (food/places) */
+.search{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 12px;margin-bottom:12px}
+.search input{flex:1;min-width:0;border:0;background:none;font:inherit;color:inherit;font-size:15px}
+.search input::placeholder{color:var(--muted)}
+.cards{display:flex;flex-direction:column;gap:8px}
+.card{background:var(--surface);border-radius:14px;box-shadow:var(--shadow);padding:12px 12px 10px;display:grid;grid-template-columns:1fr auto;gap:4px 10px;min-width:0}
+.card.done{opacity:.55}
+.card .n{font-weight:600;font-size:15px;overflow-wrap:anywhere}
+.card.done .n{text-decoration:line-through}
+.card .meta{grid-column:1;font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 10px}
+.card .meta .h{font-family:var(--mono);font-size:12px}
+.card .note{grid-column:1;font-size:13px;margin-top:2px;white-space:pre-line;overflow-wrap:anywhere}
+.card .acts{grid-column:1 / -1;display:flex;gap:6px;margin-top:6px;align-items:center;flex-wrap:wrap}
+.card .chk{grid-column:2;grid-row:1;width:28px;height:28px;border-radius:50%;border:1.5px solid var(--line);display:grid;place-items:center;font-size:14px;color:transparent;align-self:start}
+.card.done .chk{background:var(--ok);border-color:var(--ok);color:#fff}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:999px;border:1px solid var(--line);font-size:12.5px;font-weight:500;text-decoration:none;background:var(--surface)}
+.btn.map{border-color:transparent;background:var(--accent-soft);color:var(--accent)}
+.stars{color:var(--warn);letter-spacing:.05em;font-size:12px}
+.empty{color:var(--muted);text-align:center;padding:30px 0;font-size:14px}
+
+/* memo */
+.memo{background:var(--surface);border-radius:14px;box-shadow:var(--shadow);padding:14px;margin-bottom:10px;min-width:0}
+.memo h3{margin:0 0 8px;font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px}
+.memo p{margin:0 0 6px;font-size:14px;white-space:pre-line;overflow-wrap:anywhere}
+.memo p:last-child{margin-bottom:0}
+.memo a{color:var(--accent);text-decoration:none;font-weight:500;overflow-wrap:anywhere}
+.flight{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.flight:last-of-type{border-bottom:0}
+.flight .ap{font-weight:700;font-size:18px}
+.flight .tm{font-family:var(--mono);font-size:14px;font-weight:600}
+.flight .sm{font-size:11.5px;color:var(--muted)}
+.flight .arrow{color:var(--muted);text-align:center;font-size:12px;line-height:1.3}
+.flight .r{text-align:right}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:14px}
+.kv dt{color:var(--muted);font-size:12.5px;padding-top:2px}
+.kv dd{margin:0;overflow-wrap:anywhere}
+.copy{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-weight:600;font-size:14px;background:var(--chip);padding:3px 10px;border-radius:8px}
+.copy small{font-family:var(--sans);font-weight:500;font-size:11px;color:var(--muted)}
+.steps{margin:0;padding-left:20px;font-size:14px}
+.steps li{margin-bottom:4px}
+.cl{display:flex;flex-direction:column;gap:2px}
+.cl label{display:flex;align-items:flex-start;gap:10px;font-size:14px;padding:6px 0;border-bottom:1px solid var(--line)}
+.cl label:last-child{border-bottom:0}
+.cl input{width:20px;height:20px;margin:1px 0 0;accent-color:var(--ok);flex:0 0 auto}
+.cl input:checked + span{color:var(--muted);text-decoration:line-through}
+.cost{width:100%;border-collapse:collapse;font-size:13.5px}
+.cost td{padding:6px 0;border-bottom:1px solid var(--line)}
+.cost tr:last-child td{border-bottom:0;font-weight:700}
+.cost td.r{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.cost td.who{color:var(--muted);font-size:12px;text-align:right;padding-left:8px;white-space:nowrap}
+.sub-h{font-size:12px;font-weight:600;color:var(--muted);margin:10px 0 4px}
+.sub-h:first-of-type{margin-top:0}
+
+/* bottom tabs */
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:9;background:var(--surface);border-top:1px solid var(--line);display:flex;justify-content:space-around;padding-left:max(8px,env(safe-area-inset-left,0px));padding-right:max(8px,env(safe-area-inset-right,0px));padding-bottom:env(safe-area-inset-bottom,0px)}
+.tabs button{flex:1;height:var(--tab-h);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11.5px;font-weight:500;color:var(--muted)}
+.tabs button svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tabs button[aria-selected="true"]{color:var(--accent);font-weight:600}
+@media (prefers-reduced-motion:no-preference){ .det{animation:fade .18s ease-out} @keyframes fade{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none}} }
+@media (min-width:600px){ .cards{display:grid;grid-template-columns:1fr 1fr} .card{align-content:start} }
+</style>
+
+<header class="top">
+  <div class="top-in">
+    <div class="brand">
+      <h1>도쿄 덕질 여행 <span class="dates">10.24 – 10.28</span></h1>
+      <span class="dday" id="dday"></span>
+    </div>
+    <div class="chips" id="subchips"></div>
+  </div>
+</header>
+
+<main>
+  <section class="panel" id="p-plan"></section>
+  <section class="panel" id="p-food" hidden>
+    <div class="search"><span aria-hidden="true">⌕</span><input id="q-food" type="search" placeholder="가게 이름, 메뉴 검색" autocomplete="off"></div>
+    <div class="cards" id="food-list"></div>
+  </section>
+  <section class="panel" id="p-place" hidden>
+    <div class="search"><span aria-hidden="true">⌕</span><input id="q-place" type="search" placeholder="장소 검색" autocomplete="off"></div>
+    <div id="place-list"></div>
+  </section>
+  <section class="panel" id="p-memo" hidden></section>
+</main>
+
+<nav class="tabs" role="tablist" aria-label="메뉴">
+  <button role="tab" data-tab="plan" aria-selected="true"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>일정</button>
+  <button role="tab" data-tab="food" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M5 3v8a3 3 0 0 0 6 0V3M8 3v18M17 3c-2 0-3 3-3 7v2h3v9"/></svg>맛집</button>
+  <button role="tab" data-tab="place" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>갈 곳</button>
+  <button role="tab" data-tab="memo" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4M9 12h6M9 16h6"/></svg>메모</button>
+</nav>
+
+<script>
+/* ---------- DATA ---------- */
+const DAYS = [
+ {date:'2026-10-24', w:'토', n:1, items:[
+  {t:'09:00', p:'김포공항', title:'출국', pills:['1터미널'], d:['KE2101 대한항공 · 예약번호는 시트 참고','김포 1터미널. 집에서 공항버스 시간 확인 (5200 정자 / 5100 서현)']},
+  {t:'11:20', p:'하네다공항', title:'입국', pills:['3터미널'], d:[
+    '입국 전 Visit Japan Web 전자신고 QR 준비해두기.',
+    {k:'공항 → 이케부쿠로 선택지'},
+    '리무진 버스: 1시간 35분 + 도보 10분. 12:10 차는 사실상 못 탐. 13:10 차 타면 호텔 도착 약 15:00.',
+    '전철: 환승 포함 55~65분 + 도보 15~20분. 12:00~12:40 사이 출발하면 호텔 도착 13:30~14:10.',
+    {l:'Visit Japan Web', u:'https://services.digital.go.jp/ko/visit-japan-web/'}
+  ]},
+  {t:'14:00', ts:'~15:00', p:'하네다 → 이케부쿠로', title:'호텔 이동', d:[
+    {k:'전철 (668엔)'},
+    '게이큐선 시나가와 방면 → 시나가와에서 JR 환승 개찰구 → 야마노테선 (시부야·신주쿠 방면) → 이케부쿠로 동쪽 출구',
+    {k:'리무진 (1,400엔)'},
+    '선샤인시티 프린스호텔 하차. 예약 가능.',
+    {l:'리무진 버스 예약', u:'https://www.limousinebus.co.jp/ja/'},
+    '* 아이폰 스이카 등록은 메모 탭 참고'
+  ]},
+  {t:'', p:'이케부쿠로', title:'점심 + 체크인', d:['호텔 레솔 이케부쿠로. 맛집 탭에서 이케부쿠로 필터.']},
+  {t:'오후', p:'이케부쿠로', title:'오토메 로드 · 어시스트 위그\n선샤인시티 포케센 · 치이카와', big:true, d:[
+    '포켓몬센터 10:00~20:00 · 키디랜드 (선샤인시티)',
+    'K-BOOKS 11:30~20:00 · 아미아미 11:00~20:00 · 토라노아나 11:00~20:00 · 만다라케 12:00~20:00',
+    '어시스트 위그 11:30~20:50',
+    '치이카와 랜드 11:00~21:00 · 에바 스토어 (파르코)',
+    '아니메이트 10:00~21:00 · 라신반 10:00~21:00 · 북오프 10:00~22:00',
+    '게임센터 대충 10:00~23:00'
+  ]},
+  {t:'밤', p:'이케부쿠로', title:'돈키호테 or 세이부 마트', d:['체력과 시간이 되면. 당고 먹고 싶습니다.']},
+  {t:'할 일', p:'', title:'귀국 리무진 예약', pills:['필수'], d:['10월 28일 첫차 06:25 선샤인시티 프린스호텔 → 07:35 하네다 (1,400엔). 출국 09:45.',{l:'리무진 버스 예약', u:'https://www.limousinebus.co.jp/ja/'}]}
+ ]},
+ {date:'2026-10-25', w:'일', n:2, items:[
+  {t:'10:00', ts:'~10:30 도착', p:'이케부쿠로 → 도시마엔', title:'해리포터 스튜디오 이동', pills:['11시 전 도착'], d:['이동 경로와 소요시간 재확인 (이케부쿠로 → 스튜디오 30~40분).','비상용 택시: 3,500~5,000엔 예상. 시간은 비슷.','건물 입장 → 보안검사 → 탈의실 → 코인로커 → 입장 순서라 여유 필요.']},
+  {t:'11:00', p:'스튜디오 투어 도쿄', title:'해리포터 스튜디오 또 가기 (개오반가워)', big:true, pills:['클룩 예약 완료'], d:['클룩 앱에서 티켓 제시.','레스토랑·카페 500엔 바우처: 2,000엔 이상 단일 결제, 셀프 계산대 불가, 클룩 앱 필요.','탈의실·로커·반입금지 품목은 메모 탭 참고.']},
+  {t:'이후', p:'하라주쿠 or 이케부쿠로', title:'시간 되면 하라주쿠, 아니면 못 한 쇼핑', d:['하라주쿠: 해리포터 샵, 키디랜드, 치이카와 베이커리']}
+ ]},
+ {date:'2026-10-26', w:'월', n:3, items:[
+  {t:'10:30', p:'아카사카', title:'해리포터 카페', pills:['예약 변경 완료'], d:['앱 다운 완료.','해리포터 샵 11:00~21:00 + 주변 거리 구경']},
+  {t:'', p:'도쿄역', title:'마호도코로 · 치이카와 랜드\n나가노 마켓 (긴자)', d:['마호도코로 10:00~20:30 (도쿄역 캐릭터 스트리트 B1)','치이카와 랜드 도쿄역 (캐릭터 스트리트 B1)','나가노 마켓 11:00~21:00 (긴자). 예약 필요하다는 이야기 있음, 확인.']},
+  {t:'', p:'하라주쿠', title:'해리포터 샵 · 키디랜드\n치이카와 베이커리', d:['해리포터 샵 11:00~21:00','키디랜드 11:00~20:00 (치이카와 랜드 하라주쿠 입점)','치이카와 베이커리 11:00~20:00. 10월 예약 마감. 평일이라 운 좋으면 입장 가능할지도.']},
+  {t:'19:00', p:'이케부쿠로 파르코', title:'치이카와 레스토랑', pills:['예약'], d:['오후 7시 밖에 선택지가 없을 것 같지만 일단 기입']}
+ ]},
+ {date:'2026-10-27', w:'화', n:4, items:[
+  {t:'', p:'이케부쿠로 → 도시마엔', title:'해리포터 스튜디오 이동', d:['이동 경로, 소요시간 재확인','타임테이블 확인 / 복장 확인 / 짐?']},
+  {t:'12:00', ts:'~15:00', p:'스튜디오 투어 도쿄', title:'스튜디오 입장', pills:['예약 1시간 전 입장'], d:['입장은 예약 1시간 전부터 가능 (일반 투어 기준, 추후 재확인)']},
+  {t:'16:45', p:'스튜디오 로비', title:'로비 집합 → 투어 & 디너', big:true, d:['탈의실에서 갈아입기 → 실내 로커에 평상복·메이크업 도구 보관 → 투어 입장','로커는 QR 영수증이 열쇠. 중간에 열면 재결제.','자세한 내용은 메모 탭.']},
+  {t:'밤', p:'호텔', title:'취침 전 출국 준비', d:['짐 싸기, 리무진 첫차 06:25 확인']}
+ ]},
+ {date:'2026-10-28', w:'수', n:5, items:[
+  {t:'06:25', p:'선샤인시티 프린스호텔', title:'공항 리무진 첫차', pills:['예약 필요'], d:['07:35 하네다 도착. 아무튼 첫 차를 타야 함.']},
+  {t:'09:45', p:'하네다공항', title:'출국', pills:['3터미널'], d:['KE2101 대한항공 · 예약번호는 시트 참고']},
+  {t:'12:25', p:'김포공항', title:'귀국', d:['집 가자']}
+ ]}
+];
+
+/* area order follows the itinerary */
+const FOOD_AREAS = ['이케부쿠로','하라주쿠','도쿄역·긴자','시부야','신주쿠','아키하바라','기타'];
+const FOOD = [
+ // 이케부쿠로
+ {a:'이케부쿠로', n:'규카츠 이로하', k:'규카츠', h:'11:00~22:00', pr:'1,200엔~', s:5, note:'규카츠 전문점', q:'牛かつ いろは 池袋'},
+ {a:'이케부쿠로', n:'무테키야', k:'라멘', h:'', pr:'750~1,330엔', note:'미나미이케부쿠로 1-17-1. 줄 긴 유명 라멘집', q:'無敵家 池袋'},
+ {a:'이케부쿠로', n:'야스베에', k:'츠케멘', note:'국물과 면이 분리된 라멘. 히가시이케부쿠로 1-12-12', q:'つけ麺 やすべえ 池袋'},
+ {a:'이케부쿠로', n:'긴타코', k:'타코야키', pr:'550엔', s:5, note:'이케부쿠로역 타코야키', q:'銀だこ 池袋'},
+ {a:'이케부쿠로', n:'빗쿠리돈키', k:'함바그', s:3, note:'히가시이케부쿠로 1-21-11', q:'びっくりドンキー 池袋'},
+ {a:'이케부쿠로', n:'츠바메 그릴', k:'함바그', h:'11:30~', note:'은박지에 싸여 나오는 함바그가 유명. 루미네 이케부쿠로 8층', q:'つばめグリル ルミネ池袋'},
+ {a:'이케부쿠로', n:'와코', k:'돈가스', h:'11:00~22:00', pr:'1,050~1,700엔', note:'선샤인시티 알타 3층. 밥·미소시루·양상추 무한리필. 나베 먹어보고 싶음', q:'とんかつ和幸 サンシャインシティ'},
+ {a:'이케부쿠로', n:'카레와 노미모노', k:'카레', pr:'800엔~', q:'カレーは飲み物 池袋'},
+ {a:'이케부쿠로', n:'코우에이 (幸永)', k:'야키니쿠 · 호르몬', pr:'호르몬 880엔~', note:'비싸ㅏㅏ 규탄은 1,950엔 ㅠㅠ. 이케부쿠로 동쪽 출구', q:'ホルモン焼 幸永 池袋東口店'},
+ {a:'이케부쿠로', n:'Egg Restaurant OMS', k:'계란 요리', h:'10:00~21:00', note:'파르코 7층. 에그!!!', q:'Egg Restaurant OMS 池袋パルコ'},
+ {a:'이케부쿠로', n:'간다 타마고켄', k:'오무라이스', h:'11:00~22:00', pr:'1,000~2,000엔', q:'神田たまごけん 池袋'},
+ {a:'이케부쿠로', n:'키친 ABC', k:'옛날식 동네 양식집', h:'11:00~22:00', pr:'1,000~2,000엔', note:'"일본 현지인 밥"', q:'キッチンABC 池袋'},
+ {a:'이케부쿠로', n:'Yobocho', k:'양식 정식', h:'11:00~22:00 (일 휴무)', pr:'1,000~2,000엔', note:'현금만. 추천: 가라시야키 정식, 스태미나야키, 돼지고기 생강구이, 햄버그 정식', q:'洋包丁 池袋'},
+ {a:'이케부쿠로', n:'고치톤', k:'일본 가정식', q:'ごちとん 池袋'},
+ {a:'이케부쿠로', n:'멘야 후루루', k:'라멘 (하와이 테마)', h:'11:00~21:00 · 화 휴무 · 15:00~17:30 브레이크', pr:'1,000~2,000엔', note:'현금만. 특제 간장 SOBA가 대표 메뉴', q:'麺屋Hulu-lu 池袋'},
+ {a:'이케부쿠로', n:'Mendokoro Hanada', k:'라멘', h:'11:00~22:30', pr:'1,000~2,000엔', q:'麺処 花田 池袋'},
+ {a:'이케부쿠로', n:'이치토라 규니쿠 라멘', k:'대만식 우육면', q:'一虎牛肉ラーメン 池袋'},
+ {a:'이케부쿠로', n:'키미니 아게루 본점', k:'돈가스', q:'君に、揚げる 池袋本店'},
+ {a:'이케부쿠로', n:'돈카츠 마이센', k:'돈가스', note:'세이부 B1 / 도부 백화점 4층 (시부야·신주쿠·도쿄역에도)', q:'とんかつ まい泉 西武池袋'},
+ {a:'이케부쿠로', n:'로스트 비프 오노', k:'로스트비프 덮밥', h:'11:00~23:00', note:'우리 가본 듯. 하라주쿠·아키하바라에도 있음', q:'ローストビーフ大野 池袋'},
+ {a:'이케부쿠로', n:'쿠아 아이나', k:'햄버거', h:'11:00~21:00', note:'선샤인시티', q:'クア・アイナ サンシャインシティ'},
+ {a:'이케부쿠로', n:'텐야', k:'텐동', note:'이케부쿠로랑 여기저기', q:'天丼てんや 池袋'},
+ {a:'이케부쿠로', n:'야키돈 히나타', k:'꼬치구이 · 술집', h:'16:00~23:00', pr:'2인 코스 4,000엔 · 꼬치 10개 약 1,700엔', note:'코스 있음', link:'https://hinata-ikebukuro.com/food-menu/', q:'焼とん ひなた 池袋'},
+ {a:'이케부쿠로', n:'테케테케', k:'꼬치구이 · 술집', pr:'단품부터 코스까지', q:'てけてけ 池袋'},
+ {a:'이케부쿠로', n:'모츠나베 오야마', k:'모츠나베', link:'https://www.motu-ooyama.com/shop/tokyo/', q:'もつ鍋 おおやま 池袋'},
+ {a:'이케부쿠로', n:'화성카레', k:'카레', h:'월·화 휴무, 영업 불규칙 (페북 확인)', note:'닭·돼지·말·사슴·캥거루 카레. 메뉴판이 없어..', q:'火星カレー 池袋'},
+ {a:'이케부쿠로', n:'코메라쿠 (こめらく)', k:'오차즈케', h:'11:00~22:00', note:'루미네 이케부쿠로 8층', q:'こめらく ルミネ池袋'},
+ {a:'이케부쿠로', n:'다시차즈케 엔', k:'오차즈케', h:'11:00~22:00', note:'에미오 이케부쿠로 (역 안인가)', q:'だし茶漬け えん エミオ池袋'},
+ {a:'이케부쿠로', n:'도쿄 다시차즈케 코메카라', k:'오차즈케', h:'11:00~21:30', note:'선샤인시티 B1', q:'東京だし茶漬け こめから 池袋'},
+ {a:'이케부쿠로', n:'Princess Tart', k:'타르트 · 팬케이크 카페', h:'10:00~19:00', note:'현금 불가. 수플레 팬케이크, 고수분 식빵 One Hundred, 트러플 오믈렛', q:'Princess Tart 池袋'},
+ {a:'이케부쿠로', n:'Anthony Tart', k:'타르트', q:'Anthony Tart 池袋'},
+ {a:'이케부쿠로', n:'모모부쿠로 (夜パフェ専門店)', k:'밤 파르페', q:'夜パフェ専門店 モモブクロ'},
+ {a:'이케부쿠로', n:'교바시 센비키야 파라', k:'과일 파르페', note:'도부 백화점 6층', q:'京橋千疋屋 東武池袋'},
+ {a:'이케부쿠로', n:'에쉬레 파티세리 오 부르', k:'디저트', note:'세이부 B1', q:'エシレ・パティスリー オ ブール 西武池袋'},
+ {a:'이케부쿠로', n:'파티스리 아 라 캄파뉴', k:'디저트', h:'11:00~22:30', q:'パティスリー ア・ラ・カンパーニュ 池袋'},
+ {a:'이케부쿠로', n:'ESPRESSO D WORKS', k:'베이커리 · 이탈리안', q:'ESPRESSO D WORKS 池袋'},
+ {a:'이케부쿠로', n:'하치쿠마 카페', k:'카페', h:'11:00~20:30', q:'ハチクマカフェ 池袋'},
+ {a:'이케부쿠로', n:'미스터 도넛', k:'도넛', note:'그냥 갑자기 먹고 싶음. 일본 한정템', q:'ミスタードーナツ 池袋'},
+ // 하라주쿠
+ {a:'하라주쿠', n:'레드락 하라주쿠점', k:'로스트비프동 · 스테이크동', q:'レッドロック 原宿'},
+ {a:'하라주쿠', n:'아후리 하라주쿠점', k:'라멘 (유자소금)', q:'AFURI 原宿'},
+ {a:'하라주쿠', n:'오레류 교자반점 하라주쿠점', k:'토마토라멘 · 오무라이스', q:'俺流餃子飯店 原宿'},
+ {a:'하라주쿠', n:'사쿠라테이', k:'오코노미야키', q:'さくら亭 原宿'},
+ {a:'하라주쿠', n:'오코노미야키 야이야이', k:'오코노미야키', q:'お好み焼き やいやい 原宿'},
+ {a:'하라주쿠', n:'랄프스 커피', k:'카페', h:'10:00~19:00', note:'오모테산도', q:"Ralph's Coffee 表参道"},
+ // 도쿄역·긴자
+ {a:'도쿄역·긴자', n:'부타스테', k:'와규 규동 · 스키야키', h:'런치 11:00~15:30 · 디너 17:00~23:00', note:'도쿄역 마루노우치 남쪽출구 KITTE 5층. 비교적 저렴한 와규. 추천: 규동, 스키야키', q:'豚捨 KITTE丸の内'},
+ {a:'도쿄역·긴자', n:'규안', k:'스테이크 · 스키야키', note:'도쿄역 근처', q:'牛庵 東京駅'},
+ {a:'도쿄역·긴자', n:'야키니쿠 규통', k:'1인 야키니쿠', note:'도쿄역 · 아키바역. 유우키가 감 ㅋㅋ', q:'焼肉 牛筒 東京'},
+ {a:'도쿄역·긴자', n:'에쉬레 크루아상', k:'베이커리', note:'도쿄역 (에쉬레 메종 뒤 뵈르, 마루노우치)', q:'ÉCHIRÉ MAISON DU BEURRE 丸の内'},
+ {a:'도쿄역·긴자', n:'긴자 히무카', k:'일식', h:'런치 11:00~16:00 · 디너 17:00~23:00', note:'긴자역 도보 1분 도큐플라자 긴자', q:'銀座ひむか 東急プラザ銀座'},
+ {a:'도쿄역·긴자', n:'킷사유', k:'일본식 오믈렛 (오무라이스)', h:'11:00~15:00', note:'3시 장난하냐. 긴자', q:'喫茶YOU 銀座'},
+ {a:'도쿄역·긴자', n:'기무라야', k:'단팥빵', note:'긴자. 도쿄역에서 걸어갈 수 있을 듯', q:'木村屋總本店 銀座'},
+ {a:'도쿄역·긴자', n:'라뒤레 긴자', k:'마카롱 · 카페', q:'ラデュレ 銀座'},
+ // 시부야
+ {a:'시부야', n:'모토무라 규카츠', k:'규카츠', h:'11:00~23:00', pr:'1,200엔~', note:'시부야에 줄 길어서 안 먹은 곳. 이케부쿠로·신주쿠에도 생김', q:'牛かつ もと村 渋谷'},
+ {a:'시부야', n:'이치란 라멘', k:'라멘', s:5, q:'一蘭 渋谷'},
+ {a:'시부야', n:'오레노 함바그', k:'함바그', q:'俺のハンバーグ 渋谷'},
+ {a:'시부야', n:'골드러쉬', k:'함바그', q:'ゴールドラッシュ 渋谷'},
+ {a:'시부야', n:'야마모토 함바그', k:'함바그', q:'山本のハンバーグ 渋谷'},
+ {a:'시부야', n:'San Francisco Peaks', k:'수제 함바그', h:'11:30~23:30', q:'San Francisco Peaks 渋谷'},
+ {a:'시부야', n:'라케루', k:'오무라이스', h:'11:00~20:30', note:'빵이 맛있대', q:'ラケル 渋谷'},
+ {a:'시부야', n:'겐카츠', k:'돈가스', note:'튀김이 희다', q:'ゲンカツ 渋谷'},
+ {a:'시부야', n:'오레류 시오라멘', k:'라멘', h:'11:00~23:30', note:'넘버슈가 근처', q:'俺流塩らーめん 渋谷'},
+ {a:'시부야', n:'나베조', k:'나베 (샤브샤브)', h:'11:30~22:30 · 15:00~17:00 브레이크', note:'신주쿠에도', q:'鍋ぞう 渋谷'},
+ {a:'시부야', n:'크레미아', k:'아이스크림', h:'11:00~21:00', pr:'515엔~', note:'고급진 아이스크림', q:'クレミア 渋谷'},
+ {a:'시부야', n:'넘버슈가', k:'캐러멜', h:'11:00~19:00', q:'NUMBER SUGAR 渋谷'},
+ {a:'시부야', n:'파블로 치즈케이크', k:'치즈케이크', q:'PABLO 渋谷'},
+ {a:'시부야', n:'하브스', k:'케이크', note:'시부야·신주쿠·우에노·롯본기', q:'HARBS 渋谷'},
+ {a:'시부야', n:'산마르크 카페', k:'카페', note:'초코크로와상 파는 카페', q:'サンマルクカフェ 渋谷'},
+ {a:'시부야', n:'피자 슬라이스', k:'피자', q:'PIZZA SLICE 渋谷'},
+ // 신주쿠
+ {a:'신주쿠', n:'리큐', k:'우설 전문', h:'11:00~23:30', pr:'정식 1,620엔~', note:'루미네 이스트 7층', q:'牛たん 利久 ルミネエスト新宿'},
+ {a:'신주쿠', n:'모모 파라다이스', k:'스키야키 무한', h:'11:30~22:30 · 15:00~17:00 브레이크', q:'MoMo Paradise 新宿'},
+ {a:'신주쿠', n:'우동신', k:'우동', h:'11:00~22:00', note:'거리 개애매', q:'うどん慎 新宿'},
+ {a:'신주쿠', n:'코메라쿠', k:'오차즈케', h:'11:00~22:00', q:'こめらく 新宿'},
+ {a:'신주쿠', n:'오모이데요코초', k:'꼬치 술집 거리', q:'思い出横丁 新宿'},
+ {a:'신주쿠', n:'4/4 Seasons Coffee', k:'커피', h:'08:00~19:00 · 주말 10:00~17:00 · 화 휴무', pr:'드립 480엔 · 아메리카노 380엔', note:'케멕스 / 하리오 드립 선택 가능', q:'4/4 SEASONS COFFEE 新宿'},
+ {a:'신주쿠', n:'Bake Cheese Tart', k:'치즈타르트', pr:'200엔~', note:'치즈가 진하고 맛있다고 함', q:'BAKE CHEESE TART 新宿'},
+ // 아키하바라
+ {a:'아키하바라', n:'스타쵸 식당', k:'오무라이스 · 함바그', pr:'1,000~1,800엔', note:'아키하바라 UDX 푸드코트 3층', q:'アキバ・イチ UDX 秋葉原'},
+ {a:'아키하바라', n:'다시차즈케 엔', k:'오차즈케', pr:'650~980엔', note:'UDX 푸드코트 2층', q:'だし茶漬け えん 秋葉原UDX'},
+ {a:'아키하바라', n:'히노모토 히나이야', k:'오야코동', pr:'1,100엔', note:'UDX 푸드코트 3층. 오야코동 유명', q:'日本橋 比内や 秋葉原UDX'},
+ {a:'아키하바라', n:'마구로돈야 (十代目彌左ヱ門)', k:'참치 덮밥', note:'아키바역 근방. 나카오치 정식', q:'まぐろ問屋 十代目彌左ヱ門 秋葉原'},
+ {a:'아키하바라', n:'규카쿠', k:'야키니쿠 무한리필', h:'주말 11:30~23:00 · 평일 16:00~23:00', pr:'단품 모듬 1,000~2,000엔 · 무제한 3,300~5,200엔', q:'牛角 秋葉原'},
+ {a:'아키하바라', n:'큐슈 장가라 라멘', k:'라멘', h:'11:00~22:00', q:'九州じゃんがら 秋葉原'},
+ // 기타
+ {a:'기타', n:'빌즈 (bills)', k:'팬케이크', s:5, note:'오다이바 (야경222)', q:'bills お台場'},
+ {a:'기타', n:'곤파치', k:'이자카야', note:'아쿠아시티 오다이바 4층. 야경', q:'権八 お台場'},
+ {a:'기타', n:'후게츠', k:'오코노미야키', note:'아쿠아시티 오다이바', q:'風月 アクアシティお台場'},
+ {a:'기타', n:'Pomme-no-ki', k:'오무라이스 체인', note:'아쿠아시티 오다이바 5층', q:'ポムの樹 アクアシティお台場'},
+ {a:'기타', n:'히비키', k:'퓨전 일식', note:'아쿠아시티 오다이바 6층', q:'響 アクアシティお台場'},
+ {a:'기타', n:'피터래빗 카페', k:'카페', h:'11:00~19:00 (L.O. 17:30)', note:'지유가오카. 비쌈', q:'ピーターラビットガーデンカフェ 自由が丘'},
+ {a:'기타', n:'포테이토 크림', k:'매시드포테이토', h:'11:30~20:00 · 주말 12:00~ · 수 휴무', pr:'550엔~', note:'지유가오카. 양이 적어서 간식용', q:'ポテトクリーム 自由が丘'},
+ {a:'기타', n:'몽블랑', k:'디저트 카페', h:'10:00~19:00', pr:'몽블랑 620엔~', note:'지유가오카. 포장 시 아이스팩 2시간에 1개', q:'モンブラン 自由が丘'},
+ {a:'기타', n:'몽상클레르', k:'디저트 카페', pr:'580엔~', note:'지유가오카. 세라비 케이크 유명', q:'モンサンクレール 自由が丘'},
+ {a:'기타', n:'롤야', k:'롤케이크', pr:'480엔(한 조각)~', note:'지유가오카. 롤케이쿠!!', q:'ロール屋 自由が丘'}
+];
+
+const PLACE_GROUPS = ['해리포터','치이카와','이케부쿠로','하라주쿠','아키하바라','그 외'];
+const PLACES = [
+ {g:'해리포터', n:'워너브라더스 스튜디오 투어 도쿄', k:'10/25 · 10/27 방문', h:'예약 시간대 입장', loc:'도시마엔 (네리마). 이케부쿠로에서 30~40분', q:'ワーナー ブラザース スタジオツアー東京'},
+ {g:'해리포터', n:'해리포터 카페', k:'10/26 10:30', h:'', res:'예약', loc:'아카사카. 근처 약간의 거리 구경거리', q:'ハリー・ポッター カフェ 赤坂'},
+ {g:'해리포터', n:'해리포터 샵 하라주쿠', k:'스토어', h:'11:00~21:00', loc:'하라주쿠', q:'ハリー・ポッター ショップ 原宿'},
+ {g:'해리포터', n:'마호도코로 도쿄역점', k:'스토어', h:'10:00~20:30', loc:'도쿄역 캐릭터 스트리트 B1', q:'マホウドコロ 東京駅'},
+ {g:'치이카와', n:'치이카와 파크', k:'전시 + 쇼핑', h:'10:00~19:00 (최종 입장 17:40)', res:'예약', loc:'이케부쿠로 선샤인시티', q:'ちいかわパーク サンシャインシティ'},
+ {g:'치이카와', n:'치이카와 레스토랑', k:'10/26 19:00', res:'예약', loc:'이케부쿠로 파르코', q:'ちいかわレストラン 池袋PARCO'},
+ {g:'치이카와', n:'치이카와 랜드 이케부쿠로', k:'스토어', h:'11:00~21:00', loc:'파르코 B2', q:'ちいかわランド 池袋PARCO'},
+ {g:'치이카와', n:'치이카와 베이커리', k:'베이커리', h:'11:00~20:00', res:'예약 (10월 마감)', loc:'도큐 플라자 오모테산도 오모카도 (하라주쿠 근처). 평일이니 운 좋으면', q:'ちいかわベーカリー 東急プラザ表参道'},
+ {g:'치이카와', n:'나가노 마켓', k:'스토어', h:'11:00~21:00', res:'확인', loc:'긴자 (도쿄역 부근). 예약 필요하다는 이야기가?', q:'ナガノマーケット 銀座'},
+ {g:'치이카와', n:'치이카와 랜드 도쿄역', k:'스토어', loc:'도쿄역 캐릭터 스트리트 B1', q:'ちいかわランド 東京駅'},
+ {g:'치이카와', n:'치이카와 랜드 하라주쿠', k:'스토어', h:'11:00~20:00', loc:'키디랜드 하라주쿠 안', q:'キデイランド 原宿'},
+ {g:'치이카와', n:'치이카와 랜드 스카이트리', k:'영화 콜라보 이벤트', h:'~10/31', loc:'도쿄 스카이트리타운 소라마치. 치이카와 영화 개봉 기념', q:'ちいかわランド 東京ソラマチ'},
+ {g:'이케부쿠로', n:'어시스트 위그 1호점 · 2호점', k:'코스프레 가발', h:'11:30~20:50', loc:'24시간 자판기 생겼다는데 무슨 소린지', q:'アシストウィッグ 池袋'},
+ {g:'이케부쿠로', n:'포켓몬센터 메가도쿄', k:'스토어', h:'10:00~20:00', loc:'선샤인시티 알파 2F', q:'ポケモンセンターメガトウキョー'},
+ {g:'이케부쿠로', n:'키디랜드 선샤인시티', k:'캐릭터 잡화', loc:'선샤인시티', q:'キデイランド サンシャインシティ'},
+ {g:'이케부쿠로', n:'아니메이트 본점', k:'애니 굿즈', h:'10:00~21:00', loc:'이케부쿠로 동쪽 출구', q:'アニメイト池袋本店'},
+ {g:'이케부쿠로', n:'K-BOOKS (애니메·캐스트·코믹·동인관)', k:'중고 굿즈 · 동인지', h:'11:30~20:00', loc:'오토메 로드', q:'K-BOOKS 池袋 乙女ロード'},
+ {g:'이케부쿠로', n:'라신반 본관 · 1호관', k:'중고 굿즈', h:'10:00~21:00', loc:'오토메 로드', q:'らしんばん 池袋本店'},
+ {g:'이케부쿠로', n:'만다라케 이케부쿠로', k:'중고 · 동인지', h:'12:00~20:00', loc:'오토메 로드', q:'まんだらけ 池袋店'},
+ {g:'이케부쿠로', n:'토라노아나 이케부쿠로', k:'동인지', h:'11:00~20:00 (평일 ~21:00)', q:'とらのあな 池袋'},
+ {g:'이케부쿠로', n:'아미아미', k:'피규어', h:'11:00~20:00', q:'あみあみ 秋葉原ラジオ会館店 池袋'},
+ {g:'이케부쿠로', n:'메이키도', k:'중고 동인지', loc:'오토메 로드', q:'明輝堂 池袋'},
+ {g:'이케부쿠로', n:'북오프', k:'중고', h:'10:00~22:00', q:'ブックオフ 池袋'},
+ {g:'이케부쿠로', n:'에바 스토어', k:'에반게리온 굿즈', loc:'파르코', q:'EVANGELION STORE TOKYO-01 池袋'},
+ {g:'이케부쿠로', n:'GRIMOIRE (그리모와르)', k:'마법학교 콘셉트 이머시브 카페', res:'예약', link:'https://wizardcafegrimoire-ikebukuro.netlify.app/', q:'魔法学校カフェ グリモワール 池袋'},
+ {g:'이케부쿠로', n:'집사카페 스왈로테일', k:'집사카페', res:'100% 예약제', loc:'오토메 로드 K-BOOKS 동인관 지하', q:'執事喫茶 Swallowtail 池袋'},
+ {g:'이케부쿠로', n:'돈키호테', k:'잡화 · 면세', h:'24시간', loc:'역 근처', q:'ドン・キホーテ 池袋東口'},
+ {g:'이케부쿠로', n:'세이부 백화점 지하', k:'디저트 · 당고', loc:'이케부쿠로역 직결', q:'西武池袋本店'},
+ {g:'이케부쿠로', n:'도큐핸즈', k:'잡화', loc:'선샤인시티 근처', q:'東急ハンズ 池袋'},
+ {g:'이케부쿠로', n:'게임센터들', k:'오락실', h:'10:00~23:00', loc:'선샤인 거리 여기저기', q:'ゲームセンター 池袋 サンシャイン通り'},
+ {g:'하라주쿠', n:'키디랜드 하라주쿠', k:'캐릭터 잡화', h:'11:00~20:00', loc:'오모테산도', q:'キデイランド原宿店'},
+ {g:'하라주쿠', n:'도쿄 스네이크 센터', k:'뱀 카페', link:'https://snakecenter.jp/', q:'東京スネークセンター 原宿'},
+ {g:'아키하바라', n:'만다라케 콤플렉스', k:'중고 · 동인지', h:'12:00~20:00', loc:'1F 매입·골동품 / 2F 셀화·돌·코스프레 / 3F 코믹스 / 4F 남성향 / 5F 여성향 동인지 / 6F CD·DVD·게임 / 7F 특촬·카드 / 8F 로봇·피규어', q:'まんだらけコンプレックス 秋葉原'},
+ {g:'아키하바라', n:'토라노아나 B점', k:'여성향 동인지', h:'10:00~22:00', loc:'4~7F 여성향 동인지. 옆 A점은 남성향', q:'とらのあな 秋葉原'},
+ {g:'아키하바라', n:'아니메이트 아키하바라', k:'애니 굿즈', h:'10:00~21:00', q:'アニメイト秋葉原'},
+ {g:'아키하바라', n:'갸샤폰 회관', k:'가챠', h:'11:00~22:00', q:'ガチャポン会館 秋葉原'},
+ {g:'아키하바라', n:'K-BOOKS 아키하바라', k:'중고 굿즈', h:'11:00~20:30', q:'K-BOOKS 秋葉原'},
+ {g:'아키하바라', n:'고토부키야', k:'피규어 · 프라모델', h:'10:00~20:00', q:'コトブキヤ秋葉原館'},
+ {g:'아키하바라', n:'소프맙 본관', k:'전자제품 · 중고 피규어', h:'평일 11:00~21:00 · 주말 10:00~', loc:'6~7F 중고·신품 피규어가 저렴한 편. 면세·카드 가능', q:'ソフマップ AKIBA 本館'},
+ {g:'아키하바라', n:'북오프 아키하바라', k:'중고', h:'10:00~23:00', q:'ブックオフ 秋葉原駅前店'},
+ {g:'그 외', n:'나카노 브로드웨이', k:'덕후 물품 천국', h:'만다라케 12:00~20:00', loc:'굉장히 넓고 많다고 함', q:'中野ブロードウェイ'},
+ {g:'그 외', n:'디즈니 스토어 시부야', k:'스토어', h:'10:00~21:30', q:'ディズニーストア 渋谷公園通り店'},
+ {g:'그 외', n:'만다라케 시부야', k:'중고', h:'12:00~20:00', q:'まんだらけ 渋谷店'},
+ {g:'그 외', n:'동화책 나라의 앨리스', k:'앨리스 콘셉트 카페', loc:'신주쿠', q:'絵本の国のアリス 新宿'},
+ {g:'그 외', n:'요코하마 코스모월드', k:'놀이공원', h:'11:00~21:00 (휴일 ~22:00) · 목 휴무', loc:'입장료 없음, 기구별 티켓', q:'よこはまコスモワールド'},
+ {g:'그 외', n:'지유가오카', k:'잡화 · 디저트 거리', loc:'2~3시간이면 충분. DD index, 뽀빠이 카메라, TIPPY TOP, HOTCH POTCH', q:'自由が丘駅'}
+];
+
+const PACK = {
+ '공통':['여권 (유효기간 확인)','귀국 항공권 · 일본 내 연락처 출력','Visit Japan Web QR 캡처 또는 PDF','eSIM / 로밍','스튜디오 & 일반인용 사진 자료','보조배터리','서류 인쇄'],
+ '구니':['개인약','머리빗','에스트라 크림','헤어 에센스','비상약: 타이레놀, 대일밴드','약국: 부스코판'],
+ '으뉴':['헤어: 판고데기, 헤어오일, 왁스','기초: 제로이드, 선크림 (얼굴+바디), 바디로션','화장품: 코스 메이크업 도구, 디올 코렉터 + 비비','씻기: 폼클렌징, 클렌징 밀크','개인약: 정신과약, 수면약, 지르텍, 탁센, 비타민 C·D, 유산균','코스: 가발, 가발걸이, 실핀, 가발망, 렌즈, 안경, 셔츠, 넥타이, 망토, 바지','그 외: 파우더 시트, 휴족시간, 발바닥 패치']
+};
+
+/* ---------- STATE ---------- */
+const KEY='tokyo1024.v1';
+let state={tab:'plan', day:null, farea:'전체', pgroup:'전체', done:{}, pack:{}, open:{}};
+try{ Object.assign(state, JSON.parse(localStorage.getItem(KEY)||'{}')); }catch(e){}
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
+
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const mapUrl=q=>'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q);
+const todayStr=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+
+/* D-day */
+(function(){
+ const t=new Date(); t.setHours(0,0,0,0);
+ const s=new Date(2026,9,24), e=new Date(2026,9,28);
+ const diff=Math.round((s-t)/864e5);
+ const el=document.getElementById('dday');
+ if(diff>0) el.textContent='D-'+diff;
+ else if(t<=e) el.textContent=(Math.round((t-s)/864e5)+1)+'일차';
+ else el.textContent='다녀옴';
+})();
+
+/* ---------- RENDER: sub chips ---------- */
+function renderChips(){
+ const box=document.getElementById('subchips'); box.innerHTML='';
+ let list=[];
+ if(state.tab==='plan') list=DAYS.map(d=>({id:d.date,label:`${d.n}일차`,sub:`${d.date.slice(5).replace('-','.')} ${d.w}`,on:d.date===state.day}));
+ else if(state.tab==='food') list=['전체',...FOOD_AREAS].map(a=>({id:a,label:a,sub:a==='전체'?FOOD.length:FOOD.filter(f=>f.a===a).length,on:a===state.farea}));
+ else if(state.tab==='place') list=['전체',...PLACE_GROUPS].map(a=>({id:a,label:a,on:a===state.pgroup}));
+ else list=[{id:'flight',label:'항공'},{id:'hotel',label:'숙소·이동'},{id:'studio',label:'스튜디오'},{id:'pack',label:'챙길 것'},{id:'cost',label:'비용'}];
+ if(!list.length){box.style.display='none';return} box.style.display='';
+ list.forEach(c=>{
+  const b=document.createElement('button'); b.className='chip'; b.setAttribute('aria-pressed',String(!!c.on));
+  b.innerHTML=esc(c.label)+(c.sub!==undefined?`<span class="sub">${esc(c.sub)}</span>`:'');
+  b.onclick=()=>{
+   if(state.tab==='plan') state.day=c.id; else if(state.tab==='food') state.farea=c.id; else if(state.tab==='place') state.pgroup=c.id;
+   else { document.getElementById('m-'+c.id)?.scrollIntoView({behavior:'smooth',block:'start'}); return; }
+   save(); render();
+  };
+  box.appendChild(b);
+ });
+ const on=box.querySelector('[aria-pressed="true"]'); if(on) on.scrollIntoView({inline:'center',block:'nearest'});
+}
+
+/* ---------- RENDER: plan ---------- */
+function detHtml(d){
+ return d.map(x=>{
+  if(typeof x==='string') return `<p>${esc(x)}</p>`;
+  if(x.k) return `<div class="k">${esc(x.k)}</div>`;
+  if(x.l) return `<p><a href="${esc(x.u)}" target="_blank" rel="noopener">${esc(x.l)} ↗</a></p>`;
+  return '';
+ }).join('');
+}
+function renderPlan(){
+ const box=document.getElementById('p-plan');
+ const day=DAYS.find(d=>d.date===state.day)||DAYS[0];
+ box.innerHTML=`<div class="sec-h"><h2>${day.n}일차 · ${day.date.slice(5).replace('-','월 ')}일 ${day.w}요일</h2><span class="cnt">${day.items.length}개</span></div><div class="tl"></div>`;
+ const tl=box.querySelector('.tl');
+ day.items.forEach((it,i)=>{
+  const id=day.date+'-'+i; const open=!!state.open[id];
+  const el=document.createElement('article'); el.className='ev'+(it.big?' big':'');
+  el.innerHTML=`<div class="t">${esc(it.t||'—')}${it.ts?`<small>${esc(it.ts)}</small>`:''}</div>
+   <div class="b">
+    <div class="place">${it.p?`<span>${esc(it.p)}</span>`:''}${(it.pills||[]).map(p=>`<span class="pill ${/예약|필수|도착/.test(p)?'warn':'acc'}">${esc(p)}</span>`).join('')}</div>
+    <div class="title">${esc(it.title)}</div>
+    ${it.d&&it.d.length?`<button class="more" aria-expanded="${open}">자세히</button><div class="det" ${open?'':'hidden'}>${detHtml(it.d)}</div>`:''}
+   </div>`;
+  const btn=el.querySelector('.more');
+  if(btn) btn.onclick=()=>{ const det=el.querySelector('.det'); det.hidden=!det.hidden; btn.setAttribute('aria-expanded',String(!det.hidden)); state.open[id]=!det.hidden; save(); };
+  tl.appendChild(el);
+ });
+}
+
+/* ---------- RENDER: cards ---------- */
+function cardHtml(item,id){
+ const done=!!state.done[id];
+ const meta=[];
+ if(item.k) meta.push(`<span>${esc(item.k)}</span>`);
+ if(item.h) meta.push(`<span class="h">${esc(item.h)}</span>`);
+ if(item.pr) meta.push(`<span>${esc(item.pr)}</span>`);
+ if(item.s) meta.push(`<span class="stars">${'★'.repeat(item.s)}${'☆'.repeat(5-item.s)}</span>`);
+ const note=[item.loc,item.note].filter(Boolean).join('\n');
+ return `<article class="card${done?' done':''}" data-id="${esc(id)}">
+  <div class="n">${esc(item.n)}${item.res?` <span class="pill warn">${esc(item.res)}</span>`:''}</div>
+  <button class="chk" aria-label="다녀옴 표시" aria-pressed="${done}">✓</button>
+  <div class="meta">${meta.join('')}</div>
+  ${note?`<div class="note">${esc(note)}</div>`:''}
+  <div class="acts"><a class="btn map" href="${mapUrl(item.q||item.n+' 東京')}" target="_blank" rel="noopener">지도 열기 ↗</a>${item.link?`<a class="btn" href="${esc(item.link)}" target="_blank" rel="noopener">링크 ↗</a>`:''}</div>
+ </article>`;
+}
+function bindCards(root){
+ root.querySelectorAll('.chk').forEach(b=>b.onclick=()=>{
+  const card=b.closest('.card'); const id=card.dataset.id;
+  state.done[id]=!state.done[id]; if(!state.done[id]) delete state.done[id]; save();
+  card.classList.toggle('done',!!state.done[id]); b.setAttribute('aria-pressed',String(!!state.done[id]));
+ });
+}
+function renderFood(){
+ const q=(document.getElementById('q-food').value||'').trim().toLowerCase();
+ const box=document.getElementById('food-list');
+ const list=FOOD.filter(f=>(state.farea==='전체'||f.a===state.farea)&&(!q||[f.n,f.k,f.note,f.a,f.loc].join(' ').toLowerCase().includes(q)));
+ if(!list.length){box.innerHTML='<div class="empty">검색 결과가 없어요</div>';return}
+ if(state.farea==='전체'&&!q){
+  box.innerHTML=''; box.style.display='block';
+  FOOD_AREAS.forEach(a=>{
+   const sub=list.filter(f=>f.a===a); if(!sub.length) return;
+   const w=document.createElement('div');
+   w.innerHTML=`<div class="sec-h"><h2>${esc(a)}</h2><span class="cnt">${sub.length}</span></div><div class="cards">${sub.map(f=>cardHtml(f,'f:'+f.n)).join('')}</div>`;
+   box.appendChild(w);
+  });
+ } else { box.style.display=''; box.innerHTML=list.map(f=>cardHtml(f,'f:'+f.n)).join(''); }
+ bindCards(box);
+}
+function renderPlace(){
+ const q=(document.getElementById('q-place').value||'').trim().toLowerCase();
+ const box=document.getElementById('place-list');
+ const list=PLACES.filter(p=>(state.pgroup==='전체'||p.g===state.pgroup)&&(!q||[p.n,p.k,p.loc,p.g].join(' ').toLowerCase().includes(q)));
+ if(!list.length){box.innerHTML='<div class="empty">검색 결과가 없어요</div>';return}
+ box.innerHTML='';
+ PLACE_GROUPS.forEach(g=>{
+  const sub=list.filter(p=>p.g===g); if(!sub.length) return;
+  const w=document.createElement('div');
+  w.innerHTML=`<div class="sec-h"><h2>${esc(g)}</h2><span class="cnt">${sub.length}</span></div><div class="cards">${sub.map(p=>cardHtml(p,'p:'+p.n)).join('')}</div>`;
+  box.appendChild(w);
+ });
+ bindCards(box);
+}
+
+/* ---------- RENDER: memo ---------- */
+function renderMemo(){
+ const box=document.getElementById('p-memo');
+ const packHtml=Object.entries(PACK).map(([who,items])=>`<div class="sub-h">${esc(who)}</div><div class="cl">${items.map((t,i)=>{const id='pk:'+who+':'+i;return `<label><input type="checkbox" id="${esc(id)}" data-pk="${esc(id)}" ${state.pack[id]?'checked':''}><span>${esc(t)}</span></label>`}).join('')}</div>`).join('');
+ box.innerHTML=`
+ <div class="memo" id="m-flight">
+  <h3>항공편 <span class="pill acc">대한항공</span></h3>
+  <div class="flight"><div><div class="ap">GMP</div><div class="tm">09:00</div><div class="sm">10.24 토 · 김포 1터미널</div></div><div class="arrow">KE2101<br>→</div><div class="r"><div class="ap">HND</div><div class="tm">11:20</div><div class="sm">하네다 3터미널</div></div></div>
+  <div class="flight"><div><div class="ap">HND</div><div class="tm">09:45</div><div class="sm">10.28 수 · 하네다 3터미널</div></div><div class="arrow">KE2101<br>→</div><div class="r"><div class="ap">GMP</div><div class="tm">12:25</div><div class="sm">김포</div></div></div>
+  <p style="margin-top:10px">예약번호는 공개 페이지라 넣지 않았어요. 원본 시트 참고.</p>
+  <p>Visit Japan Web 전자신고: <a href="https://services.digital.go.jp/ko/visit-japan-web/" target="_blank" rel="noopener">services.digital.go.jp ↗</a>
+출발 전 작성 후 QR 캡처 또는 PDF 저장 (인터넷 안 될 때 대비).</p>
+  <p>여권 번호와 유효기간은 <a href="https://docs.google.com/spreadsheets/d/1h36cMTdIyAdIvJV_-pj9I4K8hbc1XBPzqYX0jAkimk0/edit" target="_blank" rel="noopener">원본 시트 ↗</a> 체크사항 탭에 있어요.</p>
+ </div>
+
+ <div class="memo" id="m-hotel">
+  <h3>숙소</h3>
+  <dl class="kv"><dt>호텔</dt><dd>호텔 레솔 이케부쿠로 (Hotel Resol Ikebukuro)</dd><dt>위치</dt><dd>이케부쿠로역 동쪽 출구 도보권</dd></dl>
+  <p style="margin-top:8px"><a class="btn map" href="${mapUrl('ホテルリソル池袋')}" target="_blank" rel="noopener">지도 열기 ↗</a></p>
+ </div>
+
+ <div class="memo">
+  <h3>공항 ↔ 이케부쿠로</h3>
+  <div class="sub-h">리무진 버스 · 1,400엔</div>
+  <p>하네다 → 선샤인시티 프린스호텔 약 1시간 35분, 이후 호텔까지 도보 10분. 예약 가능.
+귀국: 10/28 06:25 선샤인시티 프린스호텔 → 07:35 하네다 (첫차, 꼭 예약).</p>
+  <p><a href="https://www.limousinebus.co.jp/ja/" target="_blank" rel="noopener">limousinebus.co.jp ↗</a></p>
+  <div class="sub-h">전철 · 668엔 · 55~65분</div>
+  <p>게이큐선 시나가와 방면 → 시나가와 JR 환승 개찰구 → 야마노테선 (시부야·신주쿠 방면) → 이케부쿠로 동쪽 출구. 역에서 호텔까지 도보 15~20분.</p>
+  <div class="sub-h">아이폰에 스이카 등록</div>
+  <ol class="steps"><li>지갑 앱 → 오른쪽 위 ＋ → 교통카드 → Suica</li><li>새로운 카드 추가 → 약관 동의 → 충전 금액 선택</li><li>애플페이에 등록된 카드로 결제하면 발급 완료</li></ol>
+ </div>
+
+ <div class="memo" id="m-studio">
+  <h3>스튜디오 투어 체크 <span class="pill warn">10/25 · 10/27</span></h3>
+  <div class="sub-h">입장 순서</div>
+  <p>건물 입장 → 보안검사 (금속탐지) → 탈의실 → 코인로커 → 투어 입장. 입장은 예약 1시간 전부터 가능 (재확인).</p>
+  <div class="sub-h">탈의실</div>
+  <p>보안검색 후 로비 큰 스크린 방향으로 가는 길 오른쪽, 화장실 통로에 있음. 디지털 가이드 대여 카운터 맞은편 '화장실 1' 구역. 여성용은 오른쪽 더 안쪽, Changing Room (Female). 현장 구매자 전용 아님, 가져온 의상으로 갈아입어도 됨.</p>
+  <p><a href="https://mahoukai.com/article/harry-potter-studio-tour-changing-room-1606202311091.html" target="_blank" rel="noopener">탈의실 후기 ↗</a></p>
+  <div class="sub-h">코인로커</div>
+  <p>보안검색 통과 직후 오른쪽. 탈의실과 같은 입구 구역.
+S 300엔 · M 500엔 · L 700엔 · XL 1,000엔. 현금·카드 가능.
+영수증 QR이 열쇠라 꼭 보관. 중간에 열면 재결제.</p>
+  <p><a href="https://mahoukai.com/article/coin-operated-lockers-wbtourtokyo-161220232203301.html" target="_blank" rel="noopener">로커 안내 ↗</a></p>
+  <div class="sub-h">반입 주의</div>
+  <p>외부 음식 반입 불가 (뚜껑 있는 음료는 가능).
+눈썹칼, 미용가위 등 날붙이 반입 불가.
+셀카봉·짐벌은 가장 짧게 접고 머리보다 높이 들지 않으면 사용 가능.</p>
+  <div class="sub-h">클룩 바우처 (10/25)</div>
+  <p>레스토랑·카페 500엔 바우처. 2,000엔 이상 단일 결제, 셀프 계산대 불가, 클룩 앱 필요.</p>
+ </div>
+
+ <div class="memo" id="m-pack">
+  <h3>챙길 것</h3>
+  ${packHtml}
+ </div>
+
+ <div class="memo" id="m-cost">
+  <h3>비용 정산</h3>
+  <table class="cost">
+   <tr><td>항공권 (2인)</td><td class="r">933,800</td><td class="who">카뮈</td></tr>
+   <tr><td>스튜디오 공식 (¥110,000)</td><td class="r">981,411</td><td class="who">카뮈</td></tr>
+   <tr><td>스튜디오 클룩</td><td class="r">114,600</td><td class="who">카뮈</td></tr>
+   <tr><td>호텔 레솔 이케부쿠로</td><td class="r">655,194</td><td class="who">은유</td></tr>
+   <tr><td>합계 (원)</td><td class="r">2,685,005</td><td class="who">인당 1,342,503</td></tr>
+  </table>
+  <p style="margin-top:8px;font-size:12.5px;color:var(--muted)">귀가 택시비 참고: 김포 → 분당 약 3.5~4.0만, 인천 → 분당 약 6.2~6.5만</p>
+ </div>`;
+ box.querySelectorAll('[data-pk]').forEach(cb=>cb.onchange=()=>{ state.pack[cb.dataset.pk]=cb.checked; if(!cb.checked) delete state.pack[cb.dataset.pk]; save(); });
+ box.querySelectorAll('[data-copy]').forEach(b=>b.onclick=async()=>{
+  const v=b.dataset.copy; const sm=b.querySelector('small');
+  try{ await navigator.clipboard.writeText(v); sm.textContent='복사됨'; }
+  catch(e){ const r=document.createRange(); r.selectNodeContents(b.firstChild); const s=getSelection(); s.removeAllRanges(); s.addRange(r); sm.textContent='선택됨'; }
+  setTimeout(()=>sm.textContent='복사',1500);
+ });
+}
+
+/* ---------- TABS ---------- */
+function render(){
+ document.querySelectorAll('.panel').forEach(p=>p.hidden=p.id!=='p-'+state.tab);
+ document.querySelectorAll('.tabs [role=tab]').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.tab===state.tab)));
+ renderChips();
+ if(state.tab==='plan') renderPlan();
+ else if(state.tab==='food') renderFood();
+ else if(state.tab==='place') renderPlace();
+ else renderMemo();
+}
+document.querySelectorAll('.tabs [role=tab]').forEach(b=>b.onclick=()=>{ state.tab=b.dataset.tab; save(); render(); window.scrollTo({top:0}); });
+document.getElementById('q-food').addEventListener('input',renderFood);
+document.getElementById('q-place').addEventListener('input',renderPlace);
+
+/* auto-pick today's day while traveling, else remembered or day 1 */
+(function(){
+ const t=todayStr();
+ if(DAYS.some(d=>d.date===t)) state.day=t;
+ else if(!DAYS.some(d=>d.date===state.day)) state.day=DAYS[0].date;
+ const h=(location.hash||'').slice(1); if(['plan','food','place','memo'].includes(h)) state.tab=h;
+})();
+render();
+</script>
+</html>
