@@ -125,6 +125,14 @@ main{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px
 .memo h3{margin:0 0 8px;font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px}
 .memo p{margin:0 0 10px;font-size:14px;line-height:1.6;white-space:pre-line;overflow-wrap:anywhere}
 .memo p:last-child{margin-bottom:0}
+.memo b,.cl label b{color:var(--accent);font-weight:700}
+.memo p b{margin-right:4px}
+.memo .tm{font-family:var(--mono);font-size:12.5px;color:var(--fg);background:var(--chip);padding:0 5px;border-radius:5px;white-space:nowrap}
+.memo .ch{display:inline-block;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:2px 8px;margin:3px 6px 3px 0;font-size:13px;line-height:1.45;color:var(--fg)}
+.memo .ch .tm{background:transparent;padding:0}
+.memo .sub-h{font-size:13px;font-weight:700;color:var(--fg);padding-left:8px;border-left:3px solid var(--accent);margin:18px 0 8px;line-height:1.3}
+.memo .cl label{padding:9px 0}
+.memo .cl label span{display:block}
 details.memo summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;-webkit-tap-highlight-color:transparent}
 details.memo summary::-webkit-details-marker{display:none}
 details.memo summary h3{margin:0;flex:1;min-width:0}
@@ -718,10 +726,12 @@ S 300엔 · M 500엔 · L 700엔 · XL 1,000엔. 현금·카드 가능.
 10/26 진행 팝업: 산리오 もこもこ (いちばんプラザ ~10/29), 뿌요뿌요×하피단부이 (10/23~11/5), 프라가리아 메모리즈 (캐라코레 ~10/28).
 프리즘스톤은 8/31 폐점.</p>
   <div class="sub-h">같은 층 먹을 것</div>
-  <p><b>라멘스트리트</b> (一番街 B1) — 로쿠린샤 츠케멘 (아침 7:30~) · 이카루가 · 소라노이로 · 히루가오 등 11곳
-<b>오카시랜드</b> 9:00~21:00 — 가루비 플러스 (갓 튀긴 감자칩) · 글리코 · 모리나가 · 超해피턴 · 베이비스타 팝업 ~10/27</p>
+  <p><b>라멘스트리트 (一番街 B1)</b>
+로쿠린샤 츠케멘 (아침 7:30~) · 이카루가 · 소라노이로 · 히루가오 등 11곳
+<b>오카시랜드 9:00~21:00</b>
+가루비 플러스 (갓 튀긴 감자칩) · 글리코 · 모리나가 · 超해피턴 · 베이비스타 팝업 ~10/27</p>
   <div class="sub-h">개찰 안 / 밖 요령</div>
-  <p>그란스타는 JR 개찰 <b>안</b>이라 입장권 150엔이 필요하지만, 3일차에 도쿄역 → 유라쿠초 JR 1정거장을 타니 <b>그 때 개찰 들어가서 그란스타를 돌고 유라쿠초로</b> 가면 됨.
+  <p>그란스타는 JR 개찰 안이라 입장권 150엔이 필요하지만, 3일차에 도쿄역 → 유라쿠초 JR 1정거장을 타니 그 때 개찰 들어가서 그란스타를 돌고 유라쿠초로 가면 됨.
 그란스타 월~토 8:00~22:00.
 기프트팔레트(야에스 북쪽 개찰 밖, 9:30~20:30)와 다이마루 1F(10:00~20:00)는 개찰 밖.
 상한 쉬운 생과자는 마지막 날이 아니면 피하기.</p>
@@ -729,12 +739,16 @@ S 300엔 · M 500엔 · L 700엔 · XL 1,000엔. 현금·카드 가능.
   <div class="sub-h">하네다 3터미널 출국 (10/28 · 07:35 도착 → 09:45 출발)</div>
   <p><b>타임라인</b>: 07:35 3F 출발층 하차 → 07:40~08:00 대한항공 체크인 (출발 60분 전 08:45 마감) → 08:00~08:25 보안검색 <b>전</b> 쇼핑 → 08:25~08:50 보안·출국심사 → 08:50~09:15 면세점 → 09:15 게이트.</p>
   <p><b>보안검색 전</b>
-4F 에도코지 '江戸食賓館' 06:30~ — 도라야 공항 한정 양갱, 하늘 나는 도쿄바나나 くまッス, 로이스, Tax Free
-3F ANA FESTA 로비 기프트점 06:00~ — 전국 과자, 로이스
+<b>4F 에도코지 '江戸食賓館' 06:30~</b>
+도라야 공항 한정 양갱, 하늘 나는 도쿄바나나 くまッス, 로이스, Tax Free
+<b>3F ANA FESTA 로비 기프트점 06:00~</b>
+전국 과자, 로이스
 치이카와 굿즈 'HAIKARA'는 9시 오픈이라 시간상 어려움.</p>
   <p><b>출국심사 후</b>
-TIAT 듀티프리 센트럴 24시간 — 시로이코이비토 · 자가포쿠루 · 요쿠모쿠 · 도쿄 히요코 · 고마타마고 · 도쿄 밀크치즈 공장 · 슈가 버터의 나무 · 르타오 등 식품 137종. 금액 제한 없이 면세가
-SOUTH 06:00~ — 로이스 · 도쿄바나나 · 시로이코이비토 · 킷캣 · 가루비
+<b>TIAT 듀티프리 센트럴 24시간</b>
+시로이코이비토 · 자가포쿠루 · 요쿠모쿠 · 도쿄 히요코 · 고마타마고 · 도쿄 밀크치즈 공장 · 슈가 버터의 나무 · 르타오 등 식품 137종. 금액 제한 없이 면세가
+<b>SOUTH 06:00~</b>
+로이스 · 도쿄바나나 · 시로이코이비토 · 킷캣 · 가루비
 냉장이 필요한 로이스 생초콜릿은 여기서 마지막에.</p>
   <p><b>N.Y.
 캐러멜 샌드는 3터미널 매장이 없음</b> (1·2터미널 국내선 쪽에만 있고 셔틀 왕복 40~50분이라 불가).
@@ -764,6 +778,25 @@ SOUTH 06:00~ — 로이스 · 도쿄바나나 · 시로이코이비토 · 킷캣
  box.querySelectorAll('[data-pk]').forEach(cb=>cb.onchange=()=>{ state.pack[cb.dataset.pk]=cb.checked; if(!cb.checked) delete state.pack[cb.dataset.pk]; save(); });
  /* 문장 끝 줄바꿈 (메모 문단 전체) */
  box.querySelectorAll('p').forEach(pp=>{ const w=document.createTreeWalker(pp,NodeFilter.SHOW_TEXT); let n; while((n=w.nextNode())){ n.nodeValue=n.nodeValue.replace(/(?<=[가-힣\)\]])\. (?=\S)/g,'.\n'); } });
+ /* 가게명·시간·가격·목록 강조 */
+ (function decorate(root){
+  const rx=/(\d{1,2}:\d{2}(?:\s*~\s*\d{1,2}:\d{2})?|~\s?\d{1,2}:\d{2}|\d{1,3}(?:,\d{3})+엔|\d+엔)/g;
+  const tm=str=>{ const out=[]; let last=0; str.replace(rx,(m,_g,i)=>{ if(i>last) out.push(document.createTextNode(str.slice(last,i))); const e=document.createElement('span'); e.className='tm'; e.textContent=m; out.push(e); last=i+m.length; return m; }); if(last<str.length) out.push(document.createTextNode(str.slice(last))); return out; };
+  root.querySelectorAll('p, .cl label span').forEach(el=>{
+   const w=document.createTreeWalker(el,NodeFilter.SHOW_TEXT); const nodes=[]; let n; while((n=w.nextNode())) nodes.push(n);
+   nodes.forEach(t=>{
+    if(t.parentNode.closest('a,b,.tm,.ch')) return;
+    const frag=document.createDocumentFragment();
+    t.nodeValue.split('\n').forEach((line,li)=>{
+     if(li) frag.appendChild(document.createTextNode('\n'));
+     const segs=line.split(' · ');
+     if(segs.length>=3){ segs.forEach(sg=>{ sg=sg.trim(); if(!sg) return; const c=document.createElement('span'); c.className='ch'; tm(sg).forEach(x=>c.appendChild(x)); frag.appendChild(c); }); }
+     else tm(line).forEach(x=>frag.appendChild(x));
+    });
+    t.replaceWith(frag);
+   });
+  });
+ })(box);
  /* 아코디언: 각 메모를 details로 감싸고 펼침 상태 기억 */
  state.mo=state.mo||{};
  box.querySelectorAll('div.memo').forEach(div=>{
