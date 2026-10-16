@@ -400,6 +400,10 @@ const PACK = {
 const KEY='tokyo1024.v1';
 let state={tab:'plan', day:null, farea:'전체', ftype:'전체', pgroup:'전체', done:{}, pack:{}, open:{}};
 try{ Object.assign(state, JSON.parse(localStorage.getItem(KEY)||'{}')); }catch(e){}
+/* 저장된 필터가 사라진 지역을 가리키면 전체로 복구 */
+if(!['전체',...FOOD_AREAS].includes(state.farea)) state.farea='전체';
+if(!FOOD_TYPES.some(t=>t.id===state.ftype)) state.ftype='전체';
+if(!['전체',...PLACE_GROUPS].includes(state.pgroup)) state.pgroup='전체';
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
