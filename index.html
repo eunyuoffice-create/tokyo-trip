@@ -133,6 +133,7 @@ main{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px
 .memo .sub-h{font-size:13px;font-weight:700;color:var(--fg);padding-left:8px;border-left:3px solid var(--accent);margin:18px 0 8px;line-height:1.3}
 .memo .cl label{padding:9px 0}
 .memo .cl label span{display:block}
+.cl img.thumb{width:64px;height:64px;object-fit:cover;border-radius:8px;flex:none;background:var(--line)}
 details.memo summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;-webkit-tap-highlight-color:transparent}
 details.memo summary::-webkit-details-marker{display:none}
 details.memo summary h3{margin:0;flex:1;min-width:0}
@@ -498,24 +499,38 @@ const SHOP = {
 /* 도쿄역 선물 간식 — 2026.10.16 조사. [안]=JR 개찰 안 그란스타, [밖]=개찰 밖 */
 const GIFT = {
  '도쿄역 선물 Top 8':[
-  '① 도쿄바나나 8개 1,296엔 — [밖] 一番街 B1 東京ばな奈s (9:00~21:00) · 기프트팔레트 · [안] 그란스타. 어디서나 있어 줄 없음. 피카츄 도쿄바나나는 기프트팔레트 전문점 (8개 1,512엔)',
-  '② 코코리스 헤이즐넛&라즈베리 샌드 6개 1,620엔 — [안] 그란스타 1F 중앙통로. 7년 연속 그란스타 1위, 도쿄역에만 있음, 오후 품절 잦음',
-  '③ N.Y.C.SAND 뉴욕 캐러멜 샌드 8개 1,512엔 — [밖] 다이마루 도쿄 1F 단독 (10:00~20:00). 상시 줄 (주말 20~30분), 저녁 품절 → 개점 직후나 낮에',
-  '④ 프레스 버터 샌드 5개 약 1,200엔 — [안] 그란스타 B1 銀の鈴 10주년 한정점 (10/22 오픈, 생버터샌드 432엔) · [안] 남통로 팝업 7:00~22:00 · [밖] 다이마루 B1. 10/22~28 3,000엔 이상 토트백 증정 (1일 100개)',
-  '⑤ 더 메이플 매니아 메이플 버터 쿠키 9매 약 1,100엔 · 도쿄역 한정 캔 2,500엔 — [안] 그란스타 1F 吹き抜け. 평일 오전 줄 없음',
-  '⑥ 슈가 버터의 나무 7개 약 700엔 — [안][밖] 매장 많아 줄 없음. 스누피 콜라보 팝업 그란스타 10/12~',
-  '⑦ 버터 버틀러 피낭시에 4개 1,080엔 · 버터 밀푀유 5개 1,620엔 (기프트팔레트 한정) — [밖] 기프트팔레트 1F (야에스 북쪽 개찰 바로 밖)',
-  '⑧ 고마타마고 12개 1,620엔 — [밖] 다이마루 1F · 一番街 B1 도쿄미야게센터. 줄 없음'
+  {img:'img/gift/banana.jpg', t:'① 도쿄바나나 8개 1,296엔 — [밖] 一番街 B1 東京ばな奈s (9:00~21:00) · 기프트팔레트 · [안] 그란스타. 어디서나 있어 줄 없음. 피카츄 도쿄바나나는 기프트팔레트 전문점 (8개 1,512엔)\n다른 지점: 이케부쿠로·하라주쿠 상설 매장 없음 (이케부쿠로역은 팝업 때만). 하네다 3터미널엔 있음'},
+  {img:'img/gift/cocoris.jpg', t:'② 코코리스 헤이즐넛&라즈베리 샌드 6개 1,620엔 — [안] 그란스타 1F 중앙통로. 7년 연속 그란스타 1위, 도쿄역에만 있음, 오후 품절 잦음\n다른 지점: 없음 (도쿄역 단독)'},
+  {img:'img/gift/nycsand.jpg', t:'③ N.Y.C.SAND 뉴욕 캐러멜 샌드 8개 1,512엔 — [밖] 다이마루 도쿄 1F 단독 (10:00~20:00). 상시 줄 (주말 20~30분), 저녁 품절 → 개점 직후나 낮에\n다른 지점: 상설은 다이마루 도쿄뿐. 이케부쿠로 세이부엔 가끔 팝업만'},
+  {img:'img/gift/pbs.jpg', t:'④ 프레스 버터 샌드 5개 약 1,200엔 — [안] 그란스타 B1 銀の鈴 10주년 한정점 (10/22 오픈, 생버터샌드 432엔) · [안] 남통로 팝업 7:00~22:00 · [밖] 다이마루 B1. 10/22~28 3,000엔 이상 토트백 증정 (1일 100개)\n이케부쿠로에도 있음: JR 이케부쿠로역 중앙통로 (개찰 밖) 9:00~22:00 · 세이부 이케부쿠로 B1 10:00~20:00 → 호텔 가는 길에 사도 됨. 하라주쿠 없음'},
+  {img:'img/gift/maple.jpg', t:'⑤ 더 메이플 매니아 메이플 버터 쿠키 9매 약 1,100엔 · 도쿄역 한정 캔 2,500엔 — [안] 그란스타 1F 吹き抜け. 평일 오전 줄 없음\n다른 지점: 이케부쿠로·하라주쿠 없음 (도쿄역 · 하네다)'},
+  {img:'img/gift/sbt.jpg', t:'⑥ 슈가 버터의 나무 7개 약 700엔 — [안][밖] 매장 많아 줄 없음. 스누피 콜라보 팝업 그란스타 10/12~\n이케부쿠로에도 있음: 세이부 이케부쿠로 식품관 B1 (BUTTER STATE\'s 매장에서 취급, 10/1~ 스누피 콜라보도). 하라주쿠 없음'},
+  {img:'img/gift/butler.jpg', t:'⑦ 버터 버틀러 피낭시에 4개 1,080엔 · 버터 밀푀유 5개 1,620엔 (기프트팔레트 한정) — [밖] 기프트팔레트 1F (야에스 북쪽 개찰 바로 밖)\n다른 지점: 이케부쿠로·하라주쿠 없음'},
+  {img:'img/gift/goma.jpg', t:'⑧ 고마타마고 12개 1,620엔 — [밖] 다이마루 1F · 一番街 B1 도쿄미야게센터. 줄 없음\n다른 지점: 이케부쿠로 매장 확인 안 됨 (도쿄역·하네다에서)'}
  ],
  '더 사볼 만한 것':[
-  '오드리 그레이시아 딸기 부케 쿠키 12개 2,224엔 — [안] 그란스타 B1 銀の鈴. 오전부터 줄, 선물 인기 최상위',
-  '자가볼다 (가루비+×도쿄바나나) 감자칩 4봉 1,047엔 — [안] 그란스타 1F. 짭짤한 선물 1순위',
-  '더 드로스 마스카포네 샌드 9매 1,404엔 (유통기한 12개월) · 누에보 메이플 카스텔라 6개 1,296엔 — [안] 그란스타',
-  '도쿄 밀크치즈 공장 체다치즈 파이샌드 6개 1,944엔 (그란스타 한정) — [안] 그란스타 1F 게이요 스트리트',
-  '네코셰프 발바닥 치즈 피낭시에 5개 1,296엔 · 긴자 센비키야 후르츠 샌드 4개 1,250엔 · 피스타&도쿄 — [밖] 기프트팔레트 1F',
-  '히토츠부 칸로 구미첼 — [안] 그란스타 B1. LINE 디지털 정리권 없으면 구매 불가',
-  '뉴욕 퍼펙트 치즈 5개 약 1,100엔 — [안] JR 1F 남통로 (N.Y.C.SAND와 다른 브랜드). 오후 품절',
+  {img:'img/gift/audrey.jpg', t:'오드리 그레이시아 딸기 부케 쿠키 12개 2,224엔 — [안] 그란스타 B1 銀の鈴. 오전부터 줄, 선물 인기 최상위\n이케부쿠로에도 있음: 세이부 이케부쿠로 식품관 B1 (월~토 10:00~21:00 · 일 ~20:00) → 도쿄역 줄 길면 여기서'},
+  {img:'img/gift/jaga.jpg', t:'자가볼다 (가루비+×도쿄바나나) 감자칩 4봉 1,047엔 — [안] 그란스타 1F. 짭짤한 선물 1순위\n다른 지점: 없음 (그란스타 단독)'},
+  {img:'img/gift/dros.jpg', t:'더 드로스 마스카포네 샌드 9매 1,404엔 (유통기한 12개월) · 누에보 메이플 카스텔라 6개 1,296엔 — [안] 그란스타\n다른 지점: 없음 (도쿄역 단독)'},
+  {img:'img/gift/tmcf.jpg', t:'도쿄 밀크치즈 공장 체다치즈 파이샌드 6개 1,944엔 (그란스타 한정) — [안] 그란스타 1F 게이요 스트리트\n다른 지점: 이케부쿠로·하라주쿠 없음 (브랜드 매장은 신주쿠 루미네·시부야 등, 파이샌드는 도쿄역 한정)'},
+  {img:'img/gift/neko.jpg', t:'네코셰프 발바닥 치즈 피낭시에 5개 1,296엔 · 긴자 센비키야 후르츠 샌드 4개 1,250엔 · 피스타&도쿄 — [밖] 기프트팔레트 1F\n다른 지점: 네코셰프는 도쿄역 기프트팔레트 단독'},
+  {img:'img/gift/gumi.jpg', t:'히토츠부 칸로 구미첼 — [안] 그란스타 B1. LINE 디지털 정리권 없으면 구매 불가\n하라주쿠에도 있음: 하라카도 1F 히토츠부 칸로 하라주쿠점 11:00~21:00. 16시까지는 온라인 정리권 입장, 16시 이후는 정리권 없이 (2024 오픈 기준, 재확인). 구미첼 1개 단위 판매 → 3일차 하라주쿠에서 사는 게 편함'},
+  {img:'img/gift/nypc.jpg', t:'뉴욕 퍼펙트 치즈 5개 약 1,100엔 — [안] JR 1F 남통로 (N.Y.C.SAND와 다른 브랜드). 오후 품절\n이케부쿠로에도 있음: 도부백화점 이케부쿠로 B1 10:00~20:00'},
   '캐러멜 고스트 하우스·로이스는 도쿄역에 매장 없음 (캐러멜 고스트 하우스는 신주쿠 뉴우먼, 로이스는 하네다 공항)'
+ ],
+ '이케부쿠로에서 살 만한 것 (호텔 근처)':[
+  '세이부 이케부쿠로 식품관 B1 (월~토 10:00~21:00 · 일 ~20:00) · 도부백화점 B1 (10:00~20:00) · JR 이케부쿠로역 중앙통로 — 세이부는 2026년 리뉴얼 중이라 매장 위치가 바뀔 수 있음. 숙소에서 걸어서 5~10분',
+  '가마쿠라 베니야 쿠루밋코 5개 891엔 — 세이부 B1. 호두 캐러멜 바, 한국인 선물 인기 최상위. 품절 잦아 오전·이른 저녁 추천',
+  {img:'img/gift/audrey.jpg', t:'오드리 그레이시아 — 세이부 B1. 도쿄역 줄 피해서 여기서 (위 참고)'},
+  {img:'img/gift/pbs.jpg', t:'프레스 버터 샌드 — JR 이케부쿠로역 중앙통로 9:00~22:00. 밤 늦게까지 여는 유일한 선물 가게 · 세이부 B1에도'},
+  {img:'img/gift/nypc.jpg', t:'뉴욕 퍼펙트 치즈 — 도부 B1 10:00~20:00. 도쿄역에서 품절이면 여기서'},
+  '케이신도(桂新堂) 이케후쿠로 새우 센베이 — 세이부 이케부쿠로 한정. 부엉이 그림 센베이, 가벼워서 선물용',
+  '후지야 긴자 포켓 쇼트케이크 540엔 — 세이부 한정. 손바닥 크기 쇼트케이크 (당일 소비, 호텔 간식용)',
+  '에쉬레 봉브 에쉬레 540~648엔 — 세이부 한정 (나튀르·피스타치오·몽블랑). 당일 소비',
+  '클럽 하리에 바움쿠헨 mini 4개 2,117엔 — 도부 이케부쿠로 한정 "이케후쿠로" 부엉이 패키지 (현재 판매 여부 매장 확인)',
+  '타르틴 딸기 타르틴 — 도부 B1. 딸기 모양 콘 과자, 포장 예쁨',
+  '핫텐도 크림빵 — JR 이케부쿠로 중앙개찰 바로 앞. 당일 먹는 호텔 간식용',
+  '스즈메야 도라야키 1개 약 250엔 — 히가시이케부쿠로. 목·금·토 11:00~18:00만 영업, 매진 시 종료 → 우리 일정에선 10/24 토요일만 가능'
  ]
 };
 
@@ -681,7 +696,7 @@ function renderPlace(){
 /* ---------- RENDER: memo ---------- */
 function renderMemo(){
  const box=document.getElementById('p-memo');
- const clHtml=(obj,pre)=>Object.entries(obj).map(([cat,items])=>`<div class="sub-h">${esc(cat)}</div><div class="cl">${items.map((t,i)=>{const id=pre+':'+cat+':'+i;const [tt,rest]=t.split(' — ');return `<label><input type="checkbox" id="${esc(id)}" data-pk="${esc(id)}" ${state.pack[id]?'checked':''}><span>${rest?`<b>${esc(tt)}</b>${nl(rest)}`:nl(t)}</span></label>`}).join('')}</div>`).join('');
+ const clHtml=(obj,pre)=>Object.entries(obj).map(([cat,items])=>`<div class="sub-h">${esc(cat)}</div><div class="cl">${items.map((it,i)=>{const o=typeof it==='string'?{t:it}:it;const t=o.t;const id=pre+':'+cat+':'+i;const [tt,rest]=t.split(' — ');return `<label><input type="checkbox" id="${esc(id)}" data-pk="${esc(id)}" ${state.pack[id]?'checked':''}>${o.img?`<img class="thumb" src="${esc(o.img)}" loading="lazy" alt="">`:''}<span>${rest?`<b>${esc(tt)}</b>${nl(rest)}`:nl(t)}</span></label>`}).join('')}</div>`).join('');
  const giftHtml=clHtml(GIFT,'gf');
  const shopHtml=Object.entries(SHOP).map(([cat,items])=>`<div class="sub-h">${esc(cat)}</div><div class="cl">${items.map((t,i)=>{const id='sh:'+cat+':'+i;return `<label><input type="checkbox" id="${esc(id)}" data-pk="${esc(id)}" ${state.pack[id]?'checked':''}><span>${esc(t)}</span></label>`}).join('')}</div>`).join('');
  const packHtml=Object.entries(PACK).map(([who,items])=>`<div class="sub-h">${esc(who)}</div><div class="cl">${items.map((t,i)=>{const id='pk:'+who+':'+i;return `<label><input type="checkbox" id="${esc(id)}" data-pk="${esc(id)}" ${state.pack[id]?'checked':''}><span>${esc(t)}</span></label>`}).join('')}</div>`).join('');
