@@ -9,9 +9,20 @@ const COLS = new Set(['settings', 'expenses', 'transfers', 'checks']);
 const ID_RE = /^[A-Za-z0-9_\-.~:@+]{1,200}$/;
 let ready = null;
 
+// Neon 연동이 만드는 변수 이름이 프로젝트마다 다를 수 있어(접두사 등) postgres:// 값을 가진 변수를 찾는다
+function dbUrl() {
+  const env = process.env;
+  const prefer = ['DATABASE_URL', 'POSTGRES_URL', 'DATABASE_URL_UNPOOLED', 'POSTGRES_URL_NON_POOLING'];
+  for (const k of prefer) if (env[k] && /^postgres(ql)?:\/\//.test(env[k])) return env[k];
+  const keys = Object.keys(env).filter(k => /^postgres(ql)?:\/\//.test(env[k] || '')).sort((a, b) => (/UNPOOLED|NON_POOLING/.test(a) ? 1 : 0) - (/UNPOOLED|NON_POOLING/.test(b) ? 1 : 0));
+  return keys.length ? env[keys[0]] : '';
+}
+export function dbEnvNames() {
+  return Object.keys(process.env).filter(k => /DATABASE|POSTGRES|NEON|PG/i.test(k)).sort();
+}
 function db() {
-  const url = process.env.DATABASE_URL || process.env.POSTGRES_URL || process.env.DATABASE_URL_UNPOOLED;
-  if (!url) throw new Error('DATABASE_URL 환경변수가 없어요. Vercel → Storage에서 Neon을 연결했는지 확인하세요.');
+  const url = dbUrl();
+  if (!url) throw new Error('DB 접속 정보(DATABASE_URL)가 없어요. Vercel → Storage에서 Neon을 이 프로젝트에 연결하고 Redeploy 하세요.');
   return neon(url);
 }
 async function ensure(sql) {
@@ -31,7 +42,7 @@ export default async function handler(req, res) {
     const action = body.action || 'list';
     if (action === 'ping') {
       let ok = false; try { const sql = db(); await ensure(sql); ok = true; } catch (_) {}
-      return res.status(200).json({ ok: true, db: ok, pinRequired: !!process.env.LEDGER_PIN });
+      return res.status(200).json({ ok: true, db: ok, pinRequired: !!process.env.LEDGER_PIN, envNames: dbEnvNames(), hasUrl: !!dbUrl() });
     }
     const PIN = process.env.LEDGER_PIN || '';
     if (PIN && String(body.pin || '') !== PIN) return res.status(200).json({ ok: false, error: 'pin' });
