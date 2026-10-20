@@ -77,7 +77,7 @@ async function reorder(col,ids){
 /* ---------- 길게 눌러 끌어서 정렬 (메모와 같은 방식) ---------- */
 function makeSortable(listEl,sel,col){
   if(!listEl)return;
-  listEl.querySelectorAll(sel).forEach(el=>{ if(el.dataset.sortable)return; el.dataset.sortable='1'; el.addEventListener('pointerdown',ev=>pressToDrag(ev,el,listEl,sel,col)); });
+  listEl.querySelectorAll(sel).forEach(el=>{ if(el.dataset.sortable)return; el.dataset.sortable='1'; el.addEventListener('pointerdown',ev=>pressToDrag(ev,el,listEl,sel,col)); el.addEventListener('contextmenu',e=>{ if(loggedIn()&&!e.target.closest('a,input,textarea'))e.preventDefault(); }); });
 }
 function pressToDrag(ev,el,listEl,sel,col){
   if(!loggedIn())return; if(ev.button&&ev.button!==0)return; if(ev.target.closest('button,a,input,textarea,.cedit'))return;

@@ -425,3 +425,6 @@ body.body-edit .ev,body.body-edit .card{-webkit-user-select:none;user-select:non
 /* 시트 머리글(제목 · 닫기)은 스크롤해도 상단 고정 */
 .lg .lgsheet h2{position:sticky;top:-8px;z-index:3;background:var(--surface);margin:0 -16px 12px;padding:6px 16px 10px;box-shadow:0 6px 10px -8px rgba(23,28,40,.18)}
 .lg .lgsheet h2 button{height:32px;padding:0 10px;border-radius:999px;background:var(--chip);color:var(--fg);font-weight:600}
+
+/* 시트 하단 저장 버튼 줄 고정 */
+.lg .lgsheet form > .lgactions,.lg .lgsheet .lgin > .lgactions{position:sticky;bottom:calc(-20px - env(safe-area-inset-bottom,0px));z-index:3;background:var(--surface);margin:16px -16px calc(-20px - env(safe-area-inset-bottom,0px));padding:10px 16px calc(14px + env(safe-area-inset-bottom,0px));box-shadow:0 -6px 10px -8px rgba(23,28,40,.18)}
