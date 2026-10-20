@@ -236,7 +236,7 @@ function rowHtml(e){
   }
   if(!priv&&e.settled) right=`<div class="ab">정산 완료</div>`;
   const check=priv?'':`<button class="lgbox lgbox-s" data-settled="${esc(e.id)}" aria-label="정산 완료" aria-pressed="${!!e.settled}">${svgCheck}</button>`;
-  return `<div class="lgrow ${!priv&&e.settled?'lgsettled':''}">${check}<button class="lgrowbody" data-exp="${esc(e.id)}"><div class="lgmid"><div class="ti">${priv?`<span class="lglock">${svgLock}</span>`:''}<span class="lgtrunc">${esc(e.title||'(제목 없음)')}</span></div><div class="si">${sub}${e.memo?` · ${esc(e.memo)}`:''}</div></div><div class="lgamt"><div class="aa">${fmt(e.amount,e.cur)}</div>${right}</div></button></div>`;
+  return `<div class="lgrow ${!priv&&e.settled?'lgsettled':''}">${check}<button class="lgrowbody" data-exp="${esc(e.id)}"><div class="lgmid"><div class="ti">${priv?`<span class="lglock">${svgLock}</span>`:''}<span class="lgtrunc">${esc(e.title||'(제목 없음)')}</span></div><div class="si">${sub}${e.memo?` · ${esc(e.memo)}`:''}</div></div><div class="lgamt"><div class="aa">${fmt(e.amount,e.cur)}</div>${right}</div><span class="lgchev" aria-hidden="true"></span></button></div>`;
 }
 function viewExp(){
   let h=''; const me=S.me; const tj=myTotals('JPY'), tk=myTotals('KRW');
@@ -259,6 +259,7 @@ function viewExp(){
     const sj=g.items.filter(e=>e.cur==='JPY').reduce((a,e)=>a+e.amount,0), sk=g.items.filter(e=>e.cur==='KRW').reduce((a,e)=>a+e.amount,0);
     h+=`<div class="lgsec"><h3>${esc(dayLabel(g.day))}</h3><span class="lgnum">${sj?fmt(sj,'JPY'):''}${sj&&sk?' · ':''}${sk?fmt(sk,'KRW'):''}</span></div><div class="lgcard lgtight">${g.items.map(rowHtml).join('')}</div>`;
   });
+  h+=`<div class="lghint" style="text-align:center;margin:10px 0 4px">지출을 누르면 수정·삭제할 수 있어요. 왼쪽 체크는 정산 완료 표시예요.</div>`;
   return h;
 }
 function viewMemo(){
@@ -270,11 +271,12 @@ function viewMemo(){
     if(!list.length){h+=`<div class="lgcard"><div class="lgempty">${sec.k==='shared'?'살 것 목록이나 가고 싶은 곳처럼 같이 체크할 걸 올려두세요.':'개인 쇼핑 리스트나 일기처럼 나만 볼 걸 써요.'}</div></div>`;return}
     list.forEach(m=>{h+=memoHtml(m)});
   });
+  h+=`<div class="lghint" style="text-align:center;margin:10px 0 4px">메모의 "편집"에서 제목·공용/개인·삭제, 항목은 글자를 누르면 수정, ×로 삭제해요.</div>`;
   return h;
 }
 function memoHtml(m){
   const priv=!isShared(m);
-  let h=`<div class="lgmemo" data-memo="${esc(m.id)}"><div class="lgmh"><button class="lgtt" data-memoedit="${esc(m.id)}">${priv?`<span class="lglock">${svgLock}</span>`:''}${m.title?esc(m.title):`<span class="lgph">${m.type==='text'?'제목 없는 글':'제목 없는 리스트'}</span>`}</button><button class="lgmore" data-memoedit="${esc(m.id)}" aria-label="메모 설정">${svgMore}</button></div>`;
+  let h=`<div class="lgmemo" data-memo="${esc(m.id)}"><div class="lgmh"><button class="lgtt" data-memoedit="${esc(m.id)}">${priv?`<span class="lglock">${svgLock}</span>`:''}${m.title?esc(m.title):`<span class="lgph">${m.type==='text'?'제목 없는 글':'제목 없는 리스트'}</span>`}</button><button class="lgaddbtn" data-memoedit="${esc(m.id)}">편집</button></div>`;
   if(m.type==='text'){
     h+=`<textarea class="lgbody" data-body="${esc(m.id)}" placeholder="여기에 그냥 써요. 줄바꿈 그대로 보여요." rows="3">${esc(m.body||'')}</textarea><div class="lgsaverow"><span class="lgsave" data-mark="${esc(m.id)}"></span><button type="button" class="lgaddbtn" data-savebody="${esc(m.id)}">저장</button></div>`;
   }else{
@@ -390,7 +392,7 @@ function openExpense(e){
   const isNew=!e; const n=S.people.length;
   const d={id:e?.id,title:e?.title||'',amount:e?.amount||'',cur:e?.cur||'JPY',day:e?.day||todayKey(),cat:e?.cat||'식비',
     priv:e?!isShared(e):false,payer:e?e.payer:S.me,parts:e?(e.parts&&e.parts.length?e.parts.slice():[...Array(n).keys()]):[...Array(n).keys()],custom:e?.custom?{...e.custom}:null,memo:e?.memo||''};
-  openSheet(`<h2>${isNew?'지출 추가':'지출 수정'}<button type="button" data-close>닫기</button></h2><form id="expForm">
+  openSheet(`<h2>${isNew?'지출 추가':'지출 수정 · 삭제'}<button type="button" data-close>닫기</button></h2><form id="expForm">
     <div class="lgf"><div class="lgchips" id="fScope"><button type="button" class="lgchip" data-s="shared" aria-pressed="${!d.priv}">공용 · 같이 나눔</button><button type="button" class="lgchip" data-s="mine" aria-pressed="${d.priv}">개인 · 나만 봄</button></div></div>
     <div class="lgf"><label>금액</label><div class="lgamount"><input type="text" inputmode="decimal" id="fAmt" placeholder="0" value="${d.amount?esc(d.amount):''}"><div class="lgseg" id="fCur"><button type="button" data-c="JPY" aria-pressed="${d.cur==='JPY'}">¥</button><button type="button" data-c="KRW" aria-pressed="${d.cur==='KRW'}">₩</button></div></div></div>
     <div class="lgf"><label>내용</label><input type="text" id="fTitle" placeholder="예: 모츠나베 야마야, 리무진 버스" value="${esc(d.title)}" maxlength="80"></div>
