@@ -113,7 +113,7 @@ function sharesOf(e){
 }
 function balances(cur){
   const n=S.people.length; const b=new Array(n).fill(0);
-  shared().filter(e=>e.cur===cur).forEach(e=>{ if(e.payer<n)b[e.payer]+=e.amount; sharesOf(e).forEach((s,i)=>{if(i<n)b[i]-=s}); });
+  shared().filter(e=>e.cur===cur&&!e.settled).forEach(e=>{ if(e.payer<n)b[e.payer]+=e.amount; sharesOf(e).forEach((s,i)=>{if(i<n)b[i]-=s}); });
   S.transfers.filter(t=>t.cur===cur).forEach(t=>{ if(t.from<n)b[t.from]+=t.amount; if(t.to<n)b[t.to]-=t.amount; });
   return b;
 }
@@ -191,9 +191,9 @@ function viewSettle(){
   if(!sh.length){big='아직 공용 지출이 없어요'}
   else if(!mine.length){big='정산 끝 · 주고받을 돈 없음';tone='lgok-t'}
   else{const f=mine[0]; big=f.to===me?`${esc(pname(f.from))}에게 받을 돈 <b class="lgnum">${fmt(f.amount,f.cur)}</b>`:`${esc(pname(f.to))}에게 줄 돈 <b class="lgnum">${fmt(f.amount,f.cur)}</b>`; tone=f.to===me?'lgok-t':'lgacc-t'; if(mine.length>1)big+=` <span class="lgsub">외 ${mine.length-1}건</span>`}
-  const total=tj*S.rate+tk;
+  const total=tj*S.rate+tk; const settledN=sh.filter(e=>e.settled).length;
   h+=`<div class="lghero"><div class="lghero-k">나의 정산</div><div class="lghero-v ${tone}">${big}</div>
-    <div class="lghero-s">공용 지출 ${tj?fmt(tj,'JPY'):''}${tj&&tk?' + ':''}${tk?fmt(tk,'KRW'):''}${sh.length?` <span class="lgdot">·</span> 약 ${fmt(total,'KRW')}${S.people.length?` <span class="lgdot">·</span> 1인 ${fmt(total/S.people.length,'KRW')}`:''}`:''}</div></div>`;
+    <div class="lghero-s">공용 지출 ${tj?fmt(tj,'JPY'):''}${tj&&tk?' + ':''}${tk?fmt(tk,'KRW'):''}${sh.length?` <span class="lgdot">·</span> 약 ${fmt(total,'KRW')}${S.people.length?` <span class="lgdot">·</span> 1인 ${fmt(total/S.people.length,'KRW')}`:''}`:''}${settledN?`<br>체크해서 정산에서 뺀 지출 ${settledN}건`:''}</div></div>`;
   // 주고받을 돈 목록
   if(allFlows.length){
     h+=`<div class="lgcard lgtight">`;
@@ -234,7 +234,9 @@ function rowHtml(e){
     if(e.payer===me&&parts.length>1) right=`<div class="ab">받을 ${fmt(e.amount-mine,e.cur)}</div>`;
     else if(e.payer!==me&&mine>0) right=`<div class="ab lgowe">내 몫 ${fmt(mine,e.cur)}</div>`;
   }
-  return `<button class="lgrow" data-exp="${esc(e.id)}"><div class="lgmid"><div class="ti">${priv?`<span class="lglock">${svgLock}</span>`:''}<span class="lgtrunc">${esc(e.title||'(제목 없음)')}</span></div><div class="si">${sub}${e.memo?` · ${esc(e.memo)}`:''}</div></div><div class="lgamt"><div class="aa">${fmt(e.amount,e.cur)}</div>${right}</div></button>`;
+  if(!priv&&e.settled) right=`<div class="ab">정산 완료</div>`;
+  const check=priv?'':`<button class="lgbox lgbox-s" data-settled="${esc(e.id)}" aria-label="정산 완료" aria-pressed="${!!e.settled}">${svgCheck}</button>`;
+  return `<div class="lgrow ${!priv&&e.settled?'lgsettled':''}">${check}<button class="lgrowbody" data-exp="${esc(e.id)}"><div class="lgmid"><div class="ti">${priv?`<span class="lglock">${svgLock}</span>`:''}<span class="lgtrunc">${esc(e.title||'(제목 없음)')}</span></div><div class="si">${sub}${e.memo?` · ${esc(e.memo)}`:''}</div></div><div class="lgamt"><div class="aa">${fmt(e.amount,e.cur)}</div>${right}</div></button></div>`;
 }
 function viewExp(){
   let h=''; const me=S.me; const tj=myTotals('JPY'), tk=myTotals('KRW');
@@ -291,6 +293,7 @@ function bind(){
   qa('[data-scope]',view).forEach(b=>b.onclick=()=>{S.scope=b.dataset.scope;render()});
   qa('[data-day]',view).forEach(b=>b.onclick=()=>{S.dayFilter=b.dataset.day;render()});
   qa('[data-exp]',view).forEach(b=>b.onclick=()=>openExpense(S.expenses.find(e=>e.id===b.dataset.exp)));
+  qa('[data-settled]',view).forEach(b=>b.onclick=()=>{const e=S.expenses.find(x=>x.id===b.dataset.settled);if(!e)return;write([{op:'update',col:'expenses',id:e.id,data:{settled:!e.settled,settledBy:!e.settled?S.me:null}}],e.settled?'정산에 다시 넣었어요':'정산에서 뺐어요')});
   qa('[data-tr]',view).forEach(b=>b.onclick=()=>openTransfer(S.transfers.find(t=>t.id===b.dataset.tr)));
   qa('[data-settle]',view).forEach(b=>b.onclick=()=>{const [f,t,a,c]=b.dataset.settle.split('|');openTransfer({from:+f,to:+t,amount:+a,cur:c})});
   qa('[data-newmemo]',view).forEach(b=>b.onclick=()=>chooseMemo(b.dataset.newmemo==='mine'?S.me:null));
@@ -414,7 +417,7 @@ function openExpense(e){
     if(d.priv) body={owner:S.me,title:g('#fTitle').value.trim(),amount:a,cur:d.cur,day:d.day,cat:d.cat,payer:S.me,parts:[S.me],custom:null,memo:g('#fMemo').value.trim(),ts:e?.ts||Date.now()};
     else{ if(!d.parts.length){toast('나눌 사람을 골라주세요');return}
       const useCustom=g('#fCustom').checked; const custom=useCustom?Object.fromEntries(d.parts.map(i=>[i,+(d.custom&&d.custom[i])||0])):null;
-      body={owner:null,title:g('#fTitle').value.trim(),amount:a,cur:d.cur,day:d.day,cat:d.cat,payer:d.payer,parts:d.parts,custom,memo:g('#fMemo').value.trim(),ts:e?.ts||Date.now()}; }
+      body={owner:null,title:g('#fTitle').value.trim(),amount:a,cur:d.cur,day:d.day,cat:d.cat,payer:d.payer,parts:d.parts,custom,memo:g('#fMemo').value.trim(),ts:e?.ts||Date.now(),settled:!!(e&&e.settled)}; }
     closeSheet();
     await write([{op:'set',col:'expenses',id:d.id||uid(),data:body}],isNew?'저장했어요':'수정했어요');
   };

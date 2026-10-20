@@ -80,7 +80,13 @@
 .lg .lgempty b{display:block;color:var(--fg);font-weight:600;margin-bottom:4px}
 
 /* 지출 행 */
-.lg .lgrow{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line);text-align:left;width:100%}
+.lg .lgrow{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line);text-align:left;width:100%}
+.lg .lgrowbody{flex:1;min-width:0;display:flex;align-items:center;gap:10px;text-align:left;padding:2px 0}
+.lg .lgbox-s{width:22px;height:22px;border-radius:7px;border:2px solid var(--line);flex-shrink:0;display:grid;place-items:center;background:var(--surface)}
+.lg .lgbox-s svg{width:13px;height:13px;display:none}
+.lg .lgbox-s[aria-pressed="true"]{background:var(--ok);border-color:var(--ok)} .lg .lgbox-s[aria-pressed="true"] svg{display:block}
+.lg .lgrow.lgsettled .ti,.lg .lgrow.lgsettled .aa{color:var(--muted);text-decoration:line-through}
+.lg .lgrow.lgsettled .lgpayer{opacity:.6}
 .lg .lgrow:first-child{border-top:0}
 .lg .lgrow .lgcat{width:36px;height:36px;border-radius:10px;background:var(--chip);display:grid;place-items:center;font-size:11px;font-weight:600;flex-shrink:0;color:var(--muted)}
 .lg .lgrow .lgmid{flex:1;min-width:0}
