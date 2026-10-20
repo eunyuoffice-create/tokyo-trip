@@ -41,6 +41,8 @@ const svgX='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-wi
 const svgLock='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
 const svgMore='<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>';
 const svgUser='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>';
+const svgIn='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/><path d="M13 4h5a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-5"/></svg>';
+const svgOut='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/><path d="M11 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h5"/></svg>';
 const svgGear='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>';
 
 /* ---------- api ---------- */
@@ -154,8 +156,8 @@ function render(){
   if(memoView){ memoView.innerHTML=S.screen==='main'?viewMemo():viewMemoLocked(); bind(memoView); }
 }
 function userHtml(){
-  if(S.screen==='main') return `<span class="lguser lguser-name">${svgUser}<span>${esc(pname(S.me))}</span></span><button class="lguser lguser-gear" data-act="settings" aria-label="설정">${svgGear}</button><button class="lguser lguser-out" data-act="logout">로그아웃</button>`;
-  if(S.screen==='login'||S.screen==='setup') return `<button class="lguser lguser-off" data-act="login">${svgUser}<span>${S.screen==='setup'?'시작하기':'로그인'}</span></button>`;
+  if(S.screen==='main') return `<span class="lguser lguser-name">${svgUser}<span>${esc(pname(S.me))}</span></span><button class="lguser lguser-gear" data-act="settings" aria-label="설정">${svgGear}</button><button class="lguser lguser-gear lguser-out" data-act="logout" aria-label="로그아웃" title="로그아웃">${svgOut}</button>`;
+  if(S.screen==='login'||S.screen==='setup') return `<button class="lguser lguser-off" data-act="login" aria-label="${S.screen==='setup'?'정산 노트 시작':'로그인'}" title="${S.screen==='setup'?'시작하기':'로그인'}">${svgIn}</button>`;
   return '';
 }
 function viewLocked(){
