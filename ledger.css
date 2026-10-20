@@ -428,3 +428,34 @@ body.body-edit .ev,body.body-edit .card{-webkit-user-select:none;user-select:non
 
 /* 시트 하단 저장 버튼 줄 고정 */
 .lg .lgsheet form > .lgactions,.lg .lgsheet .lgin > .lgactions{position:sticky;bottom:calc(-20px - env(safe-area-inset-bottom,0px));z-index:3;background:var(--surface);margin:16px -16px calc(-20px - env(safe-area-inset-bottom,0px));padding:10px 16px calc(14px + env(safe-area-inset-bottom,0px));box-shadow:0 -6px 10px -8px rgba(23,28,40,.18)}
+
+/* ---------- PC (900px 이상) ---------- */
+@media (min-width:900px){
+  .lg{font-size:17px}
+  .lg .lgrow .ti{font-size:16.5px} .lg .lgrow .si{font-size:14px} .lg .lgrow .lgamt .aa{font-size:16.5px} .lg .lgrow .lgamt .ab{font-size:12.5px}
+  .lg .lgsec h3{font-size:15.5px} .lg .lgsec .lgnum{font-size:14px}
+  .lg .lgseg2 button{height:40px;font-size:15.5px}
+  .lg .lghero-k{font-size:14px} .lg .lgflow2 .lghero-v{font-size:19px} .lg .lgflow2 .lghero-v b.lgnum{font-size:30px} .lg .lghero-s{font-size:14.5px}
+  .lg .lgsettlebtn{height:46px;font-size:16px;padding:0 22px}
+  .lg .lgdetails summary{font-size:15px} .lg .lgkv{font-size:15px} .lg .lgbal{font-size:15.5px}
+  .lg .lgmemoacc summary .lgmtitle{font-size:16px} .lg .lgmemoin .lgli .lgtx{font-size:16px} .lg .lgmemobody{font-size:16.5px}
+  .lg .lghint{font-size:13.5px}
+  .lg .lgauthcard b{font-size:16.5px} .lg .lgauthcard p{font-size:15px}
+  /* 고정 바: 가운데 폭 맞추고 바닥에 */
+  .lg .lgbar{bottom:0;padding:12px 32px 16px}
+  .lg .lgbar .lgadd2{max-width:1080px}
+  .lg .lgbar .lgaddexp{height:54px;font-size:16.5px}
+  .panel.lg-haspad{padding-bottom:96px}
+  /* 시트: 가운데 모달처럼 */
+  .lg .lgsheet{left:50%;right:auto;width:680px;max-width:calc(100vw - 48px);bottom:24px;border-radius:20px;max-height:88vh;transform:translate(-50%,calc(100% + 40px));padding:8px 24px 20px}
+  .lg .lgsheet.lgopen{transform:translate(-50%,0)}
+  .lg .lgsheet h2{margin:0 -24px 14px;padding:8px 24px 12px;font-size:19px}
+  .lg .lgsheet form > .lgactions,.lg .lgsheet .lgin > .lgactions{margin:16px -24px -20px;padding:12px 24px 16px;bottom:-20px}
+  .lg .lgf label{font-size:13.5px}
+  .lg .lgf input[type=text],.lg .lgf input[type=number],.lg .lgf input[type=password],.lg .lgf select{height:48px;font-size:16px}
+  .lg .lgf textarea{font-size:16px}
+  .lg .lgchip{height:34px;font-size:14.5px} .lg .lgchip.lgsm{height:30px;font-size:13.5px}
+  .lg .lgbtn{height:50px;font-size:16px}
+  .lg .lgtoast{bottom:40px}
+  .lgslot .lguser{height:32px;font-size:14px} .lgslot .lguser.lguser-gear,.lgslot .lguser.lguser-off{width:34px;height:32px}
+}
