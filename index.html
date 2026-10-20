@@ -150,6 +150,9 @@ main{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px
 .seg button{flex:1;padding:7px 4px;border-radius:9px;font-size:13px;font-weight:600;color:var(--muted);white-space:nowrap}
 .seg button[aria-pressed="true"]{background:var(--surface);color:var(--fg);box-shadow:0 1px 2px rgba(0,0,0,.10)}
 .seg button .sub{font-family:var(--mono);font-size:11px;font-weight:500;opacity:.7;margin-left:3px}
+.seg.seg-tag{margin-top:-6px;background:none;padding:0;gap:6px;flex-wrap:wrap}
+.seg.seg-tag button{flex:0 0 auto;padding:5px 11px;border-radius:999px;background:var(--chip);font-size:12.5px;font-weight:600;color:var(--muted)}
+.seg.seg-tag button[aria-pressed="true"]{background:#2F5FB3;color:#fff;box-shadow:none}
 .type-h{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--muted);margin:12px 0 6px}
 .type-h::after{content:"";flex:1;height:1px;background:var(--line)}
 .type-h:first-child{margin-top:0}
@@ -292,8 +295,9 @@ details.memo[open] summary{margin-bottom:10px}
 <main>
   <section class="panel" id="p-plan"></section>
   <section class="panel" id="p-food" hidden>
-    <div class="search"><span aria-hidden="true">⌕</span><input id="q-food" type="search" placeholder="가게 이름, 메뉴, 라벨(트위터 추천) 검색" autocomplete="off"></div>
+    <div class="search"><span aria-hidden="true">⌕</span><input id="q-food" type="search" placeholder="가게 이름, 메뉴 검색" autocomplete="off"></div>
     <div class="seg" id="ftype" role="group" aria-label="종류"></div>
+    <div class="seg seg-tag" id="ftag" role="group" aria-label="라벨"></div>
     <p class="hint">2026년 10월 16일 기준으로 영업 여부와 시간을 확인했어요.
 폐점·휴업한 곳은 뺐고, 최신 정보를 못 찾은 곳은 "영업 확인 필요"로 표시했습니다.
 시부야·신주쿠·아키하바라·오다이바는 이번 여행에서 제외.</p>
@@ -760,7 +764,7 @@ const getDays=()=>DB.plan?DAYS.map(d=>({...d,items:DB.plan.filter(x=>x.day===d.d
 const getFood=()=>DB.food||FOOD;
 const getPlaces=()=>DB.places||PLACES;
 const KEY='tokyo1024.v1';
-let state={tab:'plan', day:null, farea:'전체', ftype:'전체', pgroup:'전체', done:{}, pack:{}, open:{}, mo:{}};
+let state={tab:'plan', day:null, farea:'전체', ftype:'전체', ftag:'전체', pgroup:'전체', done:{}, pack:{}, open:{}, mo:{}};
 try{ Object.assign(state, JSON.parse(localStorage.getItem(KEY)||'{}')); }catch(e){}
 /* 공동 결정 사항은 기본 체크 (한 번만) */
 if(!state.pack['pk:공통:3'] && !state.packAuto){ state.pack['pk:공통:3']=true; state.packAuto=1; }
@@ -793,7 +797,7 @@ function renderChips(){
  const box=document.getElementById('subchips'); box.innerHTML='';
  let list=[];
  if(state.tab==='plan') list=DAYS.map(d=>({id:d.date,label:`${d.n}일차`,sub:`${d.date.slice(5).replace('-','.')} ${d.w}`,on:d.date===state.day}));
- else if(state.tab==='food'){ const base=getFood().filter(f=>state.ftype==='전체'||foodType(f)===state.ftype); list=['전체',...FOOD_AREAS].map(a=>({id:a,label:a,sub:a==='전체'?base.length:base.filter(f=>f.a===a).length,on:a===state.farea})); }
+ else if(state.tab==='food'){ const base=getFood().filter(f=>(state.ftype==='전체'||foodType(f)===state.ftype)&&tagMatch(f)); list=['전체',...FOOD_AREAS].map(a=>({id:a,label:a,sub:a==='전체'?base.length:base.filter(f=>f.a===a).length,on:a===state.farea})); }
  else if(state.tab==='place') list=['전체',...PLACE_CHIPS].map(a=>({id:a,label:a,sub:getPlaces().filter(p=>placeMatch(p,a)).length,on:a===state.pgroup}));
  else if(state.tab==='ledger') list=[];
  else list=[{id:'mine',label:'내 메모'},{id:'flight',label:'항공'},{id:'hotel',label:'숙소·이동'},{id:'studio',label:'스튜디오'},{id:'gift',label:'도쿄역·선물'},{id:'shop',label:'쇼핑'}];
@@ -933,10 +937,25 @@ function bindCards(root){
 function renderTypeSeg(){
  const seg=document.getElementById('ftype'); seg.innerHTML='';
  FOOD_TYPES.forEach(t=>{
-  const n=getFood().filter(f=>(state.farea==='전체'||f.a===state.farea)&&(t.id==='전체'||foodType(f)===t.id)).length;
+  const n=getFood().filter(f=>(state.farea==='전체'||f.a===state.farea)&&(t.id==='전체'||foodType(f)===t.id)&&tagMatch(f)).length;
   const b=document.createElement('button'); b.setAttribute('aria-pressed',String(state.ftype===t.id));
   b.innerHTML=esc(t.label)+`<span class="sub">${n}</span>`;
   b.onclick=()=>{ state.ftype=t.id; save(); render(); };
+  seg.appendChild(b);
+ });
+}
+const tagMatch=f=>state.ftag==='전체'||(f.tag||'')===state.ftag;
+function renderTagSeg(){
+ const seg=document.getElementById('ftag'); seg.innerHTML='';
+ const tags=[...new Set(getFood().map(f=>f.tag).filter(Boolean))];
+ if(!tags.length){ seg.style.display='none'; if(state.ftag!=='전체'){state.ftag='전체';save();} return; }
+ seg.style.display='';
+ if(state.ftag!=='전체'&&!tags.includes(state.ftag)){ state.ftag='전체'; save(); }
+ ['전체',...tags].forEach(t=>{
+  const n=getFood().filter(f=>(state.farea==='전체'||f.a===state.farea)&&(state.ftype==='전체'||foodType(f)===state.ftype)&&(t==='전체'||(f.tag||'')===t)).length;
+  const b=document.createElement('button'); b.setAttribute('aria-pressed',String(state.ftag===t));
+  b.innerHTML=esc(t)+`<span class="sub">${n}</span>`;
+  b.onclick=()=>{ state.ftag=t; save(); render(); };
   seg.appendChild(b);
  });
 }
@@ -948,10 +967,10 @@ function typeBlocks(items){
  }).join('');
 }
 function renderFood(){
- renderTypeSeg();
+ renderTypeSeg(); renderTagSeg();
  const q=(document.getElementById('q-food').value||'').trim().toLowerCase();
  const box=document.getElementById('food-list');
- const list=getFood().filter(f=>(state.farea==='전체'||f.a===state.farea)&&(state.ftype==='전체'||foodType(f)===state.ftype)&&(!q||[f.n,f.k,f.note,f.a,f.loc,f.tag,f.closed,f.pr].join(' ').toLowerCase().includes(q)));
+ const list=getFood().filter(f=>(state.farea==='전체'||f.a===state.farea)&&(state.ftype==='전체'||foodType(f)===state.ftype)&&tagMatch(f)&&(!q||[f.n,f.k,f.note,f.a,f.loc,f.tag,f.closed,f.pr].join(' ').toLowerCase().includes(q)));
  if(!list.length){box.style.display='';box.innerHTML='<div class="empty">검색 결과가 없어요</div>';return}
  box.style.display='block'; box.innerHTML='';
  if(q){ box.innerHTML=`<div class="cards">${list.map(f=>cardHtml(f,'f:'+f.n)).join('')}</div>`; bindCards(box); return; }
