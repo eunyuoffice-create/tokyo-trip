@@ -466,3 +466,13 @@ body.body-edit .ev,body.body-edit .card{-webkit-user-select:none;user-select:non
 .lg .lgwgrp-h{display:flex;align-items:center;gap:8px;padding:4px 0 2px;border-bottom:1px dashed var(--line);margin-bottom:2px}
 .lg .lgwgrp-h .lgwho{height:22px;font-size:11.5px}
 .lg .lgwgrp-h .lgsub{font-family:var(--mono);font-size:11.5px}
+/* 모바일 하단 고정 버튼 축소 */
+@media (max-width:899px){
+  .lg .lgbar{padding:8px max(16px,env(safe-area-inset-right,0px)) 8px max(16px,env(safe-area-inset-left,0px))}
+  .lg .lgbar .lgadd2{gap:8px}
+  .lg .lgbar .lgaddexp{height:42px;font-size:14px;border-radius:12px;box-shadow:0 3px 10px rgba(217,55,43,.2)}
+  .lg .lgbar .lgaddexp.lgaddmine{box-shadow:0 3px 10px rgba(23,28,40,.16)}
+  .lg .lgbar .lgaddexp svg{width:17px;height:17px}
+  .lg .lgadd2.lgadd1 .lgaddexp{max-width:260px;margin:0 auto;width:100%}
+  .panel.lg-haspad{padding-bottom:66px}
+}
