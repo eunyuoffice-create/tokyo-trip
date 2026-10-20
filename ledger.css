@@ -368,3 +368,4 @@ body.lgnoselect{-webkit-user-select:none;user-select:none;-webkit-touch-callout:
 .lg .lgmemoacc summary .lgchevbtn::before{content:"";width:9px;height:9px;border-right:1.5px solid var(--muted);border-bottom:1.5px solid var(--muted);transform:rotate(45deg);margin-top:-4px;transition:transform .15s}
 .lg .lgmemoacc[open] summary .lgchevbtn::before{transform:rotate(-135deg);margin-top:4px}
 .lg .lgmemoacc summary .lgdrag{width:36px;height:40px;margin:0;opacity:.55;border-left:1px solid var(--line);border-radius:0}
+.lg .lglinkx{color:#2F5FB3;text-decoration:underline;text-underline-offset:2px;overflow-wrap:anywhere}

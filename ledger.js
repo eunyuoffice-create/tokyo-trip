@@ -23,6 +23,7 @@ const inRoots=a=>roots().some(r=>r.contains(a));
 
 /* ---------- utils ---------- */
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const linkify=t=>esc(t).replace(/(https?:\/\/[^\s<>"']+?)([.,)!?]*)(?=\s|$)/g,(m,u,tail)=>`<a href="${u}" target="_blank" rel="noopener" class="lglinkx">${u.replace(/^https?:\/\//,'').slice(0,60)}${u.length>68?'…':''}</a>${tail}`);
 const fmt=(n,cur='JPY')=>{const c=CUR[cur]||CUR.JPY;return (n<0?'-':'')+c.sym+Math.round(Math.abs(n)).toLocaleString('ko-KR')};
 const parseNum=s=>{const v=parseFloat(String(s).replace(/[^\d.\-]/g,''));return isFinite(v)?v:0};
 const uid=()=>Math.random().toString(36).slice(2,10)+Date.now().toString(36);
@@ -301,8 +302,8 @@ function memoRow(m){
   const open=S.openMemos.has(m.id); const mdone=memoDone(m);
   let inner;
   if(list){
-    inner=items.length?items.map(it=>{const who=priv?null:whoOf(it); return `<div class="lgli ${it.done?'lgdone':''}"><button type="button" class="lgbox" data-tgl-m="${esc(m.id)}|${esc(it.id)}" aria-label="완료">${svgCheck}</button><span class="lgtx">${esc(it.text)}</span>${who===null?'':`<span class="lgwho ${who===S.me?'lgwho-me':''}">${esc(pname(who))}</span>`}</div>`}).join(''):`<div class="lghint" style="margin:0 0 6px">아직 항목이 없어요.</div>`;
-  }else inner=body.trim()?`<div class="lgmemobody">${esc(body)}</div>`:`<div class="lghint" style="margin:0 0 6px">내용이 없어요.</div>`;
+    inner=items.length?items.map(it=>{const who=priv?null:whoOf(it); return `<div class="lgli ${it.done?'lgdone':''}"><button type="button" class="lgbox" data-tgl-m="${esc(m.id)}|${esc(it.id)}" aria-label="완료">${svgCheck}</button><span class="lgtx">${linkify(it.text)}</span>${who===null?'':`<span class="lgwho ${who===S.me?'lgwho-me':''}">${esc(pname(who))}</span>`}</div>`}).join(''):`<div class="lghint" style="margin:0 0 6px">아직 항목이 없어요.</div>`;
+  }else inner=body.trim()?`<div class="lgmemobody">${linkify(body)}</div>`:`<div class="lghint" style="margin:0 0 6px">내용이 없어요.</div>`;
   return `<details class="lgdetails lgmemoacc ${mdone?'lgmdone':''}" data-accm="${esc(m.id)}" ${open?'open':''}><summary><button type="button" class="lgbox lgbox-m" data-mdone="${esc(m.id)}" aria-pressed="${mdone}" aria-label="${list?'전체 체크':'확인 완료'}">${svgCheck}</button><span class="lgmic ${list?'lgmic-list':'lgmic-text'}" title="${list?'체크 리스트':'글'}">${list?svgList:svgText}</span><span class="lgmtitle">${priv?`<span class="lglock">${svgLock}</span>`:''}<span class="lgtrunc">${esc(title)}</span></span>${list&&items.length?`<span class="lgmprog ${done===items.length?'lgokt':''}">${done}/${items.length}</span>`:''}<span class="lgchevbtn" aria-hidden="true"></span><span class="lgdrag" data-drag="${esc(m.id)}" aria-label="끌어서 순서 바꾸기">${svgDrag}</span></summary><div class="lgdetails-b lgmemoin">${inner}<div class="lgmemofoot"><span class="lgsub">${list?`${done}/${items.length} 완료`:''}</span><button type="button" class="lgaddbtn" data-memoedit="${esc(m.id)}">수정</button></div></div></details>`;
 }
 const memoDone=m=>{const items=m.items||[]; return (m.type!=='text'&&items.length)?items.every(i=>i.done):!!m.done};
