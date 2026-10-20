@@ -379,3 +379,17 @@ body.lgnoselect{-webkit-user-select:none;user-select:none;-webkit-touch-callout:
 .lg .lgmemoacc summary .lgchevbtn{width:44px}
 .lg .lgmemoacc summary.lgpressing{background:var(--chip);border-radius:14px}
 .lg .lgmemolist details.lgdragging{transform:scale(1.02)}
+
+/* 일정·맛집·갈 곳 편집 (content.js) */
+.lg.lgcbar{margin:0;height:0}
+.lg .lgadd2.lgadd1{grid-template-columns:1fr}
+.cedit{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;color:var(--muted);background:var(--chip);flex-shrink:0}
+.cedit svg{width:15px;height:15px}
+.ev > .cedit{position:absolute;top:8px;right:8px}
+.card .acts .cedit{margin-left:auto}
+.ev.lgpressing,.card.lgpressing{background:var(--chip)}
+.ev.lgdragging,.card.lgdragging{position:relative;z-index:5;box-shadow:0 12px 30px rgba(23,28,40,.2);transition:none}
+.tl .ev,.cards .card{transition:transform .16s ease}
+.lg .lgrow2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.lg .lgrow2 .lgf{min-width:0}
+.lg .lgsheet .lgf textarea{font-size:14px;line-height:1.5}

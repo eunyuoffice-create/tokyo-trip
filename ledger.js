@@ -153,6 +153,7 @@ function render(){
   else h=viewMain();
   view.innerHTML=h; bind(view);
   if(userEl){ userEl.innerHTML=userHtml(); bind(userEl); }
+  if(window.Content&&Content.onAuth)Content.onAuth();
   if(memoView){ memoView.innerHTML=S.screen==='main'?viewMemo():viewMemoLocked(); bind(memoView); }
 }
 function userHtml(){
@@ -578,7 +579,7 @@ function mount(el,memoEl){
   clearInterval(pollT); pollT=setInterval(()=>{if(document.visibilityState==='visible'&&S.screen==='main'&&!S.saving&&visible())load()},POLL_MS);
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&S.screen==='main')load()});
 }
-window.Ledger={mount,state:S,reload:load,openExpense,openSettle,openLogin};
+window.Ledger={mount,state:S,reload:load,openExpense,openSettle,openLogin,API,api,openSheet,closeSheet,toast,arm};
 const auto=document.getElementById('ledger-root');
 if(auto){ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>mount(auto)); else mount(auto); }
 })();

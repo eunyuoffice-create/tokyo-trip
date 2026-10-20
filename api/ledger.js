@@ -6,12 +6,13 @@
 //  login  {me, pin}             → { token, me }
 //  list   (token)               → { me, people, rate, expenses, transfers, memos }  (개인 항목은 본인 것만)
 //  write  (token) {ops:[{op:'set'|'update'|'delete', col, id, data}]}
+//  content → {plan,food,places,meta} 토큰 없이 읽기 (일정·맛집·갈 곳). 쓰기는 write 로 (멤버 토큰)
 //  resetPin {sitePw, me, pin} → 사이트 입장 비밀번호로 확인 후 멤버 비밀번호 재설정 + 토큰
 //  settings (token) {names?, rate?, addMember?:{name,pin}, setPin?:{me?:idx, pin}}
 import { createHmac, createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { store, dbEnvNames, hasDbUrl } from './_lib/store.js';
 
-const COLS = new Set(['expenses', 'transfers', 'memos']);
+const COLS = new Set(['expenses', 'transfers', 'memos', 'plan', 'food', 'places', 'meta']);   // plan/food/places/meta: 일정·맛집·갈 곳 (누구나 읽고, 멤버만 씀)
 const PRIVATE_COLS = new Set(['expenses', 'memos']);   // owner 필드로 개인/공용 구분
 const ID_RE = /^[A-Za-z0-9_\-.~:@+]{1,200}$/;
 const TOKEN_DAYS = 90;
@@ -112,6 +113,13 @@ export default async function handler(req, res) {
       await db.put('settings', 'trip', doc);
       const me = Math.min(Math.max(+body.me || 0, 0), people.length - 1);
       return res.status(200).json({ ok: true, token: makeToken(secret, me), me, ...publicTrip(doc) });
+    }
+
+    // 일정·맛집·갈 곳: 토큰 없이 읽기 (사이트 자체가 입장 비밀번호로 잠겨 있고, 내용은 공개 저장소의 index.html 과 같은 성격)
+    if (action === 'content') {
+      const out = { plan: {}, food: {}, places: {}, meta: {} };
+      for (const col of Object.keys(out)) for (const r of await db.all(col)) out[col][r.id] = r.data;
+      return res.status(200).json({ ok: true, ...out });
     }
 
     if (!trip) return res.status(200).json({ ok: false, error: 'not_setup' });
