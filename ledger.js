@@ -389,12 +389,11 @@ function startDrag(ev,handle){
 function pressToDrag(ev,sm){
   if(ev.target.closest('[data-mdone]'))return; if(ev.button&&ev.button!==0)return;
   const x0=ev.clientX,y0=ev.clientY; let fired=false;
-  const cancel=()=>{clearTimeout(t); sm.removeEventListener('pointermove',mv); sm.removeEventListener('pointerup',cancel); sm.removeEventListener('pointercancel',cancel); sm.classList.remove('lgpressing')};
+  const cancel=()=>{clearTimeout(t); sm.removeEventListener('pointermove',mv); sm.removeEventListener('pointerup',cancel); sm.removeEventListener('pointercancel',cancel); };
   const mv=e=>{if(Math.abs(e.clientX-x0)>8||Math.abs(e.clientY-y0)>8)cancel()};
-  const t=setTimeout(()=>{fired=true; cancel(); sm.classList.remove('lgpressing'); try{navigator.vibrate&&navigator.vibrate(12)}catch(e){}
+  const t=setTimeout(()=>{fired=true; cancel(); try{navigator.vibrate&&navigator.vibrate(12)}catch(e){}
     const card=sm.parentElement; sm.dataset.suppress='1'; setTimeout(()=>{delete sm.dataset.suppress},600);
     startDrag({pointerId:ev.pointerId,clientY:y0,button:0,preventDefault(){},stopPropagation(){}},sm);},350);
-  setTimeout(()=>{if(!fired)sm.classList.add('lgpressing')},120);
   sm.addEventListener('pointermove',mv); sm.addEventListener('pointerup',cancel); sm.addEventListener('pointercancel',cancel);
 }
 /* ---------- 바인딩 ---------- */

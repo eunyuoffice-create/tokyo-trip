@@ -82,10 +82,9 @@ function makeSortable(listEl,sel,col){
 function pressToDrag(ev,el,listEl,sel,col){
   if(!loggedIn())return; if(ev.button&&ev.button!==0)return; if(ev.target.closest('button,a,input,textarea,.cedit'))return;
   const x0=ev.clientX,y0=ev.clientY; let fired=false;
-  const cancel=()=>{clearTimeout(t); el.removeEventListener('pointermove',mv); el.removeEventListener('pointerup',cancel); el.removeEventListener('pointercancel',cancel); el.classList.remove('lgpressing')};
+  const cancel=()=>{clearTimeout(t); el.removeEventListener('pointermove',mv); el.removeEventListener('pointerup',cancel); el.removeEventListener('pointercancel',cancel); };
   const mv=e=>{if(Math.abs(e.clientX-x0)>8||Math.abs(e.clientY-y0)>8)cancel()};
   const t=setTimeout(()=>{fired=true; cancel(); try{navigator.vibrate&&navigator.vibrate(12)}catch(e){} startDrag(ev.pointerId,y0,el,listEl,sel,col);},350);
-  setTimeout(()=>{if(!fired)el.classList.add('lgpressing')},120);
   el.addEventListener('pointermove',mv); el.addEventListener('pointerup',cancel); el.addEventListener('pointercancel',cancel);
 }
 function startDrag(pointerId,startY,el,listEl,sel,col){
