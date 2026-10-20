@@ -130,30 +130,31 @@ C.decorate=function(){
 };
 C.onAuth=function(){ const a=loggedIn(); if(a===C._auth)return; C._auth=a; if(a&&C.loaded&&!C.meta.plan)seedIfNeeded(); else if(T())T().render(); };
 
-/* ---------- 직렬화: 내용(d) · 이동(r) ↔ 텍스트 ---------- */
-const dToText=d=>(d||[]).map(x=>typeof x==='string'?x.replace(/\n/g,'\n  '):x.k?`## ${x.k}`:x.l?`[${x.l}](${x.u||''})`:'').join('\n');
-function textToD(t){
-  const out=[]; String(t||'').split('\n').forEach(line=>{
-    if(/^  /.test(line)&&out.length&&typeof out[out.length-1]==='string'){ out[out.length-1]+='\n'+line.slice(2); return; }
-    const s=line.trim(); if(!s)return;
-    let m; if((m=s.match(/^##\s*(.+)$/)))out.push({k:m[1].trim()});
-    else if((m=s.match(/^\[(.+?)\]\((\S+?)\)$/)))out.push({l:m[1],u:m[2]});
-    else out.push(s);
-  }); return out;
+/* ---------- 행 편집기: 자세히 내용(d) · 이동 경로(r) — 한 항목에 입력칸 하나씩, 추가/삭제 버튼 ---------- */
+const kindOf=x=>typeof x==='string'?'s':x.k?'k':x.l?'l':'s';
+const dRow=(x)=>{const kind=kindOf(x); const text=kind==='s'?x:kind==='k'?x.k:x.l; const url=kind==='l'?(x.u||''):'';
+  return `<div class="crow" data-kind="${kind}"><div class="ckind">${[['s','문장'],['k','소제목'],['l','링크']].map(([k,l])=>`<button type="button" data-k="${k}" aria-pressed="${k===kind}">${l}</button>`).join('')}<button type="button" class="lgx" data-delrow aria-label="삭제">×</button></div><textarea class="ctext" rows="2" placeholder="${kind==='k'?'소제목':kind==='l'?'링크 이름':'내용'}">${esc(text||'')}</textarea><input type="text" class="curl" inputmode="url" autocapitalize="off" placeholder="https://…" value="${esc(url)}" ${kind==='l'?'':'hidden'}></div>`};
+const rRow=(x={})=>`<div class="crow croute"><div class="ckind"><span class="lgsub">이동 경로</span><button type="button" class="lgx" data-delrow aria-label="삭제">×</button></div>
+  <div class="lgrow2"><input type="text" class="rf" placeholder="출발 (예: 이케부쿠로역)" value="${esc(x.f||'')}"><input type="text" class="rt" placeholder="도착 (예: 스튜디오 투어 도쿄)" value="${esc(x.t||'')}"></div>
+  <textarea class="rhow" rows="2" placeholder="설명 (예: 세이부선 약 20분 + 도보 2분)">${esc(x.how||'')}</textarea>
+  <div class="lgrow2"><input type="text" class="rfq" placeholder="출발 구글맵 검색어 (비우면 출발과 같음)" value="${esc(x.fq||'')}"><input type="text" class="rtq" placeholder="도착 구글맵 검색어" value="${esc(x.tq||'')}"></div>
+  <div class="lgchips rmode">${[['transit','🚃 전철·버스'],['walking','🚶 도보'],['driving','🚕 택시']].map(([m,l])=>`<button type="button" class="lgchip lgsm" data-m="${m}" aria-pressed="${(x.mode||'transit')===m}">${l}</button>`).join('')}</div></div>`;
+function wireRows(sh){
+  sh.querySelectorAll('[data-addrow]').forEach(b=>b.onclick=()=>{const box=sh.querySelector(`[data-rows="${b.dataset.addrow}"] .crows`); box.insertAdjacentHTML('beforeend',b.dataset.addrow==='eD'?dRow(''):rRow()); wireRows(sh); const f=box.lastElementChild.querySelector('textarea,input'); if(f)f.focus();});
+  sh.querySelectorAll('[data-delrow]').forEach(b=>b.onclick=()=>b.closest('.crow').remove());
+  sh.querySelectorAll('.crow [data-k]').forEach(b=>b.onclick=()=>{const row=b.closest('.crow'); row.dataset.kind=b.dataset.k; row.querySelectorAll('[data-k]').forEach(x=>x.setAttribute('aria-pressed',String(x===b))); row.querySelector('.curl').hidden=b.dataset.k!=='l'; row.querySelector('.ctext').placeholder=b.dataset.k==='k'?'소제목':b.dataset.k==='l'?'링크 이름':'내용';});
+  sh.querySelectorAll('.rmode .lgchip').forEach(b=>b.onclick=()=>{b.parentElement.querySelectorAll('.lgchip').forEach(x=>x.setAttribute('aria-pressed',String(x===b)))});
+  sh.querySelectorAll('.crow textarea').forEach(ta=>{const grow=()=>{ta.style.height='auto';ta.style.height=Math.max(44,ta.scrollHeight+2)+'px'}; ta.oninput=grow; grow();});
 }
-const rToText=r=>(r?(Array.isArray(r)?r:[r]):[]).map(x=>[`${x.f||''} > ${x.t||''}`,String(x.how||'').replace(/\n/g,' · '),x.fq||'',x.tq||'',x.mode||'transit'].join(' | ')).join('\n');
-function textToR(t){
-  const out=[]; String(t||'').split('\n').forEach(line=>{ const s=line.trim(); if(!s)return; const parts=s.split('|').map(x=>x.trim()); const ft=parts[0].split('>').map(x=>x.trim());
-    out.push({f:ft[0]||'',t:ft[1]||'',how:parts[1]||'',fq:parts[2]||ft[0]||'',tq:parts[3]||ft[1]||'',mode:/walk/.test(parts[4]||'')?'walking':/driv|taxi|택시/.test(parts[4]||'')?'driving':'transit'}); });
-  return out.length?(out.length===1?out[0]:out):null;
-}
-
+const readD=sh=>[...sh.querySelectorAll('[data-rows="eD"] .crow')].map(r=>{const kind=r.dataset.kind; const t=(r.querySelector('.ctext').value||'').trim(); if(!t)return null; if(kind==='k')return {k:t}; if(kind==='l'){let u=(r.querySelector('.curl').value||'').trim(); if(!u)return t; if(!/^https?:\/\//i.test(u))u='https://'+u; return {l:t,u}} return t;}).filter(Boolean);
+const readR=sh=>{const out=[...sh.querySelectorAll('[data-rows="eR"] .crow')].map(r=>{const g=c=>(r.querySelector(c)?.value||'').trim(); const f=g('.rf'),t=g('.rt'); if(!f&&!t&&!g('.rhow'))return null; const mode=r.querySelector('.rmode [aria-pressed="true"]')?.dataset.m||'transit'; return {f,t,how:g('.rhow'),fq:g('.rfq')||f,tq:g('.rtq')||t,mode}}).filter(Boolean); return out.length?(out.length===1?out[0]:out):null};
 /* ---------- 편집 시트 ---------- */
 const F={
   text:(id,label,val,ph='',extra='')=>`<div class="lgf"><label>${label}</label><input type="text" id="${id}" value="${esc(val||'')}" placeholder="${esc(ph)}" ${extra}></div>`,
   area:(id,label,val,ph='',rows=4)=>`<div class="lgf"><label>${label}</label><textarea id="${id}" rows="${rows}" placeholder="${esc(ph)}">${esc(val||'')}</textarea></div>`,
   chips:(id,label,opts,val,free)=>`<div class="lgf"><label>${label}</label><div class="lgchips" data-chips="${id}">${opts.map(o=>`<button type="button" class="lgchip lgsm" data-v="${esc(o)}" aria-pressed="${o===val}">${esc(o)}</button>`).join('')}</div>${free?`<input type="text" id="${id}" value="${esc(val||'')}" placeholder="${esc(free)}" style="margin-top:8px">`:`<input type="hidden" id="${id}" value="${esc(val||'')}">`}</div>`,
   links:(id,label,arr)=>`<div class="lgf" data-links="${id}"><label>${label}</label><div class="clinks">${(arr||[]).map(x=>linkRow(x.l,x.u)).join('')}</div><button type="button" class="lglink" data-addlink="${id}">+ 링크 추가</button><div class="lghint">이름을 비우면 주소가 그대로 보여요. "구글맵 경로 보기"처럼 버튼으로 나와요.</div></div>`,
+  rows:(id,label,html,addLabel)=>`<div class="lgf" data-rows="${id}"><label>${label}</label><div class="crows">${html}</div><button type="button" class="lglink" data-addrow="${id}">+ ${addLabel}</button></div>`,
   toggle:(id,label,on)=>`<div class="lgf"><div class="lgtoggle"><span>${label}</span><input type="checkbox" id="${id}" ${on?'checked':''}></div></div>`,
 };
 const linkRow=(l,u)=>`<div class="clink"><input type="text" placeholder="이름 (예: 예약 페이지)" value="${esc(l||'')}" maxlength="40"><input type="text" inputmode="url" autocapitalize="off" placeholder="https://…" value="${esc(u||'')}"><button type="button" class="lgx" data-dellink aria-label="삭제">×</button></div>`;
@@ -181,8 +182,8 @@ function openEditor(tab,id){
       ${F.text('ePills','태그 (쉼표로 구분)',(it?.pills||[]).join(', '),'예: 예약 완료, 필수')}
       ${F.toggle('eBig','강조 (큰 제목)',!!it?.big)}
       ${F.links('eLinks','링크 버튼',it?.links)}
-      ${F.area('eD','자세히 내용',dToText(it?.d),'한 줄에 하나씩.\n## 소제목\n[링크 이름](https://…)\n  (두 칸 들여쓰면 윗줄에 이어 붙어요)',6)}
-      <details class="lgmore"><summary><span>이동 경로 (고급)</span></summary>${F.area('eR','한 줄에 경로 하나: 출발 > 도착 | 설명 | 출발 검색어 | 도착 검색어 | transit/walking/driving',rToText(it?.r),'이케부쿠로역 > 스튜디오 투어 도쿄 | 세이부선 약 20분 | 池袋駅 | ワーナー ブラザース スタジオツアー東京 | transit',4)}</details>`;
+      ${F.rows('eD','자세히 내용 (펼쳐서 보는 부분)',(it?.d||[]).map(dRow).join(''),'내용 추가')}
+      ${F.rows('eR','이동 경로 (구글맵 경로 보기 버튼이 붙어요)',(it?.r?(Array.isArray(it.r)?it.r:[it.r]):[]).map(rRow).join(''),'이동 경로 추가')}`;
   }else if(tab==='food'){
     title=isNew?'맛집 추가':'맛집 수정';
     body=`${F.text('eN','가게 이름',it?.n,'예: 규카츠 이로하')}
@@ -210,11 +211,11 @@ function openEditor(tab,id){
   Lg.openSheet(`<h2>${title}<button type="button" data-close>닫기</button></h2><form id="cForm" autocomplete="off">${body}
     <div class="lgactions">${isNew?'':'<button type="button" class="lgbtn lgdanger" id="cDel">삭제</button>'}<button type="submit" class="lgbtn lgprimary">${isNew?'저장':'수정 저장'}</button></div></form>`);
   const sh=document.querySelector('.lgov .lgsheet'); const g=s=>sh.querySelector(s); const v=s=>(g(s)?.value||'').trim();
-  wireChips(sh); wireLinks(sh);
+  wireChips(sh); wireLinks(sh); wireRows(sh);
   g('#cForm').onsubmit=async ev=>{ ev.preventDefault();
     let data; const nextOrder=()=>{ const l=listOf(col)||[]; const pool=tab==='plan'?l.filter(x=>x.day===v('#eDay')):l; return (pool.length?Math.max(...pool.map(x=>x.order||0)):0)+1000; };
     if(tab==='plan'){ if(!v('#eTitle')){toast('제목을 넣어주세요');return} const day=v('#eDay');
-      data={day,t:v('#eT'),ts:v('#eTs'),p:v('#eP'),title:v('#eTitle'),pills:v('#ePills')?v('#ePills').split(',').map(x=>x.trim()).filter(Boolean):[],big:g('#eBig').checked,links:readLinks(sh,'eLinks'),d:textToD(v('#eD')),r:textToR(v('#eR')),order:(it&&it.day===day)?it.order:nextOrder()}; }
+      data={day,t:v('#eT'),ts:v('#eTs'),p:v('#eP'),title:v('#eTitle'),pills:v('#ePills')?v('#ePills').split(',').map(x=>x.trim()).filter(Boolean):[],big:g('#eBig').checked,links:readLinks(sh,'eLinks'),d:readD(sh),r:readR(sh),order:(it&&it.day===day)?it.order:nextOrder()}; }
     else if(tab==='food'){ if(!v('#eN')){toast('가게 이름을 넣어주세요');return}
       data={a:v('#eA')||S.FOOD_AREAS[0],n:v('#eN'),k:v('#eK'),h:v('#eH'),pr:v('#ePr'),note:v('#eNote'),q:v('#eQ'),links:readLinks(sh,'eLinks'),order:it?it.order:nextOrder()}; if(v('#eTy'))data.t=v('#eTy'); if(v('#eS'))data.s=+v('#eS'); }
     else { if(!v('#eN')){toast('이름을 넣어주세요');return}
