@@ -77,6 +77,7 @@ main{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px
 #infobox .ib-x{height:32px;padding:0 12px;border-radius:999px;background:var(--chip);font-size:13px;font-weight:600}
 #infobox .ib-body{overflow:auto;padding:12px 16px 20px;font-size:14px;line-height:1.55}
 .ib-note{margin:0 0 10px;font-size:12.5px;color:var(--muted)}
+.ib-img{display:block;width:100%;max-width:560px;margin:0 auto;border-radius:10px;background:#fff}
 .ib-grid{display:grid;grid-template-columns:1fr;gap:8px}
 .ib-item{background:var(--bg);border-radius:12px;padding:10px 12px}
 .ib-item.hl{background:var(--warn-soft)}
@@ -881,9 +882,10 @@ function routeHtml(r){
 function renderPlan(){
  const box=document.getElementById('p-plan');
  const days=getDays(); const day=days.find(d=>d.date===state.day)||days[0];
- box.innerHTML=`<div class="toolrow"><button type="button" class="btn tool" id="outfit-btn">🌡 기온별 옷차림</button><button type="button" class="btn tool" id="restrict-btn">✈ 기내 반입 제한물품</button><div class="wx" id="wx-strip"></div></div><div class="sec-h"><h2>${day.n}일차 · ${day.date.slice(5).replace('-','월 ')}일 ${day.w}요일</h2><span class="cnt">${day.items.length}개</span></div><div class="tl"></div>`;
+ box.innerHTML=`<div class="toolrow"><button type="button" class="btn tool" id="outfit-btn">🌡 기온별 옷차림</button><button type="button" class="btn tool" id="restrict-btn">✈ 기내 반입 제한물품</button><button type="button" class="btn tool" id="esim-btn">📱 eSIM 설치 가이드</button><div class="wx" id="wx-strip"></div></div><div class="sec-h"><h2>${day.n}일차 · ${day.date.slice(5).replace('-','월 ')}일 ${day.w}요일</h2><span class="cnt">${day.items.length}개</span></div><div class="tl"></div>`;
  box.querySelector('#outfit-btn').onclick=()=>openLightbox('img/outfit.png','기온별 옷차림');
  box.querySelector('#restrict-btn').onclick=()=>openInfo('기내 반입 제한물품',RESTRICTED_HTML);
+ box.querySelector('#esim-btn').onclick=()=>openInfo('eSIM 설치 가이드 (iPhone)','<p class="ib-note">아래로 스크롤하면서 순서대로 따라 하면 돼요. 한국에서는 설치만 하고 데이터 로밍은 하네다 도착 후에 켜기.</p><img class="ib-img" src="img/esim-guide-ios.jpg" alt="iPhone eSIM 설치 가이드" loading="lazy">');
  renderWx();
  const tl=box.querySelector('.tl');
  day.items.forEach((it,i)=>{
