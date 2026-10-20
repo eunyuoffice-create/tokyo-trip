@@ -351,35 +351,35 @@ function openMemoEditor(m,opts={}){
   setTimeout(()=>{const f=isNew?g('#mTitle'):null; if(f)f.focus()},250);
 }
 
-/* 메모 아코디언 끌어서 순서 바꾸기 (포인터 이벤트 → 터치·마우스 공통) */
+/* 메모 아코디언 끌어서 순서 바꾸기 (포인터 이벤트, 터치·마우스 공통)
+   시작할 때 카드 위치를 한 번만 재고, 끄는 동안은 transform 으로만 움직인다. 놓을 때 순서를 계산해 저장. */
 function startDrag(ev,handle){
   if(ev.button&&ev.button!==0)return;
   const card=handle.closest('details[data-accm]'); const listEl=card&&card.parentElement; if(!card||!listEl||!listEl.classList.contains('lgmemolist'))return;
   ev.preventDefault(); ev.stopPropagation();
-  const startY=ev.clientY; let moved=false; const h=card.getBoundingClientRect().height;
-  S.dragging=true; card.classList.add('lgdragging'); listEl.classList.add('lgdraglist');
+  const cards=[...listEl.children]; if(cards.length<2)return;
+  const from=cards.indexOf(card); const rects=cards.map(c=>{const r=c.getBoundingClientRect();return {top:r.top,h:r.height,mid:r.top+r.height/2}});
+  const gap=cards.length>1?Math.max(0,rects[1].top-(rects[0].top+rects[0].h)):8; const step=rects[from].h+gap;
+  const startY=ev.clientY; let to=from, moved=false, lastY=startY;
+  S.dragging=true; card.classList.add('lgdragging'); listEl.classList.add('lgdraglist'); document.body.classList.add('lgnoselect');
   try{handle.setPointerCapture(ev.pointerId)}catch(e){}
-  const onMove=e=>{
-    const dy=e.clientY-startY; if(Math.abs(dy)>4)moved=true;
-    card.style.transform=`translateY(${dy}px)`;
-    const sibs=[...listEl.children].filter(x=>x!==card); const cy=e.clientY;
-    for(const sb of sibs){ const r=sb.getBoundingClientRect(); const mid=r.top+r.height/2;
-      const before=card.compareDocumentPosition(sb)&Node.DOCUMENT_POSITION_FOLLOWING; // sb가 card 뒤에 있나
-      if(before&&cy>mid){ listEl.insertBefore(sb,card); startYAdjust(-r.height); break; }
-      if(!before&&cy<mid){ listEl.insertBefore(card,sb); startYAdjust(r.height); break; }
-    }
+  const paint=()=>{const dy=lastY-startY; card.style.transform=`translateY(${dy}px)`;
+    const center=rects[from].mid+dy; let n=0; cards.forEach((c,j)=>{if(j!==from&&rects[j].mid<center)n++}); to=n;
+    cards.forEach((c,j)=>{ if(j===from)return; let sh=0; if(j<from&&j>=to)sh=step; else if(j>from&&j<=to)sh=-step; c.style.transform=sh?`translateY(${sh}px)`:''; });};
+  const move=e=>{ if(e.pointerId!==ev.pointerId)return; lastY=e.clientY; if(Math.abs(lastY-startY)>4)moved=true; paint(); };
+  const stopTouch=e=>{e.preventDefault()};
+  const end=async e=>{
+    if(e&&e.pointerId!==undefined&&e.pointerId!==ev.pointerId)return;
+    window.removeEventListener('pointermove',move,true); window.removeEventListener('pointerup',end,true); window.removeEventListener('pointercancel',end,true); document.removeEventListener('touchmove',stopTouch);
+    cards.forEach(c=>{c.style.transform=''}); card.classList.remove('lgdragging'); listEl.classList.remove('lgdraglist'); document.body.classList.remove('lgnoselect'); S.dragging=false;
+    if(!moved||to===from){render();return}
+    const ids=cards.map(c=>c.dataset.accm); const [id]=ids.splice(from,1); ids.splice(to,0,id);
+    const base=Date.now(); const ops=[];
+    ids.forEach((mid,i)=>{const m=S.memos.find(x=>x.id===mid); const order=base-i*1000; if(m)ops.push({op:'update',col:'memos',id:mid,data:{order}})});
+    await write(ops,'순서를 바꿨어요');
   };
-  let adjust=0; const startYAdjust=d=>{adjust+=d; card.style.transform=`translateY(${(lastY-startY)-adjust}px)`;};
-  let lastY=startY; const move=e=>{lastY=e.clientY; onMove({clientY:e.clientY}); card.style.transform=`translateY(${(lastY-startY)-adjust}px)`};
-  const end=async()=>{
-    handle.removeEventListener('pointermove',move); handle.removeEventListener('pointerup',end); handle.removeEventListener('pointercancel',end);
-    card.style.transform=''; card.classList.remove('lgdragging'); listEl.classList.remove('lgdraglist'); S.dragging=false;
-    if(!moved){render();return}
-    const ids=[...listEl.children].map(x=>x.dataset.accm); const base=Date.now(); const ops=[];
-    ids.forEach((id,i)=>{const m=S.memos.find(x=>x.id===id); const order=base-i*1000; if(m&&m.order!==order)ops.push({op:'update',col:'memos',id,data:{order}})});
-    if(ops.length)await write(ops,'순서를 바꿨어요'); else render();
-  };
-  handle.addEventListener('pointermove',move); handle.addEventListener('pointerup',end); handle.addEventListener('pointercancel',end);
+  window.addEventListener('pointermove',move,true); window.addEventListener('pointerup',end,true); window.addEventListener('pointercancel',end,true);
+  document.addEventListener('touchmove',stopTouch,{passive:false});
 }
 /* ---------- 바인딩 ---------- */
 function bind(c){
