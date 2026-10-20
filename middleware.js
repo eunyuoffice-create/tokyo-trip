@@ -18,7 +18,7 @@ function page(next, wrong) {
   return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>도쿄 덕질 여행</title>
 <style>
 :root{--bg:#F4F5F8;--surface:#fff;--fg:#171C28;--muted:#6B7280;--line:#E2E5EC;--accent:#D9372B;--accent-soft:#FBE9E6}
-@media (prefers-color-scheme:dark){:root{--bg:#12151C;--surface:#1B1F28;--fg:#E9EBF1;--muted:#9AA1B0;--line:#2B3140;--accent:#F05A4D;--accent-soft:#3A1F1D;color-scheme:dark}}
+
 *{box-sizing:border-box}body{margin:0;min-height:100dvh;display:grid;place-items:center;background:var(--bg);color:var(--fg);font-family:-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;padding:24px max(16px,env(safe-area-inset-right)) 24px max(16px,env(safe-area-inset-left))}
 .card{width:100%;max-width:360px;background:var(--surface);border-radius:18px;padding:24px 20px;box-shadow:0 1px 2px rgba(0,0,0,.06),0 10px 30px rgba(0,0,0,.08)}
 h1{margin:0 0 4px;font-size:19px}p{margin:0 0 16px;color:var(--muted);font-size:13.5px;line-height:1.5}

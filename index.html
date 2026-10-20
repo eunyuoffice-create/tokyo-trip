@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="theme-color" content="#f6f3ee">
+<meta name="theme-color" content="#F4F5F8">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}img{max-width:100%}[hidden]{display:none!important}</style>
 <link rel="stylesheet" href="ledger.css">
 </head>
@@ -23,18 +23,8 @@
   --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
   --tab-h:64px;
 }
-@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
-  --bg:#12151C; --surface:#1B1F28; --fg:#E9EBF1; --muted:#9AA1B0; --line:#2B3140;
-  --accent:#F05A4D; --accent-fg:#FFFFFF; --accent-soft:#3A1F1D;
-  --ok:#4CC38A; --ok-soft:#173226; --warn:#E0A94B; --warn-soft:#352A14;
-  --chip:#262B36; --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 16px rgba(0,0,0,.25);
-  color-scheme:dark } }
-:root[data-theme="dark"]{
-  --bg:#12151C; --surface:#1B1F28; --fg:#E9EBF1; --muted:#9AA1B0; --line:#2B3140;
-  --accent:#F05A4D; --accent-fg:#FFFFFF; --accent-soft:#3A1F1D;
-  --ok:#4CC38A; --ok-soft:#173226; --warn:#E0A94B; --warn-soft:#352A14;
-  --chip:#262B36; --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 16px rgba(0,0,0,.25);
-  color-scheme:dark }
+/* 테마는 기기 설정과 무관하게 항상 밝은 배경 (2026-10-20 결정) */
+:root{color-scheme:light}
 
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:15px;line-height:1.5;-webkit-text-size-adjust:100%}

@@ -1,7 +1,5 @@
 /* 정산 노트 (ledger.js) — 하단 "정산" 탭 패널(#p-ledger)에 붙는 블록. 사이트 토큰(--bg --surface --fg …)을 그대로 쓴다 */
 .lg{--chip-on:var(--fg);--chip-on-fg:var(--bg);--scrim:rgba(23,28,40,.45);font-size:15px;line-height:1.5;margin-bottom:14px;min-width:0}
-@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .lg{--scrim:rgba(0,0,0,.6)} }
-:root[data-theme="dark"] .lg{--scrim:rgba(0,0,0,.6)}
 .lg *{box-sizing:border-box}
 .lg button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;padding:0}
 .lg input,.lg textarea,.lg select{font:inherit;color:inherit}
@@ -99,8 +97,6 @@
 .lg .lgp1{background:#E3ECFB;color:#2F5FB3}
 .lg .lgp2{background:var(--ok-soft);color:var(--ok)}
 .lg .lgp3{background:var(--warn-soft);color:var(--warn)}
-@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .lg .lgp1{background:#1E2A44;color:#8FB1F0} }
-:root[data-theme="dark"] .lg .lgp1{background:#1E2A44;color:#8FB1F0}
 .lg .lgaddexp{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;height:46px;border-radius:14px;background:var(--accent);color:#fff;font-weight:700;font-size:15px;margin:2px 0 12px;box-shadow:0 6px 16px rgba(217,55,43,.25)}
 .lg .lgaddexp svg{width:18px;height:18px}
 .lg .lgrow .si .lgmine{color:var(--accent);font-weight:600}
@@ -288,3 +284,23 @@
 .lg .lgmemoin .lgli.lgdone .lgtx{color:var(--muted);text-decoration:line-through}
 .lg .lgmemobody{white-space:pre-wrap;overflow-wrap:anywhere;font-size:14.5px;line-height:1.65;padding:2px 0 4px}
 .lg .lgmemofoot{display:flex;align-items:center;justify-content:space-between;margin-top:8px}
+
+/* 밝은 테마 고정 + 버튼 강조 (2026-10-20) */
+.lg .lgbar{background:var(--surface);border-top:1px solid var(--line);padding:10px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));box-shadow:0 -6px 18px rgba(23,28,40,.06)}
+.lg .lgbar .lgadd2{gap:10px}
+.lg .lgbar .lgaddexp{height:52px;font-size:15.5px;border-radius:14px;box-shadow:0 6px 16px rgba(217,55,43,.28)}
+.lg .lgbar .lgaddexp.lgaddmine{background:var(--fg);color:var(--bg);box-shadow:0 6px 16px rgba(23,28,40,.22)}
+.lg .lgbar .lgaddexp:active{transform:translateY(1px);filter:brightness(.95)}
+.lg .lgbar .lgaddexp svg{width:20px;height:20px}
+.lg .lgbar .lgaddexp.lgaddmine[data-newmemo="shared"]{background:var(--accent);color:#fff;box-shadow:0 6px 16px rgba(217,55,43,.28)}
+.panel.lg-haspad{padding-bottom:84px}
+.lg .lgseg2{display:flex;width:100%;align-self:stretch;padding:3px;border-radius:12px}
+.lg .lgseg2 button{flex:1;height:36px;font-size:14px;border-radius:9px}
+.lg .lgtopseg{margin:2px 0 10px}
+.lg .lgsettlebtn{height:42px;padding:0 18px;font-size:14.5px;background:var(--accent);color:#fff;box-shadow:0 4px 12px rgba(217,55,43,.25)}
+.lg .lgsettlebtn.lgghost2{background:var(--chip);color:var(--muted);box-shadow:none}
+.lg .lgauthcard .lgbtn.lgsmbtn{box-shadow:0 4px 12px rgba(217,55,43,.25)}
+.lg .lgrow{padding:10px 0}
+.lg .lgsec h3{font-size:14px}
+.lgslot .lguser{height:28px;font-size:12.5px}
+.lgslot .lguser.lguser-off{background:var(--accent);color:#fff;box-shadow:0 3px 10px rgba(217,55,43,.3)}
