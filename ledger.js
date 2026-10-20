@@ -177,18 +177,35 @@ function viewLogin(){
   </form></div>`;
 }
 function viewMain(){
-  let h=`<div class="lg-head"><div class="lgttl">정산 노트</div><div class="lg-head-r"><span class="lgme">${esc(pname(S.me))}</span><button class="lgicon" data-act="settings" aria-label="설정">${svgGear}</button></div></div>`;
+  let h='';
   if(S.err) h+=`<div class="lgbanner">⚠️ <div>${esc(S.err)}</div></div>`;
-  return h+viewHome();
+  h+=viewHome();
+  // 고정 버튼 바 (하단 메뉴 위에 따라다님)
+  h+=`<div class="lgbar"><div class="lgadd2"><button class="lgaddexp" data-act="add-shared">${svgPlus}공용 지출</button><button class="lgaddexp lgaddmine" data-act="add-mine">${svgPlus}내 지출</button></div></div>`;
+  return h;
 }
 const svgPlus='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
 function viewHome(){
   const me=S.me; const sh=shared(); const open=sh.filter(e=>!e.settled);
+  // 1) 개인 / 공용 / 전체 — 목록이 먼저
+  let h=`<div class="lgfilters lgtopseg"><div class="lgseg2"><button data-scope="mine" aria-pressed="${S.scope==='mine'}">개인</button><button data-scope="shared" aria-pressed="${S.scope==='shared'}">공용</button><button data-scope="all" aria-pressed="${S.scope==='all'}">전체</button></div></div>`;
+  let list=S.expenses.slice().sort((a,b)=>(b.day||'').localeCompare(a.day||'')||(b.ts||0)-(a.ts||0));
+  if(S.scope==='shared')list=list.filter(isShared); else if(S.scope==='mine')list=list.filter(e=>!isShared(e));
+  if(!list.length) h+=`<div class="lgcard"><div class="lgempty"><b>${S.scope==='mine'?'내 지출이 아직 없어요':S.scope==='shared'?'공용 지출이 아직 없어요':'아직 지출이 없어요'}</b>${S.scope==='mine'?'아래 "내 지출"로 넣어요. 나만 보여요.':'아래 "공용 지출"로 넣으면 같이 나눠 계산돼요.'}</div></div>`;
+  else{
+    const groups=[]; list.forEach(e=>{let g=groups.find(x=>x.day===e.day); if(!g){g={day:e.day,items:[]};groups.push(g)} g.items.push(e)});
+    groups.forEach(g=>{
+      const sj=g.items.filter(e=>e.cur==='JPY').reduce((a,e)=>a+e.amount,0), sk=g.items.filter(e=>e.cur==='KRW').reduce((a,e)=>a+e.amount,0);
+      h+=`<div class="lgsec"><h3>${esc(dayLabel(g.day))}</h3><span class="lgnum">${sj?fmt(sj,'JPY'):''}${sj&&sk?' · ':''}${sk?fmt(sk,'KRW'):''}</span></div><div class="lgcard lgtight">${g.items.map(rowHtml).join('')}</div>`;
+    });
+    h+=`<div class="lghint" style="text-align:center;margin:10px 0 4px">지출을 누르면 고치거나 지울 수 있어요.${S.scope==='mine'?'':' 공용 지출의 왼쪽 체크는 그 건만 정산 완료 표시예요.'}</div>`;
+  }
+  // 2) 정산 — 잔액 한 줄 + 보냈어/받았어 (아래쪽)
   const allFlows=[...flows('JPY').map(f=>({...f,cur:'JPY'})),...flows('KRW').map(f=>({...f,cur:'KRW'}))];
   const mine=allFlows.filter(f=>f.from===me||f.to===me), others=allFlows.filter(f=>!(f.from===me||f.to===me));
-  // 1) 지금 잔액 — 숫자 하나
-  let h=`<div class="lghero2"><div class="lghero-k">지금 잔액</div>`;
-  if(!sh.length) h+=`<div class="lghero-v lgmuted-t">아직 공용 지출이 없어요</div><div class="lghero-s">아래 "공용 지출"로 넣으면 자동으로 나눠요.</div>`;
+  h+=`<div class="lg-head lgbelow"><div class="lgttl">정산 노트</div><div class="lg-head-r"><span class="lgme">${esc(pname(S.me))}</span><button class="lgicon" data-act="settings" aria-label="설정">${svgGear}</button></div></div>`;
+  h+=`<div class="lghero2"><div class="lghero-k">지금 잔액</div>`;
+  if(!sh.length) h+=`<div class="lghero-v lgmuted-t">아직 공용 지출이 없어요</div><div class="lghero-s">"공용 지출"로 넣으면 자동으로 나눠요.</div>`;
   else if(!allFlows.length) h+=`<div class="lghero-v lgok-t">정산 끝 · 주고받을 돈 없음</div><div class="lghero-s">공용 지출 ${sh.length}건이 모두 정리됐어요.</div>`;
   else{
     mine.forEach(f=>{const recv=f.to===me; h+=`<div class="lgflow2"><div class="lghero-v ${recv?'lgok-t':'lgacc-t'}">${esc(pname(recv?f.from:f.to))}에게 ${recv?'받을 돈':'줄 돈'}<br><b class="lgnum">${fmt(f.amount,f.cur)}</b></div><button class="lgsettlebtn" data-settle="${f.from}|${f.to}|${f.amount}|${f.cur}">${recv?'받았어':'보냈어'}</button></div>`});
@@ -198,21 +215,6 @@ function viewHome(){
   }
   h+=`</div>`;
   h+=detailsHtml();
-  // 2) 추가 버튼 두 개 — 폼 안에서 고를 게 줄어든다
-  h+=`<div class="lgadd2"><button class="lgaddexp" data-act="add-shared">${svgPlus}공용 지출</button><button class="lgaddexp lgaddmine" data-act="add-mine">${svgPlus}내 지출</button></div>`;
-  // 3) 목록
-  h+=`<div class="lgfilters"><div class="lgseg2"><button data-scope="mine" aria-pressed="${S.scope==='mine'}">개인</button><button data-scope="shared" aria-pressed="${S.scope==='shared'}">공용</button><button data-scope="all" aria-pressed="${S.scope==='all'}">전체</button></div></div>`;
-  let list=S.expenses.slice().sort((a,b)=>(b.day||'').localeCompare(a.day||'')||(b.ts||0)-(a.ts||0));
-  if(S.scope==='shared')list=list.filter(isShared); else if(S.scope==='mine')list=list.filter(e=>!isShared(e));
-  if(!list.length) h+=`<div class="lgcard"><div class="lgempty"><b>${S.scope==='mine'?'내 지출이 아직 없어요':S.scope==='shared'?'공용 지출이 아직 없어요':'아직 지출이 없어요'}</b>${S.scope==='mine'?'"내 지출"은 나만 보여요.':'"공용 지출"은 같이 나눠 계산돼요.'}</div></div>`;
-  else{
-    const groups=[]; list.forEach(e=>{let g=groups.find(x=>x.day===e.day); if(!g){g={day:e.day,items:[]};groups.push(g)} g.items.push(e)});
-    groups.forEach(g=>{
-      const sj=g.items.filter(e=>e.cur==='JPY').reduce((a,e)=>a+e.amount,0), sk=g.items.filter(e=>e.cur==='KRW').reduce((a,e)=>a+e.amount,0);
-      h+=`<div class="lgsec"><h3>${esc(dayLabel(g.day))}</h3><span class="lgnum">${sj?fmt(sj,'JPY'):''}${sj&&sk?' · ':''}${sk?fmt(sk,'KRW'):''}</span></div><div class="lgcard lgtight">${g.items.map(rowHtml).join('')}</div>`;
-    });
-    h+=`<div class="lghint" style="text-align:center;margin:10px 0 4px">지출을 누르면 고치거나 지울 수 있어요.</div>`;
-  }
   h+=historyHtml();
   return h;
 }
@@ -256,18 +258,21 @@ function rowHtml(e){
     else if(e.payer===me&&parts.length>1) right=`<div class="ab">받을 ${fmt(e.amount-mine,e.cur)}</div>`;
     else if(e.payer!==me&&mine>0) right=`<div class="ab lgowe">내 몫 ${fmt(mine,e.cur)}</div>`;
   }
-  return `<button class="lgrow ${!priv&&e.settled?'lgsettled':''}" data-exp="${esc(e.id)}"><div class="lgmid"><div class="ti">${priv?`<span class="lglock">${svgLock}</span>`:''}<span class="lgtrunc">${esc(e.title||'(내용 없음)')}</span></div><div class="si">${sub}${e.memo?`<span class="lgtrunc">· ${esc(e.memo)}</span>`:''}</div></div><div class="lgamt"><div class="aa">${fmt(e.amount,e.cur)}</div>${right}</div><span class="lgchev" aria-hidden="true"></span></button>`;
+  // 공용 줄은 왼쪽 체크로 이 건만 따로 정산 완료 처리 (잔액에서 빠짐)
+  const check=priv?'':`<button class="lgbox lgbox-s" data-settled="${esc(e.id)}" aria-label="이 건 정산 완료" aria-pressed="${!!e.settled}">${svgCheck}</button>`;
+  return `<div class="lgrow ${!priv&&e.settled?'lgsettled':''}">${check}<button class="lgrowbody" data-exp="${esc(e.id)}"><div class="lgmid"><div class="ti">${priv?`<span class="lglock">${svgLock}</span>`:''}<span class="lgtrunc">${esc(e.title||'(내용 없음)')}</span></div><div class="si">${sub}${e.memo?`<span class="lgtrunc">· ${esc(e.memo)}</span>`:''}</div></div><div class="lgamt"><div class="aa">${fmt(e.amount,e.cur)}</div>${right}</div><span class="lgchev" aria-hidden="true"></span></button></div>`;
 }
 function viewMemo(){
   let h='';
   const secs=[{k:'mine',title:'내 메모',sub:`${pname(S.me)}만 봄`,list:S.memos.filter(m=>ownerOf(m)===S.me)},{k:'shared',title:'공용 메모',sub:'둘 다 보고 체크',list:S.memos.filter(isShared)}];
   secs.forEach(sec=>{
-    h+=`<div class="lgsec"><h3>${sec.title} <span class="lgsub">${esc(sec.sub)}</span></h3><button class="lglink" data-newmemo="${sec.k}">+ 추가</button></div>`;
+    h+=`<div class="lgsec"><h3>${sec.title} <span class="lgsub">${esc(sec.sub)}</span></h3></div>`;
     const list=sec.list.slice().sort((a,b)=>(a.order||a.ts||0)-(b.order||b.ts||0));
     if(!list.length){h+=`<div class="lgcard"><div class="lgempty">${sec.k==='shared'?'살 것 목록이나 가고 싶은 곳처럼 같이 체크할 걸 올려두세요.':'개인 쇼핑 리스트나 일기처럼 나만 볼 걸 써요.'}</div></div>`;return}
     list.forEach(m=>{h+=memoHtml(m)});
   });
   h+=`<div class="lghint" style="text-align:center;margin:10px 0 14px">"편집"에서 제목·공용/개인·삭제, 항목은 글자를 누르면 수정, ×로 삭제해요.</div>`;
+  h+=`<div class="lgbar"><div class="lgadd2"><button class="lgaddexp lgaddmine" data-newmemo="mine">${svgPlus}내 메모</button><button class="lgaddexp lgaddmine" data-newmemo="shared">${svgPlus}공용 메모</button></div></div>`;
   return h;
 }
 function memoHtml(m){
@@ -291,6 +296,7 @@ function bind(c){
   qa('[data-act]',c).forEach(b=>b.onclick=()=>{const a=b.dataset.act; if(a==='retry'){S.screen='loading';render();boot()} else if(a==='settings')openSettings(); else if(a==='setup-add')setupAddRow(); else if(a==='add-shared')openExpense(null,{priv:false}); else if(a==='add-mine')openExpense(null,{priv:true}); else if(a==='forgot')openForgot(); else if(a==='go-ledger'){const t=[...document.querySelectorAll('[role="tab"][data-tab="ledger"]')].find(x=>!x.closest('.lg')); if(t)t.click(); else location.href='ledger.html';}});
   qa('[data-scope]',c).forEach(b=>b.onclick=()=>{S.scope=b.dataset.scope;render()});
   qa('[data-exp]',c).forEach(b=>b.onclick=()=>openExpense(S.expenses.find(e=>e.id===b.dataset.exp)));
+  qa('[data-settled]',c).forEach(b=>b.onclick=()=>{const e=S.expenses.find(x=>x.id===b.dataset.settled);if(!e)return;write([{op:'update',col:'expenses',id:e.id,data:{settled:!e.settled,settledBy:!e.settled?S.me:null,settleId:null}}],e.settled?'다시 잔액에 넣었어요':'이 건만 정산 완료했어요')});
   qa('[data-tr]',c).forEach(b=>b.onclick=()=>openRecord(S.transfers.find(t=>t.id===b.dataset.tr)));
   qa('[data-settle]',c).forEach(b=>b.onclick=()=>{const [f,t,a,cur]=b.dataset.settle.split('|');openSettle({from:+f,to:+t,amount:+a,cur})});
   qa('[data-newmemo]',c).forEach(b=>b.onclick=()=>chooseMemo(b.dataset.newmemo==='mine'?S.me:null));
@@ -510,6 +516,7 @@ function mount(el,memoEl){
   if(!ov){ ov=document.createElement('div'); ov.className='lg lgov'; ov.innerHTML=`<div class="lgscrim"></div><div class="lgsheet" role="dialog" aria-modal="true"><div class="lgin"></div></div><div class="lgtoast"></div>`; document.body.appendChild(ov); q('.lgscrim',ov).onclick=closeSheet; }
   memoRoot=memoEl||document.getElementById('ledger-memo-root')||null;
   if(memoRoot){ memoRoot.classList.add('lg'); memoRoot.innerHTML=`<div class="lg-view"></div>`; memoView=q('.lg-view',memoRoot); }
+  roots().forEach(r=>{const p=r.closest('.panel'); if(p)p.classList.add('lg-haspad')});
   render(); boot();
   const visible=()=>roots().some(r=>!r.closest('[hidden]'));
   clearInterval(pollT); pollT=setInterval(()=>{if(document.visibilityState==='visible'&&S.screen==='main'&&!S.saving&&visible())load()},POLL_MS);
