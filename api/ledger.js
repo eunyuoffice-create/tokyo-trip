@@ -1,80 +1,121 @@
-// 정산 노트 API — Vercel 서버 함수 + Neon(Postgres)
-// GET  /api/ledger?action=list&pin=…        → { ok, data: { settings, expenses, transfers, checks } }
-// POST /api/ledger { action:'write', pin, ops:[{op:'set'|'update'|'delete', col, id, data}] }
-// GET  /api/ledger?action=ping              → { ok, db }
-// 환경변수: DATABASE_URL (Neon 연동 시 자동), LEDGER_PIN (선택 — 비우면 비밀번호 없음)
-import { neon } from '@neondatabase/serverless';
+// 정산 노트 API — Vercel 서버 함수 + Neon(Postgres). 저장 계층은 api/_lib/store.js
+// 모든 호출: POST /api/ledger  { action, token?, ... }   (GET ?action=ping 만 예외)
+//  ping                         → { ok, db }
+//  status                       → { ok, setup, people:[name], rate }
+//  setup  {people:[{name,pin}], rate, me}   최초 1회. 멤버·비밀번호 생성 → { token, me }
+//  login  {me, pin}             → { token, me }
+//  list   (token)               → { me, people, rate, expenses, transfers, memos }  (개인 항목은 본인 것만)
+//  write  (token) {ops:[{op:'set'|'update'|'delete', col, id, data}]}
+//  settings (token) {names?, rate?, addMember?:{name,pin}, setPin?:{me?:idx, pin}}
+import { createHmac, createHash, randomBytes } from 'node:crypto';
+import { store, dbEnvNames, hasDbUrl } from './_lib/store.js';
 
-const COLS = new Set(['settings', 'expenses', 'transfers', 'checks']);
+const COLS = new Set(['expenses', 'transfers', 'memos']);
+const PRIVATE_COLS = new Set(['expenses', 'memos']);   // owner 필드로 개인/공용 구분
 const ID_RE = /^[A-Za-z0-9_\-.~:@+]{1,200}$/;
-let ready = null;
+const TOKEN_DAYS = 90;
 
-// Neon 연동이 만드는 변수 이름이 프로젝트마다 다를 수 있어(접두사 등) postgres:// 값을 가진 변수를 찾는다
-function dbUrl() {
-  const env = process.env;
-  const prefer = ['DATABASE_URL', 'POSTGRES_URL', 'DATABASE_URL_UNPOOLED', 'POSTGRES_URL_NON_POOLING'];
-  for (const k of prefer) if (env[k] && /^postgres(ql)?:\/\//.test(env[k])) return env[k];
-  const keys = Object.keys(env).filter(k => /^postgres(ql)?:\/\//.test(env[k] || '')).sort((a, b) => (/UNPOOLED|NON_POOLING/.test(a) ? 1 : 0) - (/UNPOOLED|NON_POOLING/.test(b) ? 1 : 0));
-  return keys.length ? env[keys[0]] : '';
+const hashPin = (secret, pin) => createHash('sha256').update(secret + ':' + String(pin)).digest('hex');
+const sign = (secret, s) => createHmac('sha256', secret).update(s).digest('hex');
+function makeToken(secret, me) { const exp = Date.now() + TOKEN_DAYS * 864e5; const p = me + '.' + exp; return p + '.' + sign(secret, p); }
+function readToken(secret, t) {
+  if (typeof t !== 'string') return null;
+  const [me, exp, sig] = t.split('.');
+  if (!/^\d+$/.test(me || '') || !/^\d+$/.test(exp || '') || !sig) return null;
+  if (sign(secret, me + '.' + exp) !== sig || +exp < Date.now()) return null;
+  return +me;
 }
-export function dbEnvNames() {
-  return Object.keys(process.env).filter(k => /DATABASE|POSTGRES|NEON|PG/i.test(k)).sort();
-}
-function db() {
-  const url = dbUrl();
-  if (!url) throw new Error('DB 접속 정보(DATABASE_URL)가 없어요. Vercel → Storage에서 Neon을 이 프로젝트에 연결하고 Redeploy 하세요.');
-  return neon(url);
-}
-async function ensure(sql) {
-  if (!ready) ready = sql`CREATE TABLE IF NOT EXISTS ledger_docs (
-    col text NOT NULL, id text NOT NULL, data jsonb NOT NULL,
-    updated timestamptz NOT NULL DEFAULT now(), PRIMARY KEY (col, id))`.catch(e => { ready = null; throw e; });
-  await ready;
-}
+const ownerOf = d => (d && d.owner !== null && d.owner !== undefined && d.owner !== '') ? +d.owner : null;
+const publicTrip = trip => ({ people: (trip.people || []).map(p => ({ name: p.name || '' })), rate: +trip.rate || 9.2 });
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  if (req.method === 'OPTIONS') return res.status(204).end();
   try {
     const body = req.method === 'POST' ? parseBody(req.body) : (req.query || {});
-    const action = body.action || 'list';
+    const action = body.action || 'status';
     if (action === 'ping') {
-      let ok = false; try { const sql = db(); await ensure(sql); ok = true; } catch (_) {}
-      return res.status(200).json({ ok: true, db: ok, pinRequired: !!process.env.LEDGER_PIN, envNames: dbEnvNames(), hasUrl: !!dbUrl() });
+      let db = false; try { await store(); db = true; } catch (_) {}
+      return res.status(200).json({ ok: true, db, hasUrl: hasDbUrl(), envNames: dbEnvNames() });
     }
-    const PIN = process.env.LEDGER_PIN || '';
-    if (PIN && String(body.pin || '') !== PIN) return res.status(200).json({ ok: false, error: 'pin' });
-    const sql = db(); await ensure(sql);
+    const db = await store();
+    const trip = await db.get('settings', 'trip');
+
+    if (action === 'status') return res.status(200).json({ ok: true, setup: !!trip, ...(trip ? publicTrip(trip) : { people: [], rate: 9.2 }) });
+
+    if (action === 'setup') {
+      if (trip) return res.status(409).json({ ok: false, error: 'already_setup' });
+      const people = Array.isArray(body.people) ? body.people : [];
+      if (people.length < 2 || people.length > 6) return res.status(400).json({ ok: false, error: '멤버는 2~6명' });
+      for (const p of people) if (!String(p.name || '').trim() || !/^\d{4,8}$/.test(String(p.pin || ''))) return res.status(400).json({ ok: false, error: '이름과 4~8자리 숫자 비밀번호가 필요해요' });
+      const secret = randomBytes(32).toString('hex');
+      const doc = { secret, rate: +body.rate || 9.2, people: people.map(p => ({ name: String(p.name).trim().slice(0, 12), pinHash: hashPin(secret, p.pin) })), created: Date.now() };
+      await db.put('settings', 'trip', doc);
+      const me = Math.min(Math.max(+body.me || 0, 0), people.length - 1);
+      return res.status(200).json({ ok: true, token: makeToken(secret, me), me, ...publicTrip(doc) });
+    }
+
+    if (!trip) return res.status(200).json({ ok: false, error: 'not_setup' });
+
+    if (action === 'login') {
+      const me = +body.me;
+      const p = trip.people[me];
+      if (!p || hashPin(trip.secret, body.pin) !== p.pinHash) return res.status(200).json({ ok: false, error: 'pin' });
+      return res.status(200).json({ ok: true, token: makeToken(trip.secret, me), me, ...publicTrip(trip) });
+    }
+
+    const me = readToken(trip.secret, body.token);
+    if (me === null || !trip.people[me]) return res.status(200).json({ ok: false, error: 'auth' });
+    const visible = (col, d) => !PRIVATE_COLS.has(col) || ownerOf(d) === null || ownerOf(d) === me;
 
     if (action === 'list') {
-      const rows = await sql`SELECT col, id, data FROM ledger_docs`;
-      const data = { settings: {}, expenses: {}, transfers: {}, checks: {} };
-      for (const r of rows) if (data[r.col]) data[r.col][r.id] = r.data;
-      return res.status(200).json({ ok: true, data, ts: Date.now() });
+      const rows = await db.all();
+      const data = { expenses: {}, transfers: {}, memos: {} };
+      for (const r of rows) if (data[r.col] && visible(r.col, r.data)) data[r.col][r.id] = r.data;
+      return res.status(200).json({ ok: true, me, ...publicTrip(trip), ...data, ts: Date.now() });
     }
+
     if (action === 'write') {
       const ops = Array.isArray(body.ops) ? body.ops : [];
       if (!ops.length) return res.status(400).json({ ok: false, error: 'no ops' });
-      for (const op of ops) {
-        if (!COLS.has(op.col) || !ID_RE.test(String(op.id || ''))) return res.status(400).json({ ok: false, error: 'bad op' });
-      }
+      for (const op of ops) if (!COLS.has(op.col) || !ID_RE.test(String(op.id || '')) || !['set', 'update', 'delete'].includes(op.op)) return res.status(400).json({ ok: false, error: 'bad op' });
       for (const op of ops) {
         const col = op.col, id = String(op.id);
-        if (op.op === 'delete') await sql`DELETE FROM ledger_docs WHERE col = ${col} AND id = ${id}`;
-        else if (op.op === 'update') {
-          const patch = JSON.stringify(op.data || {});
-          const r = await sql`UPDATE ledger_docs SET data = data || ${patch}::jsonb, updated = now() WHERE col = ${col} AND id = ${id} RETURNING id`;
-          if (!r.length) return res.status(409).json({ ok: false, error: `update: missing ${col}/${id}` });
-        } else {
-          const data = JSON.stringify(op.data || {});
-          await sql`INSERT INTO ledger_docs (col, id, data) VALUES (${col}, ${id}, ${data}::jsonb)
-                    ON CONFLICT (col, id) DO UPDATE SET data = EXCLUDED.data, updated = now()`;
+        const existing = await db.get(col, id);
+        if (existing && !visible(col, existing)) return res.status(403).json({ ok: false, error: 'forbidden' });
+        if (op.op === 'delete') { await db.del(col, id); continue; }
+        const data = (op.data && typeof op.data === 'object' && !Array.isArray(op.data)) ? op.data : {};
+        if (PRIVATE_COLS.has(col)) {
+          const next = op.op === 'update' ? { ...(existing || {}), ...data } : data;
+          const o = ownerOf(next);
+          if (o !== null && o !== me) return res.status(403).json({ ok: false, error: 'forbidden' });
+          // 공용 → 개인 전환은 만든 사람만 (남이 올린 공용 항목을 내 개인으로 숨기지 못하게)
+          if (existing && ownerOf(existing) === null && o === me && existing.by !== undefined && existing.by !== me) return res.status(403).json({ ok: false, error: 'forbidden' });
         }
+        if (op.op === 'update') { if (!existing) return res.status(409).json({ ok: false, error: `missing ${col}/${id}` }); await db.patch(col, id, { ...data, upd: Date.now() }); }
+        else await db.put(col, id, { ...data, by: existing ? (existing.by ?? me) : me, upd: Date.now() });
       }
       return res.status(200).json({ ok: true, ts: Date.now() });
     }
+
+    if (action === 'settings') {
+      const next = { ...trip, people: trip.people.map(p => ({ ...p })) };
+      if (Array.isArray(body.names)) body.names.forEach((n, i) => { if (next.people[i] && String(n || '').trim()) next.people[i].name = String(n).trim().slice(0, 12); });
+      if (body.rate) next.rate = +body.rate || next.rate;
+      if (body.addMember) {
+        const { name, pin } = body.addMember;
+        if (next.people.length >= 6) return res.status(400).json({ ok: false, error: '멤버는 최대 6명' });
+        if (!String(name || '').trim() || !/^\d{4,8}$/.test(String(pin || ''))) return res.status(400).json({ ok: false, error: '이름과 4~8자리 숫자 비밀번호가 필요해요' });
+        next.people.push({ name: String(name).trim().slice(0, 12), pinHash: hashPin(trip.secret, pin) });
+      }
+      if (body.setPin) {
+        const idx = body.setPin.me === undefined ? me : +body.setPin.me;   // 동행이 잊었을 때 서로 재설정 가능
+        if (!next.people[idx] || !/^\d{4,8}$/.test(String(body.setPin.pin || ''))) return res.status(400).json({ ok: false, error: '4~8자리 숫자' });
+        next.people[idx].pinHash = hashPin(trip.secret, body.setPin.pin);
+      }
+      await db.put('settings', 'trip', next);
+      return res.status(200).json({ ok: true, ...publicTrip(next) });
+    }
+
     return res.status(400).json({ ok: false, error: 'unknown action' });
   } catch (e) {
     return res.status(500).json({ ok: false, error: String(e && e.message || e) });

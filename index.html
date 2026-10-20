@@ -7,6 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#f6f3ee">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}img{max-width:100%}[hidden]{display:none!important}</style>
+<link rel="stylesheet" href="ledger.css">
 </head>
 <body>
 <title>도쿄 덕질 여행 10.24</title>
@@ -181,8 +182,6 @@ details.memo[open] summary{margin-bottom:10px}
 .tabs button{flex:1;height:var(--tab-h);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11.5px;font-weight:500;color:var(--muted)}
 .tabs button svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .tabs button[aria-selected="true"]{color:var(--accent);font-weight:600}
-.tabs a.tab-link{flex:1;height:var(--tab-h);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11.5px;font-weight:500;color:var(--muted);text-decoration:none}
-.tabs a.tab-link svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 @media (prefers-reduced-motion:no-preference){ .det{animation:fade .18s ease-out} @keyframes fade{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none}} }
 @media (min-width:600px){ .cards{display:grid;grid-template-columns:1fr 1fr} .card{align-content:start} }
 </style>
@@ -213,7 +212,10 @@ details.memo[open] summary{margin-bottom:10px}
 폐점한 곳(도큐핸즈 이케부쿠로 등)은 뺐고, 아키하바라·시부야·신주쿠·오다이바는 이번 여행에서 제외.</p>
     <div id="place-list"></div>
   </section>
-  <section class="panel" id="p-memo" hidden></section>
+  <section class="panel" id="p-memo" hidden>
+    <div id="ledger-root"></div>
+    <div id="memo-body"></div>
+  </section>
 </main>
 
 <nav class="tabs" role="tablist" aria-label="메뉴">
@@ -221,7 +223,6 @@ details.memo[open] summary{margin-bottom:10px}
   <button role="tab" data-tab="food" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M5 3v8a3 3 0 0 0 6 0V3M8 3v18M17 3c-2 0-3 3-3 7v2h3v9"/></svg>맛집</button>
   <button role="tab" data-tab="place" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>갈 곳</button>
   <button role="tab" data-tab="memo" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4M9 12h6M9 16h6"/></svg>메모</button>
-  <a class="tab-link" href="ledger.html"><svg viewBox="0 0 24 24"><path d="M3 7h18v12H3z"/><path d="M3 11h18"/><circle cx="16.5" cy="15" r="1.2"/></svg>정산</a>
 </nav>
 
 <script>
@@ -698,7 +699,7 @@ function renderPlace(){
 
 /* ---------- RENDER: memo ---------- */
 function renderMemo(){
- const box=document.getElementById('p-memo');
+ const box=document.getElementById('memo-body');
  const clHtml=(obj,pre)=>Object.entries(obj).map(([cat,items])=>`<div class="sub-h">${esc(cat)}</div><div class="cl">${items.map((it,i)=>{const o=typeof it==='string'?{t:it}:it;const t=o.t;const id=pre+':'+cat+':'+i;const [tt,rest]=t.split(' — ');return `<label><input type="checkbox" id="${esc(id)}" data-pk="${esc(id)}" ${state.pack[id]?'checked':''}>${o.img?`<img class="thumb" src="${esc(o.img)}" loading="lazy" alt="">`:''}<span>${rest?`<b>${esc(tt)}</b>${nl(rest)}`:nl(t)}</span></label>`}).join('')}</div>`).join('');
  const giftHtml=clHtml(GIFT,'gf');
  const shopHtml=Object.entries(SHOP).map(([cat,items])=>`<div class="sub-h">${esc(cat)}</div><div class="cl">${items.map((t,i)=>{const id='sh:'+cat+':'+i;return `<label><input type="checkbox" id="${esc(id)}" data-pk="${esc(id)}" ${state.pack[id]?'checked':''}><span>${esc(t)}</span></label>`}).join('')}</div>`).join('');
@@ -910,5 +911,6 @@ document.getElementById('q-place').addEventListener('input',renderPlace);
 })();
 render();
 </script>
+<script src="ledger.js" defer></script>
 </body>
 </html>
