@@ -109,16 +109,24 @@ function pressToDrag(ev,el,listEl,sel,col){
 function startDrag(pointerId,startY,el,listEl,sel,col){
   const cards=[...listEl.querySelectorAll(':scope > '+sel)]; if(cards.length<2)return;
   const from=cards.indexOf(el); if(from<0)return;
-  const rects=cards.map(c=>{const r=c.getBoundingClientRect();return {top:r.top,h:r.height,mid:r.top+r.height/2}});
+  // 위치는 문서 좌표로 재서, 끄는 동안 화면이 스크롤돼도 계산이 맞게
+  const sy=()=>window.scrollY||document.documentElement.scrollTop||0;
+  const rects=cards.map(c=>{const r=c.getBoundingClientRect();return {top:r.top+sy(),h:r.height,mid:r.top+sy()+r.height/2}});
   const gap=Math.max(0,rects[1].top-(rects[0].top+rects[0].h)); const step=rects[from].h+gap;
-  let to=from, moved=false, lastY=startY;
+  const startPage=startY+sy(); let to=from, moved=false, lastY=startY, raf=0, alive=true;
   el.classList.add('lgdragging'); document.body.classList.add('lgnoselect'); C.dragging=true;
-  const paint=()=>{ const dy=lastY-startY; el.style.transform=`translateY(${dy}px)`; const center=rects[from].mid+dy; let n=0; cards.forEach((c,j)=>{if(j!==from&&rects[j].mid<center)n++}); to=n;
+  const paint=()=>{ const dy=(lastY+sy())-startPage; el.style.transform=`translateY(${dy}px)`; const center=rects[from].mid+dy; let n=0; cards.forEach((c,j)=>{if(j!==from&&rects[j].mid<center)n++}); to=n;
     cards.forEach((c,j)=>{ if(j===from)return; let sh=0; if(j<from&&j>=to)sh=step; else if(j>from&&j<=to)sh=-step; c.style.transform=sh?`translateY(${sh}px)`:''; }); };
+  // 손가락이 화면 위·아래 가장자리에 가면 자동 스크롤 (맨 위·맨 아래로 옮길 수 있게)
+  const EDGE_T=150, EDGE_B=170;
+  const tick=()=>{ if(!alive)return; let v=0; const h=window.innerHeight; if(lastY<EDGE_T)v=-Math.min(22,(EDGE_T-lastY)/4+4); else if(lastY>h-EDGE_B)v=Math.min(22,(lastY-(h-EDGE_B))/4+4);
+    if(v&&moved){ const before=sy(); window.scrollBy(0,v); if(sy()!==before)paint(); } raf=requestAnimationFrame(tick); };
+  raf=requestAnimationFrame(tick);
   const move=e=>{ if(e.pointerId!==pointerId)return; lastY=e.clientY; if(Math.abs(lastY-startY)>4)moved=true; paint(); };
   const stopTouch=e=>{e.preventDefault()};
   const end=async e=>{
     if(e&&e.pointerId!==undefined&&e.pointerId!==pointerId)return;
+    alive=false; cancelAnimationFrame(raf);
     window.removeEventListener('pointermove',move,true); window.removeEventListener('pointerup',end,true); window.removeEventListener('pointercancel',end,true); document.removeEventListener('touchmove',stopTouch);
     cards.forEach(c=>{c.style.transform=''}); el.classList.remove('lgdragging'); document.body.classList.remove('lgnoselect'); C.dragging=false;
     if(!moved||to===from)return;

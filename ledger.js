@@ -372,18 +372,25 @@ function startDrag(ev,handle){
   const card=handle.closest('details[data-accm]'); const listEl=card&&card.parentElement; if(!card||!listEl||!listEl.classList.contains('lgmemolist'))return;
   ev.preventDefault(); ev.stopPropagation();
   const cards=[...listEl.children]; if(cards.length<2)return;
-  const from=cards.indexOf(card); const rects=cards.map(c=>{const r=c.getBoundingClientRect();return {top:r.top,h:r.height,mid:r.top+r.height/2}});
+  const from=cards.indexOf(card);
+  const sy=()=>window.scrollY||document.documentElement.scrollTop||0;
+  const rects=cards.map(c=>{const r=c.getBoundingClientRect();return {top:r.top+sy(),h:r.height,mid:r.top+sy()+r.height/2}});
   const gap=cards.length>1?Math.max(0,rects[1].top-(rects[0].top+rects[0].h)):8; const step=rects[from].h+gap;
-  const startY=ev.clientY; let to=from, moved=false, lastY=startY;
+  const startY=ev.clientY, startPage=startY+sy(); let to=from, moved=false, lastY=startY, raf=0, alive=true;
   S.dragging=true; card.classList.add('lgdragging'); listEl.classList.add('lgdraglist'); document.body.classList.add('lgnoselect');
   try{handle.setPointerCapture(ev.pointerId)}catch(e){}
-  const paint=()=>{const dy=lastY-startY; card.style.transform=`translateY(${dy}px)`;
+  const paint=()=>{const dy=(lastY+sy())-startPage; card.style.transform=`translateY(${dy}px)`;
     const center=rects[from].mid+dy; let n=0; cards.forEach((c,j)=>{if(j!==from&&rects[j].mid<center)n++}); to=n;
     cards.forEach((c,j)=>{ if(j===from)return; let sh=0; if(j<from&&j>=to)sh=step; else if(j>from&&j<=to)sh=-step; c.style.transform=sh?`translateY(${sh}px)`:''; });};
+  const EDGE_T=150, EDGE_B=170;
+  const tick=()=>{ if(!alive)return; let v=0; const h=window.innerHeight; if(lastY<EDGE_T)v=-Math.min(22,(EDGE_T-lastY)/4+4); else if(lastY>h-EDGE_B)v=Math.min(22,(lastY-(h-EDGE_B))/4+4);
+    if(v&&moved){ const before=sy(); window.scrollBy(0,v); if(sy()!==before)paint(); } raf=requestAnimationFrame(tick); };
+  raf=requestAnimationFrame(tick);
   const move=e=>{ if(e.pointerId!==ev.pointerId)return; lastY=e.clientY; if(Math.abs(lastY-startY)>4)moved=true; paint(); };
   const stopTouch=e=>{e.preventDefault()};
   const end=async e=>{
     if(e&&e.pointerId!==undefined&&e.pointerId!==ev.pointerId)return;
+    alive=false; cancelAnimationFrame(raf);
     window.removeEventListener('pointermove',move,true); window.removeEventListener('pointerup',end,true); window.removeEventListener('pointercancel',end,true); document.removeEventListener('touchmove',stopTouch);
     cards.forEach(c=>{c.style.transform=''}); card.classList.remove('lgdragging'); listEl.classList.remove('lgdraglist'); document.body.classList.remove('lgnoselect'); S.dragging=false;
     if(!moved||to===from){render();return}

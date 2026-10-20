@@ -345,7 +345,7 @@
 .lg .lgmemolist details.lgdragging{transition:none;transform-origin:center;box-shadow:0 12px 30px rgba(23,28,40,.2);background:var(--surface)}
 .lg .lgmemolist.lgdraglist details summary{pointer-events:none}
 .lg .lgmemolist.lgdraglist details.lgdragging summary{pointer-events:auto}
-body.lgnoselect{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;overflow:hidden}
+body.lgnoselect{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 /* 메모 머리글 글자 크기 축소 */
 .lg .lgmemoacc summary{padding:9px 12px;gap:8px}
 .lg .lgmemoacc summary .lgmtitle{font-size:13.5px;font-weight:600}
