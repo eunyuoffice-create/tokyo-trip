@@ -365,6 +365,7 @@ function openMemoEditor(m,opts={}){
   setTimeout(()=>{const f=isNew?g('#mTitle'):null; if(f)f.focus()},250);
 }
 
+window.__dragBlock=window.__dragBlock||(()=>{const f=e=>{if(window.__dragActive)e.preventDefault()}; document.addEventListener('touchmove',f,{passive:false}); return f})();
 /* 메모 아코디언 끌어서 순서 바꾸기 (포인터 이벤트, 터치·마우스 공통)
    시작할 때 카드 위치를 한 번만 재고, 끄는 동안은 transform 으로만 움직인다. 놓을 때 순서를 계산해 저장. */
 function startDrag(ev,handle){
@@ -377,7 +378,7 @@ function startDrag(ev,handle){
   const rects=cards.map(c=>{const r=c.getBoundingClientRect();return {top:r.top+sy(),h:r.height,mid:r.top+sy()+r.height/2}});
   const gap=cards.length>1?Math.max(0,rects[1].top-(rects[0].top+rects[0].h)):8; const step=rects[from].h+gap;
   const startY=ev.clientY, startPage=startY+sy(); let to=from, moved=false, lastY=startY, raf=0, alive=true;
-  S.dragging=true; card.classList.add('lgdragging'); listEl.classList.add('lgdraglist'); document.body.classList.add('lgnoselect');
+  S.dragging=true; window.__dragActive=true; card.classList.add('lgdragging'); listEl.classList.add('lgdraglist'); document.body.classList.add('lgnoselect');
   try{handle.setPointerCapture(ev.pointerId)}catch(e){}
   const paint=()=>{const dy=(lastY+sy())-startPage; card.style.transform=`translateY(${dy}px)`;
     const center=rects[from].mid+dy; let n=0; cards.forEach((c,j)=>{if(j!==from&&rects[j].mid<center)n++}); to=n;
@@ -392,7 +393,7 @@ function startDrag(ev,handle){
     if(e&&e.pointerId!==undefined&&e.pointerId!==ev.pointerId)return;
     alive=false; cancelAnimationFrame(raf);
     window.removeEventListener('pointermove',move,true); window.removeEventListener('pointerup',end,true); window.removeEventListener('pointercancel',end,true); document.removeEventListener('touchmove',stopTouch);
-    cards.forEach(c=>{c.style.transform=''}); card.classList.remove('lgdragging'); listEl.classList.remove('lgdraglist'); document.body.classList.remove('lgnoselect'); S.dragging=false;
+    cards.forEach(c=>{c.style.transform=''}); card.classList.remove('lgdragging'); listEl.classList.remove('lgdraglist'); document.body.classList.remove('lgnoselect'); S.dragging=false; window.__dragActive=false;
     if(!moved||to===from){render();return}
     const ids=cards.map(c=>c.dataset.accm); const [id]=ids.splice(from,1); ids.splice(to,0,id);
     const base=Date.now(); const ops=[];
@@ -400,14 +401,14 @@ function startDrag(ev,handle){
     await write(ops,'순서를 바꿨어요');
   };
   window.addEventListener('pointermove',move,true); window.addEventListener('pointerup',end,true); window.addEventListener('pointercancel',end,true);
-  document.addEventListener('touchmove',stopTouch,{passive:false});
+  document.addEventListener('touchmove',stopTouch,{passive:false}); window.addEventListener('touchend',end,{once:true});
 }
 /* 머리글을 350ms 길게 누르면 드래그 시작. 그 전에 움직이면 스크롤, 그 전에 떼면 펼치기(기본 동작) */
 function pressToDrag(ev,sm){
   if(ev.target.closest('[data-mdone]'))return; if(ev.button&&ev.button!==0)return;
   const x0=ev.clientX,y0=ev.clientY; let fired=false;
   const cancel=()=>{clearTimeout(t); sm.removeEventListener('pointermove',mv); sm.removeEventListener('pointerup',cancel); sm.removeEventListener('pointercancel',cancel); };
-  const mv=e=>{if(Math.abs(e.clientX-x0)>8||Math.abs(e.clientY-y0)>8)cancel()};
+  const mv=e=>{if(Math.abs(e.clientX-x0)>12||Math.abs(e.clientY-y0)>12)cancel()};
   const t=setTimeout(()=>{fired=true; cancel(); try{navigator.vibrate&&navigator.vibrate(12)}catch(e){}
     const card=sm.parentElement; sm.dataset.suppress='1'; setTimeout(()=>{delete sm.dataset.suppress},600);
     startDrag({pointerId:ev.pointerId,clientY:y0,button:0,preventDefault(){},stopPropagation(){}},sm);},350);

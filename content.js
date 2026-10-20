@@ -94,6 +94,8 @@ async function reorder(col,ids){
 }
 
 /* ---------- 길게 눌러 끌어서 정렬 (메모와 같은 방식) ---------- */
+/* iOS: 터치 시작 전에 등록된 non-passive 리스너만 스크롤을 확실히 막는다 */
+window.__dragBlock=window.__dragBlock||(()=>{const f=e=>{if(window.__dragActive)e.preventDefault()}; document.addEventListener('touchmove',f,{passive:false}); return f})();
 function makeSortable(listEl,sel,col){
   if(!listEl)return;
   listEl.querySelectorAll(sel).forEach(el=>{ if(el.dataset.sortable)return; el.dataset.sortable='1'; el.addEventListener('pointerdown',ev=>pressToDrag(ev,el,listEl,sel,col)); el.addEventListener('contextmenu',e=>{ if(loggedIn()&&!e.target.closest('a,input,textarea'))e.preventDefault(); }); });
@@ -102,7 +104,7 @@ function pressToDrag(ev,el,listEl,sel,col){
   if(!loggedIn())return; if(ev.button&&ev.button!==0)return; if(ev.target.closest('button,a,input,textarea,.cedit'))return;
   const x0=ev.clientX,y0=ev.clientY; let fired=false;
   const cancel=()=>{clearTimeout(t); el.removeEventListener('pointermove',mv); el.removeEventListener('pointerup',cancel); el.removeEventListener('pointercancel',cancel); };
-  const mv=e=>{if(Math.abs(e.clientX-x0)>8||Math.abs(e.clientY-y0)>8)cancel()};
+  const mv=e=>{if(Math.abs(e.clientX-x0)>12||Math.abs(e.clientY-y0)>12)cancel()};
   const t=setTimeout(()=>{fired=true; cancel(); try{navigator.vibrate&&navigator.vibrate(12)}catch(e){} startDrag(ev.pointerId,y0,el,listEl,sel,col);},350);
   el.addEventListener('pointermove',mv); el.addEventListener('pointerup',cancel); el.addEventListener('pointercancel',cancel);
 }
@@ -114,7 +116,7 @@ function startDrag(pointerId,startY,el,listEl,sel,col){
   const rects=cards.map(c=>{const r=c.getBoundingClientRect();return {top:r.top+sy(),h:r.height,mid:r.top+sy()+r.height/2}});
   const gap=Math.max(0,rects[1].top-(rects[0].top+rects[0].h)); const step=rects[from].h+gap;
   const startPage=startY+sy(); let to=from, moved=false, lastY=startY, raf=0, alive=true;
-  el.classList.add('lgdragging'); document.body.classList.add('lgnoselect'); C.dragging=true;
+  el.classList.add('lgdragging'); document.body.classList.add('lgnoselect'); C.dragging=true; window.__dragActive=true;
   const paint=()=>{ const dy=(lastY+sy())-startPage; el.style.transform=`translateY(${dy}px)`; const center=rects[from].mid+dy; let n=0; cards.forEach((c,j)=>{if(j!==from&&rects[j].mid<center)n++}); to=n;
     cards.forEach((c,j)=>{ if(j===from)return; let sh=0; if(j<from&&j>=to)sh=step; else if(j>from&&j<=to)sh=-step; c.style.transform=sh?`translateY(${sh}px)`:''; }); };
   // 손가락이 화면 위·아래 가장자리에 가면 자동 스크롤 (맨 위·맨 아래로 옮길 수 있게)
@@ -128,13 +130,13 @@ function startDrag(pointerId,startY,el,listEl,sel,col){
     if(e&&e.pointerId!==undefined&&e.pointerId!==pointerId)return;
     alive=false; cancelAnimationFrame(raf);
     window.removeEventListener('pointermove',move,true); window.removeEventListener('pointerup',end,true); window.removeEventListener('pointercancel',end,true); document.removeEventListener('touchmove',stopTouch);
-    cards.forEach(c=>{c.style.transform=''}); el.classList.remove('lgdragging'); document.body.classList.remove('lgnoselect'); C.dragging=false;
+    cards.forEach(c=>{c.style.transform=''}); el.classList.remove('lgdragging'); document.body.classList.remove('lgnoselect'); C.dragging=false; window.__dragActive=false;
     if(!moved||to===from)return;
     const ids=cards.map(c=>c.dataset.eid); const [id]=ids.splice(from,1); ids.splice(to,0,id);
     await reorder(col,ids);
   };
   window.addEventListener('pointermove',move,true); window.addEventListener('pointerup',end,true); window.addEventListener('pointercancel',end,true);
-  document.addEventListener('touchmove',stopTouch,{passive:false});
+  document.addEventListener('touchmove',stopTouch,{passive:false}); window.addEventListener('touchend',end,{once:true});
 }
 
 /* ---------- 화면 꾸미기: 렌더 뒤마다 (편집 버튼 · 추가 바 · 정렬) ---------- */
