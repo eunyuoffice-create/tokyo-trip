@@ -278,7 +278,9 @@ function rowHtml(e){
   }
   // 공용 줄은 왼쪽 체크로 이 건만 따로 정산 완료 처리 (잔액에서 빠짐)
   const check=priv?'':`<button class="lgbox lgbox-s" data-settled="${esc(e.id)}" aria-label="이 건 정산 완료" aria-pressed="${!!e.settled}">${svgCheck}</button>`;
-  return `<div class="lgrow ${!priv&&e.settled?'lgsettled':''}">${check}<button class="lgrowbody" data-exp="${esc(e.id)}"><div class="lgmid"><div class="ti">${priv?`<span class="lglock">${svgLock}</span>`:''}<span class="lgtrunc">${esc(e.title||'(내용 없음)')}</span></div><div class="si">${sub}${e.memo?`<span class="lgtrunc">· ${esc(e.memo)}</span>`:''}</div></div><div class="lgamt"><div class="aa">${fmt(e.amount,e.cur)}</div>${right}</div><span class="lgchev" aria-hidden="true"></span></button></div>`;
+  const links=(Array.isArray(e.links)?e.links:[]).filter(x=>x&&x.u);
+  const linkHtml=links.length?`<div class="lgelinks">${links.map(x=>`<a class="lgelink" href="${esc(x.u)}" target="_blank" rel="noopener">${esc(x.l||x.u.replace(/^https?:\/\//,'').slice(0,24))} ↗</a>`).join('')}</div>`:'';
+  return `<div class="lgrow ${!priv&&e.settled?'lgsettled':''}">${check}<div class="lgrowbody" role="button" tabindex="0" data-exp="${esc(e.id)}"><div class="lgmid"><div class="ti">${priv?`<span class="lglock">${svgLock}</span>`:''}<span class="lgtrunc">${esc(e.title||'(내용 없음)')}</span></div><div class="si">${sub}${e.memo?`<span class="lgtrunc">· ${esc(e.memo)}</span>`:''}</div>${linkHtml}</div><div class="lgamt"><div class="aa">${fmt(e.amount,e.cur)}</div>${right}</div><span class="lgchev" aria-hidden="true"></span></div></div>`;
 }
 
 /* ---------- 메모: 목록은 한 줄씩, 쓰기·보기는 시트에서 ---------- */
@@ -408,7 +410,7 @@ function pressToDrag(ev,sm){
 function bind(c){
   qa('[data-act]',c).forEach(b=>b.onclick=()=>{const a=b.dataset.act; if(a==='retry'){S.screen='loading';render();boot()} else if(a==='settings')openSettings(); else if(a==='setup-add')setupAddRow(); else if(a==='login')openLogin(); else if(a==='logout'){logout();toast('로그아웃했어요')} else if(a==='add-shared')openExpense(null,{priv:false}); else if(a==='add-mine')openExpense(null,{priv:true}); else if(a==='forgot')openForgot(); });
   qa('[data-scope]',c).forEach(b=>b.onclick=()=>{S.scope=b.dataset.scope;render()});
-  qa('[data-exp]',c).forEach(b=>b.onclick=()=>openExpense(S.expenses.find(e=>e.id===b.dataset.exp)));
+  qa('[data-exp]',c).forEach(b=>b.onclick=ev=>{if(ev.target.closest('a'))return; openExpense(S.expenses.find(e=>e.id===b.dataset.exp))});
   qa('[data-settled]',c).forEach(b=>b.onclick=()=>{const e=S.expenses.find(x=>x.id===b.dataset.settled);if(!e)return;write([{op:'update',col:'expenses',id:e.id,data:{settled:!e.settled,settledBy:!e.settled?S.me:null,settleId:null}}],e.settled?'다시 잔액에 넣었어요':'이 건만 정산 완료했어요')});
   qa('[data-tr]',c).forEach(b=>b.onclick=()=>openRecord(S.transfers.find(t=>t.id===b.dataset.tr)));
   qa('[data-settle]',c).forEach(b=>b.onclick=()=>{const [f,t,a,cur]=b.dataset.settle.split('|');openSettle({from:+f,to:+t,amount:+a,cur})});
@@ -450,11 +452,14 @@ function arm(btn,fn){ if(!btn)return; btn.onclick=()=>{ if(btn.dataset.arm!=='1'
 function openSheet(html){ q('.lgsheet .lgin',ov).innerHTML=`<div class="lggrab"></div>`+html; q('.lgsheet',ov).classList.add('lgopen'); q('.lgscrim',ov).classList.add('lgopen'); document.body.style.overflow='hidden'; qa('[data-close]',ov).forEach(b=>b.onclick=closeSheet); q('.lgsheet',ov).scrollTop=0; }
 function closeSheet(){ q('.lgsheet').classList.remove('lgopen'); q('.lgscrim').classList.remove('lgopen'); document.body.style.overflow=''; }
 
+const expLinkRow=(l,u)=>`<div class="lgclink"><input type="text" placeholder="이름" value="${esc(l||'')}" maxlength="40"><input type="text" inputmode="url" autocapitalize="off" placeholder="https://…" value="${esc(u||'')}"><button type="button" class="lgx" data-dellink aria-label="삭제">×</button></div>`;
+const readExpLinks=sh=>[...sh.querySelectorAll('#fLinks .lgclink')].map(r=>{const [a,b]=r.querySelectorAll('input'); let u=(b.value||'').trim(); if(!u)return null; if(!/^https?:\/\//i.test(u))u='https://'+u; return {l:(a.value||'').trim(),u}}).filter(Boolean);
+function wireExpLinks(sh){ sh.querySelectorAll('#fLinks [data-dellink]').forEach(b=>b.onclick=()=>b.closest('.lgclink').remove()); const add=sh.querySelector('#fAddLink'); if(add)add.onclick=()=>{sh.querySelector('#fLinks').insertAdjacentHTML('beforeend',expLinkRow('','')); wireExpLinks(sh); const f=sh.querySelector('#fLinks .lgclink:last-child input'); if(f)f.focus(); sh.querySelector('#fMore').open=true;}; }
 function openExpense(e,opts={}){
   const isNew=!e; const n=S.people.length; const today=todayKey();
   const d={id:e?.id,title:e?.title||'',amount:e?.amount||'',cur:e?.cur||'JPY',day:e?.day||today,cat:e?.cat||'식비',
     priv:e?!isShared(e):!!opts.priv,payer:e?e.payer:S.me,parts:e?(e.parts&&e.parts.length?e.parts.slice():[...Array(n).keys()]):[...Array(n).keys()],custom:e?.custom?{...e.custom}:null,memo:e?.memo||'',settled:!!(e&&e.settled)};
-  const moreOpen=!isNew&&(!!d.custom||(!d.priv&&d.parts.length!==n)||!!d.memo||d.settled);
+  const moreOpen=!isNew&&(!!d.custom||(!d.priv&&d.parts.length!==n)||!!d.memo||d.settled||(Array.isArray(e?.links)&&e.links.length>0));
   const dayShort=k=>{const x=dayOf(k);return k===today?'오늘':(x.d==='pre'?'출발 전':`D${x.n}`)};
   openSheet(`<h2><span id="fHead">${isNew?(d.priv?'내 지출':'공용 지출'):'지출 수정'}</span><button type="button" data-close>닫기</button></h2><form id="expForm">
     <div class="lgf"><label>금액 <span class="lgreq" aria-label="필수">*</span></label><div class="lgamount"><input type="text" inputmode="decimal" id="fAmt" placeholder="0" value="${d.amount?esc(d.amount):''}" aria-label="금액"><div class="lgseg" id="fCur"><button type="button" data-c="JPY" aria-pressed="${d.cur==='JPY'}">¥</button><button type="button" data-c="KRW" aria-pressed="${d.cur==='KRW'}">₩</button></div></div></div>
@@ -470,11 +475,12 @@ function openExpense(e,opts={}){
         ${isNew?'':`<div class="lgf"><div class="lgtoggle"><span>이 건은 정산 완료 <span class="lgsub">잔액에서 뺌</span></span><input type="checkbox" id="fSettled" ${d.settled?'checked':''}></div></div>`}
       </div>
       <div class="lgf"><label>메모</label><input type="text" id="fMemo" placeholder="영수증, 누구 거 샀는지 등" value="${esc(d.memo)}" maxlength="120"></div>
+    <div class="lgf"><label>링크 <span class="lgsub">예약 페이지, 영수증 사진 주소 등</span></label><div class="lgclinks" id="fLinks">${(Array.isArray(e?.links)?e.links:[]).map(x=>expLinkRow(x.l,x.u)).join('')}</div><button type="button" class="lglink" id="fAddLink">+ 링크 추가</button></div>
     </details>
     <div class="lgactions">${isNew?'':'<button type="button" class="lgbtn lgdanger" id="fDel">삭제</button>'}<button type="submit" class="lgbtn lgprimary" id="fSave">${isNew?'저장':'수정 저장'}</button></div></form>`);
   const sh=q('.lgsheet',ov); const g=s=>q(s,sh);
   const amt=()=>parseNum(g('#fAmt').value);
-  const sum=()=>{const bits=[dayShort(d.day),d.cat]; if(!d.priv){ if(d.parts.length!==n)bits.push(d.parts.map(pname).join('·')+' 몫'); if(g('#fCustom').checked)bits.push('직접 나눔'); } if(d.memo)bits.push('메모'); g('#fMoreSum').textContent=bits.join(' · ')};
+  const sum=()=>{const bits=[dayShort(d.day),d.cat]; if(!d.priv){ if(d.parts.length!==n)bits.push(d.parts.map(pname).join('·')+' 몫'); if(g('#fCustom').checked)bits.push('직접 나눔'); } if(d.memo)bits.push('메모'); const nl=g('#fLinks')?g('#fLinks').querySelectorAll('.lgclink').length:0; if(nl)bits.push(`링크 ${nl}`); g('#fMoreSum').textContent=bits.join(' · ')};
   const partsHint=()=>{const a=amt(),k=d.parts.length; const el=g('#fPartsHint'); if(d.priv){el.textContent='';return} el.textContent=k===0?'나눌 사람을 "자세히"에서 골라주세요':k===1?(d.parts[0]===d.payer?`${pname(d.payer)} 혼자 몫 — 나눔 없음`:`${pname(d.parts[0])} 몫 전액 → ${pname(d.payer)}에게 ${fmt(a,d.cur)}`):(a>0?`${k}명이 1인 ${fmt(a/k,d.cur)}씩`:`${k}명이 똑같이 나눠요`)};
   const customHint=()=>{if(!g('#fCustom').checked)return;const s=d.parts.reduce((t,i)=>t+(d.custom&&+d.custom[i]||0),0);const rest=amt()-s;const el=g('#fCustomHint');el.className='lghint'+(Math.abs(rest)>0.5?' bad':'');el.textContent=Math.abs(rest)>0.5?`합계 ${fmt(s,d.cur)} · 남는 ${fmt(rest,d.cur)}은 ${pname(d.parts[0]??d.payer)}에게 붙어요`:'합계가 딱 맞아요'};
   const customBox=()=>{const box=g('#fCustomAmts'); box.innerHTML=d.parts.map(i=>`<label>${esc(pname(i))}<input type="text" inputmode="decimal" data-ci="${i}" value="${d.custom&&d.custom[i]?esc(d.custom[i]):''}" placeholder="0"></label>`).join(''); box.querySelectorAll('input').forEach(inp=>inp.oninput=()=>{d.custom=d.custom||{};d.custom[inp.dataset.ci]=parseNum(inp.value);customHint()}); customHint()};
@@ -488,15 +494,16 @@ function openExpense(e,opts={}){
   qa('#fPayer button',sh).forEach(b=>b.onclick=()=>{d.payer=+b.dataset.i;qa('#fPayer button',sh).forEach(x=>x.setAttribute('aria-pressed',x===b));partsHint()});
   qa('#fParts button',sh).forEach(b=>b.onclick=()=>{const i=+b.dataset.i;d.parts=d.parts.includes(i)?d.parts.filter(x=>x!==i):[...d.parts,i].sort();b.setAttribute('aria-pressed',d.parts.includes(i));partsHint();sum();if(g('#fCustom').checked)customBox()});
   g('#fCustom').onchange=()=>{g('#fCustomBox').hidden=!g('#fCustom').checked;if(g('#fCustom').checked)customBox();sum()};
-  partsHint(); sum(); if(d.custom)customBox();
+  partsHint(); sum(); if(d.custom)customBox(); wireExpLinks(sh); sh.querySelector('#fLinks').addEventListener('input',sum); const al=g('#fAddLink'); const al0=al.onclick; al.onclick=()=>{al0();sum()};
   g('#expForm').onsubmit=async ev=>{ev.preventDefault();
     const a=amt(); if(!(a>0)){toast('금액을 넣어주세요');g('#fAmt').focus();return}
     let body;
-    if(d.priv) body={owner:S.me,title:g('#fTitle').value.trim(),amount:a,cur:d.cur,day:d.day,cat:d.cat,payer:S.me,parts:[S.me],custom:null,memo:g('#fMemo').value.trim(),ts:e?.ts||Date.now()};
+    const links=readExpLinks(sh);
+    if(d.priv) body={owner:S.me,title:g('#fTitle').value.trim(),amount:a,cur:d.cur,day:d.day,cat:d.cat,payer:S.me,parts:[S.me],custom:null,memo:g('#fMemo').value.trim(),links,ts:e?.ts||Date.now()};
     else{ if(!d.parts.length){toast('나눌 사람을 골라주세요');g('#fMore').open=true;return}
       const useCustom=g('#fCustom').checked; const custom=useCustom?Object.fromEntries(d.parts.map(i=>[i,+(d.custom&&d.custom[i])||0])):null;
       const settled=isNew?false:!!g('#fSettled').checked;
-      body={owner:null,title:g('#fTitle').value.trim(),amount:a,cur:d.cur,day:d.day,cat:d.cat,payer:d.payer,parts:d.parts,custom,memo:g('#fMemo').value.trim(),ts:e?.ts||Date.now(),settled,settledBy:settled?(e&&e.settledBy!==undefined&&e.settledBy!==null?e.settledBy:S.me):null,settleId:settled?(e&&e.settleId)||null:null}; }
+      body={owner:null,title:g('#fTitle').value.trim(),amount:a,cur:d.cur,day:d.day,cat:d.cat,payer:d.payer,parts:d.parts,custom,memo:g('#fMemo').value.trim(),links,ts:e?.ts||Date.now(),settled,settledBy:settled?(e&&e.settledBy!==undefined&&e.settledBy!==null?e.settledBy:S.me):null,settleId:settled?(e&&e.settleId)||null:null}; }
     closeSheet();
     await write([{op:'set',col:'expenses',id:d.id||uid(),data:body}],isNew?'저장했어요':'수정했어요');
   };

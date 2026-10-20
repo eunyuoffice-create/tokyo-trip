@@ -475,3 +475,12 @@ body.body-edit .ev,body.body-edit .card{-webkit-user-select:none;user-select:non
   .lg .lgbar .lgaddexp svg{width:17px;height:17px}
   .panel.lg-haspad{padding-bottom:66px}
 }
+
+/* 지출 링크 */
+.lg .lgrowbody{cursor:pointer}
+.lg .lgelinks{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px}
+.lg .lgelink{display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:999px;background:#E3ECFB;color:#2F5FB3;font-size:11.5px;font-weight:600;text-decoration:none;white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis}
+.lg .lgclinks{display:flex;flex-direction:column;gap:6px;margin-bottom:6px}
+.lg .lgclink{display:grid;grid-template-columns:1fr 1.4fr 28px;gap:6px;align-items:center}
+.lg .lgclink input{height:40px !important;border-radius:10px;border:1px solid var(--line);background:var(--bg);padding:0 10px;min-width:0;font-size:13.5px}
+.lg .lgclink .lgx{width:28px;height:28px;border-radius:7px;display:grid;place-items:center;color:var(--muted);font-size:18px}
