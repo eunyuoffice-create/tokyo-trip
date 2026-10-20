@@ -304,3 +304,13 @@
 .lg .lgsec h3{font-size:14px}
 .lgslot .lguser{height:28px;font-size:12.5px}
 .lgslot .lguser.lguser-off{background:var(--accent);color:#fff;box-shadow:0 3px 10px rgba(217,55,43,.3)}
+
+/* 메모 종류 구분: 체크 리스트 = 초록, 글 = 파랑 */
+.lg .lgmemoacc summary .lgmic.lgmic-list{background:var(--ok-soft);color:var(--ok)}
+.lg .lgmemoacc summary .lgmic.lgmic-text{background:#E3ECFB;color:#2F5FB3}
+.lg .lgmemoacc summary .lgmic svg{width:17px;height:17px}
+.lg .lgmkind{font-size:11px;font-weight:700;padding:2px 7px;border-radius:999px;flex-shrink:0;letter-spacing:.02em}
+.lg .lgmkind-list{background:var(--ok-soft);color:var(--ok)}
+.lg .lgmkind-text{background:#E3ECFB;color:#2F5FB3}
+.lg .lgsheet #mType .lgchip[data-t="list"][aria-pressed="true"]{background:var(--ok);color:#fff}
+.lg .lgsheet #mType .lgchip[data-t="text"][aria-pressed="true"]{background:#2F5FB3;color:#fff}
