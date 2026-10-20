@@ -87,6 +87,29 @@ main{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px
 .ib-row span:last-child{flex:1;min-width:0;color:var(--muted)}
 .ib-tag{flex:0 0 auto;font-family:var(--mono);font-size:11.5px;font-weight:700;padding:2px 7px;border-radius:6px;background:var(--chip)}
 .ib-tag.ok{background:var(--ok-soft);color:var(--ok)} .ib-tag.no{background:var(--accent-soft);color:var(--accent)}
+.kcbanner{background:var(--fg);color:var(--bg);border-radius:14px;padding:14px 16px;margin:0 0 12px}
+.kcbanner .kcb-k{font-size:12px;opacity:.8;letter-spacing:.02em} .kcbanner .kcb-k small{margin-left:4px;opacity:.8}
+.kcbanner .kcb-v{font-family:var(--mono);font-size:30px;font-weight:700;letter-spacing:-.02em;line-height:1.2;margin:2px 0 4px} .kcbanner .kcb-v small{font-family:var(--sans);font-size:13px;font-weight:500;opacity:.8;margin-left:4px}
+.kcbanner .kcb-s{font-size:12.5px;opacity:.9;line-height:1.5}
+.kct{border:1px solid var(--line);border-radius:12px;overflow:hidden;font-size:13px;background:var(--surface)}
+.kcrow{display:grid;grid-template-columns:1.7fr .8fr .6fr .7fr;align-items:center;border-top:1px solid var(--line);cursor:pointer}
+.kcrow:first-child{border-top:0}
+.kcrow>div{padding:9px 6px;display:flex;align-items:center;justify-content:center;min-width:0}
+.kcrow .kcn{justify-content:flex-start;flex-direction:column;align-items:flex-start;gap:1px;font-weight:600;line-height:1.3;padding-left:12px;position:relative}
+.kcrow .kcn small{font-size:11px;color:var(--muted);font-weight:500}
+.kcrow.kchead{background:var(--bg);cursor:default} .kcrow.kchead>div{font-size:11.5px;font-weight:700;color:var(--muted);padding:7px 6px} .kcrow.kchead .kcn{padding-left:12px}
+.kcrow:nth-child(odd):not(.kchead){background:#FAFAF8}
+.kcrow .kcdet{display:none;grid-column:1 / -1;justify-content:flex-start;font-size:13px;line-height:1.6;color:var(--fg);padding:4px 12px 12px;white-space:pre-line;border-top:1px dashed var(--line);margin-top:2px}
+.kcrow.open{background:var(--accent-soft)} .kcrow.open .kcdet{display:block}
+.kcrow .kcn::after{content:"▾";position:absolute;right:2px;top:9px;font-size:10px;color:var(--line)} .kcrow.open .kcn::after{content:"▴";color:var(--accent)}
+.kc{display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:24px;padding:0 6px;border-radius:7px;font-size:12.5px;font-weight:800}
+.kc.ok{background:var(--ok-soft);color:var(--ok)} .kc.no{background:var(--accent-soft);color:var(--accent)} .kc.mid{background:var(--warn-soft);color:var(--warn);font-size:11.5px}
+.kcrow.open .kc{box-shadow:0 0 0 1px rgba(255,255,255,.6) inset}
+@media (min-width:900px){.kct{font-size:14.5px}.kcrow .kcn small{font-size:12.5px}.kcrow .kcdet{font-size:14.5px}.kcbanner .kcb-v{font-size:34px}}
+.ib-tag.bag{background:var(--chip);color:var(--fg)}
+.ib-tag.mid{background:var(--warn-soft);color:var(--warn)}
+.ib-bagrow span:last-child .ib-tag{margin-right:4px;font-size:11px}
+.ib-bagrow{align-items:flex-start}
 .ib-h{margin:16px 0 6px;font-size:14px;font-weight:700}
 .ib-ul{margin:0;padding-left:18px} .ib-ul li{margin:3px 0}
 .ib-src{margin:14px 0 0;font-size:12px;color:var(--muted)} .ib-src a{color:var(--accent)}
@@ -219,6 +242,65 @@ details.memo[open] summary{margin-bottom:10px}
 .tabs button{flex:1;height:var(--tab-h);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11.5px;font-weight:500;color:var(--muted)}
 .tabs button svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .tabs button[aria-selected="true"]{color:var(--accent);font-weight:600}
+
+/* ---------- UI v2 (가독성): 따뜻한 배경, 테두리 카드, 큰 글자, 타임라인 레일, 메모 접기 ---------- */
+:root{--bg:#F6F6F3;--surface:#FFFFFF;--fg:#1B1F27;--muted:#5F6775;--line:#E4E4DF;--chip:#EEEEE9;--accent-soft:#FBEAE7;--shadow:0 1px 1px rgba(27,31,39,.04),0 2px 8px rgba(27,31,39,.04)}
+body{font-size:16px;line-height:1.55}
+.top{border-bottom:1px solid var(--line)}
+.brand h1{font-size:18px;letter-spacing:-.02em}
+.brand .dates{font-size:12.5px}
+.chip{padding:7px 13px;font-size:13.5px;font-weight:600;border:1px solid transparent}
+.chip[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
+.chip .sub{font-size:11.5px}
+main{padding-block:16px calc(var(--tab-h) + env(safe-area-inset-bottom,0px) + 24px)}
+.sec-h{margin:22px 0 10px}
+.sec-h h2{font-size:12.5px;letter-spacing:.08em;color:var(--muted)}
+/* 일정: 왼쪽 세로 레일 + 점 */
+.tl{gap:12px;position:relative;padding-left:2px}
+.tl::before{content:"";position:absolute;left:10px;top:14px;bottom:14px;width:2px;background:var(--line);border-radius:2px}
+.ev{grid-template-columns:64px 1fr;gap:12px;padding:14px 14px 14px 26px;border-radius:16px;box-shadow:var(--shadow);border:1px solid var(--line)}
+.ev::before{content:"";position:absolute;left:-1px;top:19px;width:12px;height:12px;border-radius:50%;background:var(--surface);border:3px solid var(--accent);box-sizing:border-box;transform:translateX(-50%);margin-left:11px}
+.ev .t{font-size:15px;font-weight:700;color:var(--fg);letter-spacing:-.01em;padding-top:1px}
+.ev .t small{font-size:11px;color:var(--muted);margin-top:2px}
+.ev .place{font-size:12.5px;gap:6px}
+.ev .title{font-size:16.5px;font-weight:700;margin-top:2px;line-height:1.35;letter-spacing:-.01em}
+.ev.big .title{font-size:17.5px}
+.ev .route{margin-top:9px;padding:9px 11px;border-radius:10px;background:var(--bg);border:1px solid var(--line);font-size:13px;color:var(--muted)}
+.ev .route .rf{font-size:13.5px}
+.ev .more{margin-top:8px;height:30px;padding:0 10px 0 8px;border-radius:8px;background:var(--chip);color:var(--fg);font-size:12.5px;font-weight:600}
+.ev .more::before{font-size:10px;color:var(--muted)}
+.ev > .cedit{top:10px;right:10px;width:28px;height:28px;background:transparent;border:1px solid var(--line)}
+.det{font-size:14px;line-height:1.65;border-top:1px solid var(--line);margin-top:10px;padding-top:10px}
+.det .k{font-size:12px;letter-spacing:.04em;text-transform:uppercase;margin-top:6px}
+.pill{font-size:11px;padding:2px 8px}
+.btn{font-size:12.5px;padding:6px 11px}
+/* 맛집·갈 곳 카드: 이름 크게, 메타 한 줄, 메모는 3줄까지만 (누르면 펼침) */
+.card{border-radius:16px;box-shadow:var(--shadow);border:1px solid var(--line);padding:14px 14px 12px;gap:5px 10px}
+.card .n{font-size:16px;font-weight:700;line-height:1.35;letter-spacing:-.01em}
+.card .meta{font-size:12.5px;gap:4px 8px;align-items:center}
+.card .meta .h{font-size:11.5px;color:var(--muted);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:3px 7px;flex-basis:100%;max-width:100%;white-space:normal;overflow-wrap:anywhere;line-height:1.45}
+.card .meta .stars{color:#D9A21B;letter-spacing:-.5px}
+.card .note{font-size:13.5px;line-height:1.55;color:var(--muted);margin-top:4px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}
+.card .note.open{display:block;-webkit-line-clamp:unset;color:var(--fg)}
+.card .note::after{content:""}
+.card .chk{width:30px;height:30px;border-width:1.5px}
+.card .acts{margin-top:8px;gap:6px}
+.card .acts .cedit{width:28px;height:28px;background:transparent;border:1px solid var(--line)}
+.btn.map{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.type-h{font-size:12px;letter-spacing:.06em;margin:16px 0 8px}
+.search{border-radius:14px;padding:10px 14px}
+.search input{font-size:15.5px}
+.seg{border-radius:12px}
+.seg button{font-size:13.5px;padding:8px 4px}
+.hint{font-size:12.5px}
+/* 메모 카드 */
+.memo{border-radius:16px;box-shadow:var(--shadow);border:1px solid var(--line);padding:16px}
+.memo h3{font-size:16px}
+/* 하단 탭: 선택 탭에 알약 배경 */
+.tabs{border-top:1px solid var(--line);box-shadow:0 -4px 16px rgba(27,31,39,.04)}
+.tabs button{font-size:11.5px;gap:4px}
+.tabs button svg{width:22px;height:22px;padding:2px;border-radius:8px}
+.tabs button[aria-selected="true"] svg{background:var(--accent-soft)}
 /* ---------- PC (900px 이상): 글자 키우고, 탭을 위로, 카드 2열 ---------- */
 @media (min-width:900px){
   :root{--tab-h:0px;--pc-nav:56px}
@@ -690,11 +772,11 @@ const PLACES = [
 /* 일본 다녀오면 다들 사 오는 것들 — 체크해서 쓰기 */
 const SHOP = {
  '돈키호테 (동구역앞점 24시간 · 5,000엔 이상 면세)':[
-  '곤약젤리 (오리히로) · 코로로 젤리 · 알포트 초콜릿 · 푸치 시리즈',
+  '곤약젤리 (오리히로 짜먹는 것만 1~2봉지 · 캐리어에) · 코로로 젤리 · 알포트 초콜릿 · 푸치 시리즈 — 컵형 곤약젤리는 한국 반입 금지',
   '킷캣 한정맛 (말차·호지차·딸기) · 로이스 생초콜릿 (냉장 코너)',
   '자가비 · 자가리코 · 포키 한정맛 · 도쿄 한정 과자',
   '호로요이 · 산토리 생맥주 캔 · 츄하이 (주류는 면세 포장)',
-  '이치란 봉지라멘 · 마루짱 세이멘 · 고형 카레 루 (고쿠마로·자와카레)',
+  '이치란 봉지라멘 · 마루짱 세이멘 · 고형 카레 루 (고쿠마로·자와카레) — 고기 성분(豚·牛·鶏·肉エキス) 들어간 건 한국 반입 금지라 성분표 확인',
   '휴족시간 · 메구리즘 스팀 아이마스크 · 동전파스 (로이히츠보코) · 샤론파스',
   '카베진 (위장) · 오타이산 (소화) · 이브 (진통) · 파브론 (감기) · 무히 (벌레)',
   '아이봉 (눈 세정) · 로토 안약 · 비오레 UV 아쿠아리치 선크림 · 센카 퍼펙트 휩',
@@ -840,6 +922,37 @@ const RESTRICTED_HTML=`
 <h3 class="ib-h">우리 짐 기준 체크</h3>
 <ul class="ib-ul"><li>헤어오일·왁스·선크림·클렌징 밀크·치약: 100ml 이하로 소분해 지퍼백, 아니면 위탁.</li><li>판고데기: 기내·위탁 모두 가능 (배터리 내장형은 기내).</li><li>보조배터리: 기내 가방에. 위탁 ✕.</li><li>스튜디오 반입 금지인 눈썹칼·미용가위는 위탁 가방에.</li></ul>
 <p class="ib-src">출처: <a href="https://www.airport.kr/ap_ko/905/subview.do" target="_blank" rel="noopener">인천국제공항 제한물품 안내 ↗</a> · 문의 1577-2600</p>`;
+/* 일본 → 한국 반입 주의. 관세청·농림축산검역본부·식약처 안내 기준 (2026-10-20 정리). 줄을 누르면 그 줄의 자세한 조건이 펼쳐진다 */
+const KC_ROWS=[
+ {n:'술',note:'2병 · 2L · US$400',r:'l',c:'x',k:'o',d:'세 가지(2병 이하, 합계 2L 이하, US$400 이하)를 모두 만족해야 면세. 하나라도 넘으면 전부 과세(주세·교육세 붙어 비쌈). 사케·위스키·우메슈 전부 합산. 기내는 공항 면세점에서 산 밀봉 봉투(STEB)만 예외, 시내 구매분은 캐리어로. 캐리어는 24~70도 1인 5L까지, 24도 이하는 제한 없음, 70도 초과는 ✕. 깨지지 않게 옷으로 감싸기.'},
+ {n:'담배',note:'200개비 (1보루)',r:'l',c:'o',k:'o',d:'궐련 200개비 또는 전자담배 스틱 200개비, 액상 20ml까지 면세. 19세 미만은 술·담배 면세 없음.'},
+ {n:'일반약 · 건강식품',note:'각 6병',r:'l',c:'o',k:'o',d:'자가 사용 범위에서 의약품 6병(또는 3개월분), 건강기능식품 6병. 카베진·오타이산·이브·파브론·동전파스 같은 건 몇 개 사도 문제없음. 시럽·안약은 기내 100ml 규정, 넘으면 캐리어로. 알약·파스는 어디든 ○.'},
+ {n:'화장품 · 향수 · 스프레이',note:'기내 100ml',r:'o',c:'d',k:'o',d:'기내는 개당 100ml 이하를 1L 지퍼백 하나에. 캐리어는 ○, 스프레이는 개당 500ml·총 2L까지. 향수는 면세 100ml(초과분 과세). 일본 면세(소모품 밀봉 포장)는 한국 도착 전 뜯지 않기.'},
+ {n:'과자 · 초콜릿 · 차 · 굿즈',note:'로이스는 보냉백',r:'o',c:'o',k:'o',d:'킷캣·포키·자가비·도쿄바나나·차·꿀·인스턴트 커피·캐릭터 굿즈·문구 전부 문제없음. 로이스 생초콜릿은 냉장품이라 보냉백에 넣어 캐리어로(10월이면 괜찮음). 금액은 US$800 한도에 합산.'},
+ {n:'곤약젤리 (컵형)',note:'압수',r:'x',c:'x',k:'x',d:'컵에 든 곤약젤리는 질식 사고 때문에 국내 반입 금지. 어디에 넣어도 세관에서 통관 불가.'},
+ {n:'곤약젤리 (짜먹는 파우치)',note:'1~2봉지 정도만',r:'d',c:'d',k:'o',d:'오리히로 같은 짜먹는 파우치·튜브형은 개인 소비 범위(보통 1~2봉지, 10~20개 내외)는 대체로 통과. 2023년 8월부터 해외직구 반입은 차단됐고, 많이 들고 오면 판매용으로 봐서 세관에서 압수된 사례가 있어요. 공식 개수 기준은 없음. 기내는 100ml 액체 규정이라 캐리어에.'},
+ {n:'햄 · 소시지 · 육포 · 고기 든 식품',note:'과태료 최대 1,000만',r:'x',c:'x',k:'x',d:'가축 전염병 때문에 전면 금지. 햄·소시지·베이컨·육포는 물론 고기 성분이 든 라면·카레 루·과자·소스·만두도 해당. 진공포장·조리된 것·면세점 구매도 예외 없음. 미신고 적발 시 1차 500만원, 최대 1,000만원 과태료. 성분표에 豚·牛·鶏·肉·エキス 있으면 의심하고 빼기.'},
+ {n:'생과일 · 채소 · 씨앗',note:'가공품은 ○',r:'x',c:'x',k:'x',d:'귤·딸기·멜론 같은 생과일, 흙 묻은 채소, 씨앗·화분은 식물검역에서 거의 다 폐기. 건과일·잼·과자 같은 가공품은 ○(잼은 액체라 기내 100ml).'},
+ {n:'치즈 · 버터',note:'세관신고서 체크',r:'r',c:'o',k:'o',d:'유제품은 검역 신고 대상. 밀봉된 가공 치즈·버터 소량은 신고하면 통과되는 편. 입국 세관신고서의 "동식물·축산물" 칸에 체크하고 검역대에서 보여주면 돼요.'},
+ {n:'우유 · 요거트',note:'액체',r:'r',c:'x',k:'o',d:'검역 신고 대상이고 액체라 기내 ✕. 캐리어에 넣어도 새면 곤란하니 굳이 사 오지 않는 게 편해요.'},
+ {n:'계란 · 생우유 · 생크림',note:'',r:'x',c:'x',k:'x',d:'비살균 축산물은 반입 금지.'},
+ {n:'수산물 (후쿠시마 등 8개현)',note:'후쿠시마·이바라키·군마·미야기·이와테·도치기·지바·아오모리',r:'x',c:'x',k:'x',d:'8개현산 수산물은 수입 금지가 계속 유지 중. 건어물·젓갈·명란도 포함. 산지 표시 확인.'},
+ {n:'수산물 (그 외 지역)',note:'밀봉 + 신고',r:'r',c:'x',k:'o',d:'검역 신고 대상. 가져온다면 밀봉해서 캐리어에 넣고 신고. 냄새·액체 때문에 기내는 사실상 ✕. 사지 않는 게 속 편함.'},
+ {n:'쌀',note:'소량',r:'r',c:'o',k:'o',d:'식물검역 신고 후 소량(자가소비)은 가능. 신고 안 하고 걸리면 과태료.'},
+ {n:'전기제품 (고데기·드라이어)',note:'100V 주의',r:'o',c:'o',k:'o',d:'반입은 문제없지만 일본 제품은 100V라 한국(220V)에서 바로 쓰면 고장. 프리볼트(100~240V) 표기가 있는 것만 사기. 가격은 US$800에 합산.'},
+ {n:'보조배터리 · 라이터 · 전자담배 기기',note:'라이터는 1개, 몸에',r:'o',c:'o',k:'x',d:'리튬배터리는 캐리어 ✕, 기내만(160Wh 이하 2개). 라이터는 1개만 몸에 소지. 전자담배 기기·배터리도 기내만, 액상은 기내 100ml 규정. 니코틴 고농도 액상은 반입 제한.'},
+ {n:'칼 · 가위 · 눈썹칼',note:'',r:'o',c:'x',k:'o',d:'반입은 되지만 기내 ✕. 식칼·가위·눈썹칼·미용가위 전부 캐리어에.'},
+ {n:'고가품 (전자기기·명품·시계)',note:'US$800 초과 신고',r:'r',c:'o',k:'o',d:'1인 US$800을 넘으면 입국 때 자진신고. 신고하면 세금 30% 감면(최대 20만원), 숨기다 걸리면 40% 가산. 둘이 각자 $800이니 영수증을 사람별로 나눠 결제하면 유리.'},
+];
+const kcSym=v=>({o:['ok','○'],x:['no','✕'],d:['mid','△'],r:['mid','신고'],l:['ok','한도']})[v];
+function kcHtml(){
+ const cell=v=>{const [c,t]=kcSym(v);return `<div><span class="kc ${c}">${t}</span></div>`};
+ return `<div class="kcbanner"><div class="kcb-k">1인 면세 한도 <small>둘이 따로 계산</small></div><div class="kcb-v">US$800 <small>≈ 110만원</small></div><div class="kcb-s">술 2병·2L·$400 별도 · 담배 200개비 · 향수 100ml · 넘으면 자진신고(세금 30% 감면)</div></div>
+ <p class="ib-note">줄을 누르면 자세한 조건이 펼쳐져요. ○ 가능 · △ 조건부 · ✕ 안 됨 · 신고 = 세관신고서 체크 · 한도 = 면세 한도 안에서. 기내 △는 100ml 지퍼백.</p>
+ <div class="kct"><div class="kcrow kchead"><div>품목</div><div>한국 반입</div><div>기내</div><div>캐리어</div></div>${KC_ROWS.map((r,i)=>`<div class="kcrow" data-kc="${i}" role="button" tabindex="0"><div class="kcn">${esc(r.n)}${r.note?`<small>${esc(r.note)}</small>`:''}</div>${cell(r.r)}${cell(r.c)}${cell(r.k)}<div class="kcdet">${nl(r.d)}</div></div>`).join('')}</div>
+ <p class="ib-src">출처: 관세청 여행자 휴대품 안내 · 농림축산검역본부 · 식약처 · 연합뉴스 팩트체크(2026.6) · 2026.10.20 정리. 기준은 바뀔 수 있어 출발 전 관세청 앱으로 한 번 더 확인.</p>`;
+}
+function bindKc(root){ root.querySelectorAll('.kcrow[data-kc]').forEach(r=>{ r.onclick=()=>r.classList.toggle('open'); }); }
 /* 이미지 크게 보기 (탭하면 닫힘) */
 function openLightbox(src,alt){
  let lb=document.getElementById('lightbox');
@@ -886,9 +999,10 @@ function routeHtml(r){
 function renderPlan(){
  const box=document.getElementById('p-plan');
  const days=getDays(); const day=days.find(d=>d.date===state.day)||days[0];
- box.innerHTML=`<div class="toolrow"><button type="button" class="btn tool" id="outfit-btn">🌡 기온별 옷차림</button><button type="button" class="btn tool" id="restrict-btn">✈ 기내 반입 제한물품</button><button type="button" class="btn tool" id="esim-btn">📱 eSIM 설치 가이드</button><div class="wx" id="wx-strip"></div></div><div class="sec-h"><h2>${day.n}일차 · ${day.date.slice(5).replace('-','월 ')}일 ${day.w}요일</h2><span class="cnt">${day.items.length}개</span></div><div class="tl"></div>`;
+ box.innerHTML=`<div class="toolrow"><button type="button" class="btn tool" id="outfit-btn">🌡 기온별 옷차림</button><button type="button" class="btn tool" id="restrict-btn">✈ 기내 반입 제한물품</button><button type="button" class="btn tool" id="kcustoms-btn">🛍 한국 반입 주의</button><button type="button" class="btn tool" id="esim-btn">📱 eSIM 설치 가이드</button><div class="wx" id="wx-strip"></div></div><div class="sec-h"><h2>${day.n}일차 · ${day.date.slice(5).replace('-','월 ')}일 ${day.w}요일</h2><span class="cnt">${day.items.length}개</span></div><div class="tl"></div>`;
  box.querySelector('#outfit-btn').onclick=()=>openLightbox('img/outfit.png','기온별 옷차림');
  box.querySelector('#restrict-btn').onclick=()=>openInfo('기내 반입 제한물품',RESTRICTED_HTML);
+ box.querySelector('#kcustoms-btn').onclick=()=>{openInfo('일본에서 사 올 때 주의 (한국 반입)',kcHtml()); bindKc(document.getElementById('infobox'));};
  box.querySelector('#esim-btn').onclick=()=>openInfo('eSIM 설치 가이드 (iPhone)','<p class="ib-note">아래로 스크롤하면서 순서대로 따라 하면 돼요. 한국에서는 설치만 하고 데이터 로밍은 하네다 도착 후에 켜기.</p><img class="ib-img" src="img/esim-guide-ios.jpg" alt="iPhone eSIM 설치 가이드" loading="lazy">');
  renderWx();
  const tl=box.querySelector('.tl');
@@ -928,6 +1042,7 @@ function cardHtml(item,id){
  </article>`;
 }
 function bindCards(root){
+ root.querySelectorAll('.card .note').forEach(n=>{ n.onclick=e=>{ if(e.target.closest('a'))return; n.classList.toggle('open'); }; });
  root.querySelectorAll('.chk').forEach(b=>b.onclick=()=>{
   const card=b.closest('.card'); const id=card.dataset.id;
   state.done[id]=!state.done[id]; if(!state.done[id]) delete state.done[id]; save();
