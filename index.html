@@ -58,7 +58,15 @@ main{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px
 
 /* timeline */
 .tl{display:flex;flex-direction:column;gap:10px}
-.toolrow{display:flex;gap:8px;margin:0 0 10px}
+.toolrow{display:flex;gap:8px;margin:0 0 10px;flex-wrap:wrap;align-items:center}
+.wx{display:flex;gap:6px;align-items:center;overflow-x:auto;scrollbar-width:none;flex:1 1 100%;min-width:0;padding-bottom:2px;margin-inline:-16px;padding-inline:16px}
+.wx::-webkit-scrollbar{display:none}
+.wx-day{flex:0 0 auto;display:flex;align-items:center;gap:4px;height:32px;padding:0 10px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-size:12px;color:var(--muted);white-space:nowrap}
+.wx-day[aria-pressed="true"]{border-color:var(--fg);color:var(--fg)}
+.wx-day .wt{font-family:var(--mono);color:var(--fg)} .wx-day .wt b{font-weight:600}
+.wx-day .wp{font-size:11px;color:#2F5FB3}
+.wx-note{font-size:11px;color:var(--muted);white-space:nowrap;padding-left:4px}
+@media (min-width:900px){.wx{flex:1 1 auto;margin-inline:0;padding-inline:0}.wx-day{height:36px;font-size:13.5px;padding:0 12px}.wx-note{font-size:12.5px}}
 .btn.tool{background:var(--surface);border-color:var(--line);font-weight:600;padding:7px 12px}
 #lightbox{position:fixed;inset:0;z-index:60;background:rgba(23,28,40,.88);display:flex;align-items:center;justify-content:center;padding:16px;cursor:zoom-out}
 #lightbox[hidden]{display:none}
@@ -663,6 +671,27 @@ function openLightbox(src,alt){
  if(!lb){ lb=document.createElement('div'); lb.id='lightbox'; lb.innerHTML='<button type="button" class="lb-x" aria-label="닫기">✕</button><img alt="">'; document.body.appendChild(lb); lb.onclick=()=>{lb.hidden=true;document.body.style.overflow=''}; }
  const im=lb.querySelector('img'); im.src=src; im.alt=alt||''; lb.hidden=false; document.body.style.overflow='hidden';
 }
+/* 도쿄 예상 기온 (Open-Meteo, 키 없음·CORS 허용). 3시간 캐시 */
+const WX_KEY='tokyo1024.wx'; let WX=null;
+try{ const w=JSON.parse(localStorage.getItem(WX_KEY)||'null'); if(w&&Date.now()-w.at<3*3600e3) WX=w; }catch(e){}
+const wxIcon=c=>c<=1?'☀️':c===2?'⛅':c===3?'☁️':c<=48?'🌫️':c<=57?'🌦️':(c<=67||(c>=80&&c<=82))?'🌧️':(c<=77||c===85||c===86)?'❄️':c>=95?'⛈️':'🌧️';
+async function loadWeather(){
+ if(WX&&Date.now()-WX.at<3*3600e3) return WX;
+ try{
+  const u=`https://api.open-meteo.com/v1/forecast?latitude=35.6895&longitude=139.6917&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weathercode&timezone=Asia%2FTokyo&start_date=${DAYS[0].date}&end_date=${DAYS[DAYS.length-1].date}`;
+  const j=await (await fetch(u)).json(); const d=j.daily; const days={};
+  d.time.forEach((t,i)=>{days[t]={hi:Math.round(d.temperature_2m_max[i]),lo:Math.round(d.temperature_2m_min[i]),pop:d.precipitation_probability_max[i],code:d.weathercode[i]}});
+  WX={at:Date.now(),days}; try{localStorage.setItem(WX_KEY,JSON.stringify(WX))}catch(e){}
+ }catch(e){ WX=WX||{at:0,days:{},err:true}; }
+ renderWx(); return WX;
+}
+function renderWx(){
+ const el=document.getElementById('wx-strip'); if(!el) return;
+ if(!WX||!Object.keys(WX.days||{}).length){ el.innerHTML=`<span class="wx-note">${WX&&WX.err?'예보를 못 가져왔어요':'도쿄 예보 불러오는 중…'}</span>`; if(!WX||!WX.err) loadWeather(); return; }
+ el.innerHTML=DAYS.map(d=>{const w=WX.days[d.date]; if(!w) return ''; return `<button type="button" class="wx-day" data-date="${d.date}" aria-pressed="${d.date===state.day}"><span class="wd">${d.date.slice(8)}일 ${d.w}</span><span class="wi">${wxIcon(w.code)}</span><span class="wt"><b>${w.hi}°</b>/${w.lo}°</span>${w.pop>=30?`<span class="wp">☔${w.pop}%</span>`:''}</button>`}).join('')+`<span class="wx-note">도쿄 예보 · ${new Date(WX.at).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})} 기준</span>`;
+ el.querySelectorAll('.wx-day').forEach(b=>b.onclick=()=>{state.day=b.dataset.date; save(); render();});
+ if(Date.now()-WX.at>=3*3600e3) loadWeather();
+}
 /* ---------- RENDER: plan ---------- */
 function detHtml(d){
  return d.map(x=>{
@@ -681,8 +710,9 @@ function routeHtml(r){
 function renderPlan(){
  const box=document.getElementById('p-plan');
  const days=getDays(); const day=days.find(d=>d.date===state.day)||days[0];
- box.innerHTML=`<div class="toolrow"><button type="button" class="btn tool" id="outfit-btn">🌡 기온별 옷차림</button></div><div class="sec-h"><h2>${day.n}일차 · ${day.date.slice(5).replace('-','월 ')}일 ${day.w}요일</h2><span class="cnt">${day.items.length}개</span></div><div class="tl"></div>`;
+ box.innerHTML=`<div class="toolrow"><button type="button" class="btn tool" id="outfit-btn">🌡 기온별 옷차림</button><div class="wx" id="wx-strip"></div></div><div class="sec-h"><h2>${day.n}일차 · ${day.date.slice(5).replace('-','월 ')}일 ${day.w}요일</h2><span class="cnt">${day.items.length}개</span></div><div class="tl"></div>`;
  box.querySelector('#outfit-btn').onclick=()=>openLightbox('img/outfit.png','기온별 옷차림');
+ renderWx();
  const tl=box.querySelector('.tl');
  day.items.forEach((it,i)=>{
   const id=it.id||day.date+'-'+i; const open=!!state.open[id];
