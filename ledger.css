@@ -473,6 +473,5 @@ body.body-edit .ev,body.body-edit .card{-webkit-user-select:none;user-select:non
   .lg .lgbar .lgaddexp{height:42px;font-size:14px;border-radius:12px;box-shadow:0 3px 10px rgba(217,55,43,.2)}
   .lg .lgbar .lgaddexp.lgaddmine{box-shadow:0 3px 10px rgba(23,28,40,.16)}
   .lg .lgbar .lgaddexp svg{width:17px;height:17px}
-  .lg .lgadd2.lgadd1 .lgaddexp{max-width:260px;margin:0 auto;width:100%}
   .panel.lg-haspad{padding-bottom:66px}
 }
