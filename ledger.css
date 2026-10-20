@@ -86,7 +86,16 @@
 .lg .lgrow .lgmid{flex:1;min-width:0}
 .lg .lgrow .ti{font-weight:500;font-size:14.5px;display:flex;align-items:center;gap:5px;min-width:0}
 .lg .lgrow .ti .lglock{display:inline-flex;color:var(--muted)} .lg .lgrow .ti .lglock svg{width:12px;height:12px}
-.lg .lgrow .si{font-size:12px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lg .lgrow .si{font-size:12px;color:var(--muted);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:6px}
+.lg .lgpayer{display:inline-flex;align-items:center;height:20px;padding:0 7px;border-radius:6px;font-size:11.5px;font-weight:700;white-space:nowrap;flex-shrink:0}
+.lg .lgp0{background:var(--accent-soft);color:var(--accent)}
+.lg .lgp1{background:#E3ECFB;color:#2F5FB3}
+.lg .lgp2{background:var(--ok-soft);color:var(--ok)}
+.lg .lgp3{background:var(--warn-soft);color:var(--warn)}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .lg .lgp1{background:#1E2A44;color:#8FB1F0} }
+:root[data-theme="dark"] .lg .lgp1{background:#1E2A44;color:#8FB1F0}
+.lg .lgaddexp{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;height:46px;border-radius:14px;background:var(--accent);color:#fff;font-weight:700;font-size:15px;margin:2px 0 12px;box-shadow:0 6px 16px rgba(217,55,43,.25)}
+.lg .lgaddexp svg{width:18px;height:18px}
 .lg .lgrow .si .lgmine{color:var(--accent);font-weight:600}
 .lg .lgrow .lgamt{text-align:right;flex-shrink:0}
 .lg .lgrow .lgamt .aa{font-family:var(--mono);font-weight:600;font-size:14.5px}
@@ -171,8 +180,6 @@
 .lg .lgbtn:disabled{opacity:.5;cursor:default}
 
 /* 고정 요소 (FAB·시트·토스트) — 정산 탭이 숨으면 같이 숨는다 */
-.lg .lgfab{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(var(--tab-h,64px) + 16px + env(safe-area-inset-bottom,0px));z-index:12;height:48px;padding:0 18px 0 14px;border-radius:999px;background:var(--accent);color:#fff;font-weight:700;font-size:15px;box-shadow:0 8px 20px rgba(217,55,43,.35);display:flex;align-items:center;gap:6px}
-.lg .lgfab svg{width:20px;height:20px}
 .lg .lgscrim{position:fixed;inset:0;background:var(--scrim);z-index:40;opacity:0;pointer-events:none;transition:opacity .18s}
 .lg .lgscrim.lgopen{opacity:1;pointer-events:auto}
 .lg .lgsheet{position:fixed;left:0;right:0;bottom:0;z-index:41;background:var(--surface);border-radius:20px 20px 0 0;max-height:92dvh;overflow:auto;transform:translateY(105%);transition:transform .22s cubic-bezier(.2,.8,.2,1);padding:8px max(16px,env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}

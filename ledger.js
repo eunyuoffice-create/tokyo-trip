@@ -149,7 +149,6 @@ function render(){
   else if(S.screen==='login') h=viewLogin();
   else h=viewMain();
   view.innerHTML=h; bind();
-  q('.lgfab').hidden=!(S.screen==='main'&&S.tab==='exp');
   if(S.focusAdd){const inp=q(`[data-addli="${S.focusAdd}"]`); if(inp)inp.focus(); S.focusAdd=null}
 }
 function viewSetup(){
@@ -230,7 +229,7 @@ function rowHtml(e){
   if(priv){ sub=`개인 · ${esc(e.cat||'기타')}`; }
   else{
     const who=parts.length===S.people.length?'모두':parts.map(pname).join('·');
-    sub=`<span class="${e.payer===me?'lgmine':''}">${esc(pname(e.payer))}</span> 결제 · ${esc(who)}${parts.length>1?' 나눔':''} · ${esc(e.cat||'기타')}`;
+    sub=`<span class="lgpayer lgp${e.payer%4}">${esc(pname(e.payer))} 결제</span>${parts.length>1?`${esc(who)} 나눔`:`${esc(who)} 몫`} · ${esc(e.cat||'기타')}`;
     const mine=sh[me]||0;
     if(e.payer===me&&parts.length>1) right=`<div class="ab">받을 ${fmt(e.amount-mine,e.cur)}</div>`;
     else if(e.payer!==me&&mine>0) right=`<div class="ab lgowe">내 몫 ${fmt(mine,e.cur)}</div>`;
@@ -244,6 +243,7 @@ function viewExp(){
   h+=`<div class="lghero"><div class="lghero-k">${esc(pname(me))}의 지출</div><div class="lghero-v"><b class="lgnum">${fmt(totalJ,'JPY')}</b>${totalK?` <span class="lgsub">+ ${fmt(totalK,'KRW')}</span>`:''} <span class="lghero-eq">≈ ${fmt(totalJ*S.rate+totalK,'KRW')}</span></div>
     <div class="lghero-s">공용 몫 ${fmt(tj.share,'JPY')} <span class="lgdot">·</span> 개인 ${fmt(tj.priv,'JPY')} <span class="lgdot">·</span> 내가 낸 공용 ${fmt(tj.paid,'JPY')}</div>
     <div class="lghero-s">${balLine(bj,'JPY')}${(tk.share||tk.priv||tk.paid)?' · '+balLine(bk,'KRW'):''}</div></div>`;
+  h+=`<button class="lgaddexp" data-act="add-exp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>지출 추가</button>`;
   h+=`<div class="lgfilters"><div class="lgseg2"><button data-scope="all" aria-pressed="${S.scope==='all'}">전체</button><button data-scope="shared" aria-pressed="${S.scope==='shared'}">공용</button><button data-scope="mine" aria-pressed="${S.scope==='mine'}">개인</button></div>
   <div class="lgchips lgscroll"><button class="lgchip lgsm" data-day="all" aria-pressed="${S.dayFilter==='all'}">모든 날</button>`;
   ALLDAYS.forEach(d=>{const c=S.expenses.filter(e=>e.day===d.d).length; if(d.d==='pre'&&!c)return; h+=`<button class="lgchip lgsm" data-day="${d.d}" aria-pressed="${S.dayFilter===d.d}">${d.d==='pre'?'출발 전':`${d.n}일차`}</button>`});
@@ -251,7 +251,7 @@ function viewExp(){
   let list=S.expenses.slice().sort((a,b)=>(b.day||'').localeCompare(a.day||'')||(b.ts||0)-(a.ts||0));
   if(S.scope==='shared')list=list.filter(isShared); else if(S.scope==='mine')list=list.filter(e=>!isShared(e));
   if(S.dayFilter!=='all')list=list.filter(e=>e.day===S.dayFilter);
-  if(!list.length)return h+`<div class="lgcard"><div class="lgempty"><b>${S.expenses.length?'이 조건에 맞는 지출이 없어요':'아직 지출이 없어요'}</b>오른쪽 아래 + 버튼으로 추가해요. 공용은 같이 나누고, 개인은 나만 봐요.</div></div>`;
+  if(!list.length)return h+`<div class="lgcard"><div class="lgempty"><b>${S.expenses.length?'이 조건에 맞는 지출이 없어요':'아직 지출이 없어요'}</b>위의 "지출 추가"로 넣어요. 공용은 같이 나누고, 개인은 나만 봐요.</div></div>`;
   const groups=[]; list.forEach(e=>{let g=groups.find(x=>x.day===e.day); if(!g){g={day:e.day,items:[]};groups.push(g)} g.items.push(e)});
   groups.forEach(g=>{
     const sj=g.items.filter(e=>e.cur==='JPY').reduce((a,e)=>a+e.amount,0), sk=g.items.filter(e=>e.cur==='KRW').reduce((a,e)=>a+e.amount,0);
@@ -286,7 +286,7 @@ function memoHtml(m){
 }
 /* ---------- 바인딩 ---------- */
 function bind(){
-  qa('[data-act]',view).forEach(b=>b.onclick=()=>{const a=b.dataset.act; if(a==='retry'){S.screen='loading';render();boot()} else if(a==='settings')openSettings(); else if(a==='setup-add')setupAddRow(); else if(a==='all-shared'){S.tab='exp';S.scope='shared';S.dayFilter='all';render()}});
+  qa('[data-act]',view).forEach(b=>b.onclick=()=>{const a=b.dataset.act; if(a==='retry'){S.screen='loading';render();boot()} else if(a==='settings')openSettings(); else if(a==='setup-add')setupAddRow(); else if(a==='all-shared'){S.tab='exp';S.scope='shared';S.dayFilter='all';render()} else if(a==='add-exp')openExpense(null);});
   qa('[data-tab]',view).forEach(b=>b.onclick=()=>{S.tab=b.dataset.tab;ls.set('tl_tab',S.tab);render()});
   qa('[data-scope]',view).forEach(b=>b.onclick=()=>{S.scope=b.dataset.scope;render()});
   qa('[data-day]',view).forEach(b=>b.onclick=()=>{S.dayFilter=b.dataset.day;render()});
@@ -461,8 +461,8 @@ function openSettings(){
 /* ---------- mount ---------- */
 function mount(el){
   root=el; root.classList.add('lg');
-  root.innerHTML=`<div class="lg-view"></div><button class="lgfab" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>지출 추가</button><div class="lgscrim"></div><div class="lgsheet" role="dialog" aria-modal="true"><div class="lgin"></div></div><div class="lgtoast"></div>`;
-  view=q('.lg-view'); q('.lgfab').onclick=()=>openExpense(null); q('.lgscrim').onclick=closeSheet;
+  root.innerHTML=`<div class="lg-view"></div><div class="lgscrim"></div><div class="lgsheet" role="dialog" aria-modal="true"><div class="lgin"></div></div><div class="lgtoast"></div>`;
+  view=q('.lg-view'); q('.lgscrim').onclick=closeSheet;
   const t=ls.get('tl_tab'); if(t&&TABS.some(x=>x.id===t))S.tab=t;
   render(); boot();
   clearInterval(pollT); pollT=setInterval(()=>{if(document.visibilityState==='visible'&&S.screen==='main'&&!S.saving&&!root.closest('[hidden]'))load()},POLL_MS);
