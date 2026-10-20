@@ -213,8 +213,10 @@ details.memo[open] summary{margin-bottom:10px}
     <div id="place-list"></div>
   </section>
   <section class="panel" id="p-memo" hidden>
-    <div id="ledger-root"></div>
     <div id="memo-body"></div>
+  </section>
+  <section class="panel" id="p-ledger" hidden>
+    <div id="ledger-root"></div>
   </section>
 </main>
 
@@ -223,6 +225,7 @@ details.memo[open] summary{margin-bottom:10px}
   <button role="tab" data-tab="food" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M5 3v8a3 3 0 0 0 6 0V3M8 3v18M17 3c-2 0-3 3-3 7v2h3v9"/></svg>맛집</button>
   <button role="tab" data-tab="place" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>갈 곳</button>
   <button role="tab" data-tab="memo" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4M9 12h6M9 16h6"/></svg>메모</button>
+  <button role="tab" data-tab="ledger" aria-selected="false"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/><path d="M7 15h3"/></svg>정산</button>
 </nav>
 
 <script>
@@ -573,6 +576,7 @@ function renderChips(){
  if(state.tab==='plan') list=DAYS.map(d=>({id:d.date,label:`${d.n}일차`,sub:`${d.date.slice(5).replace('-','.')} ${d.w}`,on:d.date===state.day}));
  else if(state.tab==='food'){ const base=FOOD.filter(f=>state.ftype==='전체'||foodType(f)===state.ftype); list=['전체',...FOOD_AREAS].map(a=>({id:a,label:a,sub:a==='전체'?base.length:base.filter(f=>f.a===a).length,on:a===state.farea})); }
  else if(state.tab==='place') list=['전체',...PLACE_CHIPS].map(a=>({id:a,label:a,sub:PLACES.filter(p=>placeMatch(p,a)).length,on:a===state.pgroup}));
+ else if(state.tab==='ledger') list=[];
  else list=[{id:'flight',label:'항공'},{id:'hotel',label:'숙소·이동'},{id:'studio',label:'스튜디오'},{id:'esim',label:'eSIM'},{id:'pack',label:'챙길 것'},{id:'gift',label:'도쿄역·선물'},{id:'shop',label:'쇼핑'},{id:'cost',label:'비용'}];
  if(!list.length){box.style.display='none';return} box.style.display='';
  list.forEach(c=>{
@@ -896,7 +900,7 @@ function render(){
  if(state.tab==='plan') renderPlan();
  else if(state.tab==='food') renderFood();
  else if(state.tab==='place') renderPlace();
- else renderMemo();
+ else if(state.tab==='memo') renderMemo();
 }
 document.querySelectorAll('.tabs [role=tab]').forEach(b=>b.onclick=()=>{ state.tab=b.dataset.tab; save(); render(); window.scrollTo({top:0}); });
 document.getElementById('q-food').addEventListener('input',renderFood);

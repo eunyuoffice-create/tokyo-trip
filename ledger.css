@@ -1,4 +1,4 @@
-/* 정산 노트 (ledger.js) — 메모 탭 상단에 붙는 블록. 사이트 토큰(--bg --surface --fg …)을 그대로 쓴다 */
+/* 정산 노트 (ledger.js) — 하단 "정산" 탭 패널(#p-ledger)에 붙는 블록. 사이트 토큰(--bg --surface --fg …)을 그대로 쓴다 */
 .lg{--chip-on:var(--fg);--chip-on-fg:var(--bg);--scrim:rgba(23,28,40,.45);font-size:15px;line-height:1.5;margin-bottom:14px;min-width:0}
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .lg{--scrim:rgba(0,0,0,.6)} }
 :root[data-theme="dark"] .lg{--scrim:rgba(0,0,0,.6)}
@@ -166,7 +166,7 @@
 .lg .lgbtn.lgdanger{background:none;color:var(--accent);flex:0 0 auto}
 .lg .lgbtn:disabled{opacity:.5;cursor:default}
 
-/* 고정 요소 (FAB·시트·토스트) — 메모 탭이 숨으면 같이 숨는다 */
+/* 고정 요소 (FAB·시트·토스트) — 정산 탭이 숨으면 같이 숨는다 */
 .lg .lgfab{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(var(--tab-h,64px) + 16px + env(safe-area-inset-bottom,0px));z-index:12;height:48px;padding:0 18px 0 14px;border-radius:999px;background:var(--accent);color:#fff;font-weight:700;font-size:15px;box-shadow:0 8px 20px rgba(217,55,43,.35);display:flex;align-items:center;gap:6px}
 .lg .lgfab svg{width:20px;height:20px}
 .lg .lgscrim{position:fixed;inset:0;background:var(--scrim);z-index:40;opacity:0;pointer-events:none;transition:opacity .18s}
