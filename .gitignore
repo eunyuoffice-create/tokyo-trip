@@ -1,3 +1,4 @@
 .vercel
 dev/.data.json
 node_modules
+.env
