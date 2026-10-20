@@ -277,7 +277,8 @@ function memoHtml(m){
     h+=`<textarea class="lgbody" data-body="${esc(m.id)}" placeholder="여기에 그냥 써요. 줄바꿈 그대로 보여요." rows="3">${esc(m.body||'')}</textarea><div class="lgsaverow"><span class="lgsave" data-mark="${esc(m.id)}"></span><button type="button" class="lgaddbtn" data-savebody="${esc(m.id)}">저장</button></div>`;
   }else{
     const items=(m.items||[]).slice().sort((a,b)=>(a.done?1:0)-(b.done?1:0)); const done=items.filter(i=>i.done).length;
-    items.forEach(it=>{h+=`<div class="lgli ${it.done?'lgdone':''}"><button class="lgbox" data-li="${esc(m.id)}|${esc(it.id)}" aria-label="완료">${svgCheck}</button><button class="lgtx" data-liedit="${esc(m.id)}|${esc(it.id)}">${esc(it.text)}</button><button class="lgx" data-lidel="${esc(m.id)}|${esc(it.id)}" aria-label="삭제">${svgX}</button></div>`});
+    items.forEach(it=>{const who=(!priv&&it.who!==null&&it.who!==undefined&&it.who!==''&&S.people[+it.who])?+it.who:null;
+      h+=`<div class="lgli ${it.done?'lgdone':''}"><button class="lgbox" data-li="${esc(m.id)}|${esc(it.id)}" aria-label="완료">${svgCheck}</button><button class="lgtx" data-liedit="${esc(m.id)}|${esc(it.id)}"><span>${esc(it.text)}</span>${who!==null?`<span class="lgwho ${who===S.me?'lgwho-me':''}">${esc(pname(who))}</span>`:''}</button><button class="lgx" data-lidel="${esc(m.id)}|${esc(it.id)}" aria-label="삭제">${svgX}</button></div>`});
     h+=`<form class="lgaddli" data-addform="${esc(m.id)}"><span class="lgplus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span><input type="text" data-addli="${esc(m.id)}" placeholder="항목 추가" autocomplete="off" maxlength="200"><button type="submit" class="lgaddbtn">입력</button></form>`;
     if(items.length)h+=`<div class="lgsave" style="text-align:right">${done}/${items.length} 완료</div>`;
   }
@@ -348,9 +349,13 @@ async function toggleItem(mid,iid){ const m=S.memos.find(x=>x.id===mid); if(!m)r
 async function delItem(mid,iid){ const m=S.memos.find(x=>x.id===mid); if(!m)return; const items=memoItems(m).filter(it=>it.id!==iid); await write([{op:'update',col:'memos',id:mid,data:{items}}]); }
 function openItem(mid,iid){
   const m=S.memos.find(x=>x.id===mid); const it=m&&(m.items||[]).find(x=>x.id===iid); if(!it)return;
-  openSheet(`<h2>항목 수정<button type="button" data-close>닫기</button></h2><form id="itemForm"><div class="lgf"><label>내용</label><textarea id="itText" maxlength="500">${esc(it.text)}</textarea></div><div class="lgactions"><button type="button" class="lgbtn lgdanger" id="itDel">삭제</button><button type="submit" class="lgbtn lgprimary">저장</button></div></form>`);
+  const sharedMemo=isShared(m); let who=(it.who===null||it.who===undefined||it.who==='')?null:+it.who;
+  openSheet(`<h2>항목 수정<button type="button" data-close>닫기</button></h2><form id="itemForm"><div class="lgf"><label>내용</label><textarea id="itText" maxlength="500">${esc(it.text)}</textarea></div>
+    ${sharedMemo?`<div class="lgf"><label>담당</label><div class="lgchips" id="itWho"><button type="button" class="lgchip lgsm" data-w="" aria-pressed="${who===null}">없음</button>${S.people.map((p,i)=>`<button type="button" class="lgchip lgsm" data-w="${i}" aria-pressed="${who===i}">${esc(pname(i))}${i===S.me?' (나)':''}</button>`).join('')}</div><div class="lghint">누가 챙길지 정해두면 항목 옆에 이름이 붙어요.</div></div>`:''}
+    <div class="lgactions"><button type="button" class="lgbtn lgdanger" id="itDel">삭제</button><button type="submit" class="lgbtn lgprimary">저장</button></div></form>`);
   const sh=q('.lgsheet');
-  q('#itemForm',sh).onsubmit=async ev=>{ev.preventDefault();const t=q('#itText',sh).value.trim();if(!t)return;const items=memoItems(m).map(x=>x.id===iid?{...x,text:t}:x);closeSheet();await write([{op:'update',col:'memos',id:mid,data:{items}}])};
+  qa('#itWho .lgchip',sh).forEach(b=>b.onclick=()=>{who=b.dataset.w===''?null:+b.dataset.w;qa('#itWho .lgchip',sh).forEach(x=>x.setAttribute('aria-pressed',x===b))});
+  q('#itemForm',sh).onsubmit=async ev=>{ev.preventDefault();const t=q('#itText',sh).value.trim();if(!t)return;const items=memoItems(m).map(x=>x.id===iid?{...x,text:t,who:sharedMemo?who:null}:x);closeSheet();await write([{op:'update',col:'memos',id:mid,data:{items}}])};
   arm(q('#itDel',sh),async()=>{closeSheet();await delItem(mid,iid)});
   setTimeout(()=>q('#itText',sh).focus(),250);
 }
