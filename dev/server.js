@@ -14,7 +14,9 @@ try {
   }
   console.log('.env 읽음' + (process.env.SITE_PASSWORD ? ' (SITE_PASSWORD 있음)' : ' (SITE_PASSWORD 비어 있음)'));
 } catch (_) { console.log('.env 없음 → .env.example 을 복사해서 만들면 됨'); }
+if (process.env.LEDGER_FAKE) { delete process.env.DATABASE_URL; console.log('LEDGER_FAKE=1 → 가짜 저장소 (' + (process.env.LEDGER_FAKE_FILE || 'dev/.data.json') + '), .env 의 DATABASE_URL 무시'); }
 if (!process.env.DATABASE_URL) process.env.LEDGER_FAKE = '1';
+else console.log('⚠ 실제 Neon DB에 연결됨 (.env DATABASE_URL). 테스트는 LEDGER_FAKE=1 로 띄울 것');
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');

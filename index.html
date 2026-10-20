@@ -290,7 +290,7 @@ const DAYS = [
  ]},
  {date:'2026-10-27', w:'화', n:4, items:[
   {t:'09:00', ts:'~09:45', p:'이케부쿠로역 동쪽출구', title:'아침', d:['타카세 본점 2F 킷사 모닝세트 (9:00~11:00, 토스트·커피 리필) 또는 오오토야 1호점 아침 정식 (7:00~10:00).','둘 다 호텔에서 도보 2~5분.']},
-  {t:'10:00', ts:'~11:10', p:'이케부쿠로', title:'못 산 것 마무리 (오전 루트)', r:{f:'호텔', t:'아니메이트 본점', how:'도보 5분. 선샤인60거리 → 아니메이트 → 역으로 돌아오는 동선', fq:'ホテルリソル池袋', tq:'アニメイト池袋本店', mode:'walking'}, d:['① 돈키호테 동구역앞점 (24시간) — 면세 쇼핑은 여권 들고. 무거운 건 호텔에 두고 나오기.','② 아니메이트 본점 (10:00~)\n스루가야 오토메관 (10:00~)\n북오프 (10:00~). K-BOOKS·토라노아나·만다라케는 평일 12시 오픈이라 오전엔 못 감.','③ 치이카와 파크 평일 슬롯을 잡았다면 10:00 입장 (선샤인시티 아넥스, 90분 정도).','11:10까지 이케부쿠로역으로. 코스 의상·가발은 메모 탭 체크리스트대로 챙겼는지 확인.']},
+  {t:'10:00', ts:'~11:10', p:'이케부쿠로', title:'못 산 것 마무리 (오전 루트)', r:{f:'호텔', t:'아니메이트 본점', how:'도보 5분. 선샤인60거리 → 아니메이트 → 역으로 돌아오는 동선', fq:'ホテルリソル池袋', tq:'アニメイト池袋本店', mode:'walking'}, d:['① 돈키호테 동구역앞점 (24시간) — 면세 쇼핑은 여권 들고. 무거운 건 호텔에 두고 나오기.','② 아니메이트 본점 (10:00~)\n스루가야 오토메관 (10:00~)\n북오프 (10:00~). K-BOOKS·토라노아나·만다라케는 평일 12시 오픈이라 오전엔 못 감.','③ 치이카와 파크 평일 슬롯을 잡았다면 10:00 입장 (선샤인시티 아넥스, 90분 정도).','11:10까지 이케부쿠로역으로. 코스 의상·가발 챙겼는지 확인 (메모 탭 공용 메모 "챙길것").']},
   {t:'11:20', ts:'~11:50', p:'이케부쿠로 → 도시마엔', title:'스튜디오 이동', r:[{f:'이케부쿠로역', t:'스튜디오 투어 도쿄', how:'세이부 이케부쿠로선 → 네리마 환승 도시마선 약 20분 + 도보 2분', fq:'池袋駅', tq:'ワーナー ブラザース スタジオツアー東京', mode:'transit'},{f:'호텔 레솔 이케부쿠로', t:'스튜디오 투어 도쿄', how:'택시 약 25~35분 · 3,500~5,000엔 (약 7~8km, 둘이 나누면 1인 2,000엔대). 짐·의상 많거나 늦었을 때. GO 앱 또는 호텔 앞 승차', fq:'ホテルリソル池袋', tq:'ワーナー ブラザース スタジオツアー東京', mode:'driving'}], d:['세이부 이케부쿠로선 타고 네리마 환승 (직통도 있음). 도시마엔역 A2 출구 → 도보 2분.','건물 입장 → 보안검사 → 탈의실 → 코인로커 순서라 여유 두기.']},
   {t:'12:00', ts:'~16:30', p:'스튜디오 투어 도쿄', title:'입장 → 자유시간', pills:['예약 1시간 전 입장'], d:['① 건물 입장 (예약 1시간 전부터 가능, 일반 투어 기준·재확인) → 보안검사.','② 로비·숍·백롯 카페 등 투어 전 자유시간. 점심은 스튜디오 안 레스토랑 (클룩 500엔 바우처는 2,000엔 이상 단일 결제).','③ 16:15쯤 탈의실 (보안검색 후 오른쪽 화장실 통로)에서 갈아입기 → 실내 코인로커 (S 300\nM 500\nL 700\nXL 1,000엔)에 평상복·메이크업 도구 보관.','로커는 QR 영수증이 열쇠, 중간에 열면 재결제. 날붙이·외부 음식 반입 불가. 자세한 건 메모 탭 스튜디오.']},
   {t:'16:45', p:'스튜디오 로비', title:'로비 집합 → 투어 & 디너', big:true, d:['로비 집합 → 투어 입장 → 디너.','투어 끝나고 로커에서 짐 찾고 탈의실에서 환복 (마감 시간 확인).']},
@@ -456,11 +456,6 @@ const PLACES = [
  {g:'그 외', area:'그 외', n:'지유가오카', k:'잡화 · 디저트 거리', h:'뽀빠이카메라 11:00~19:30 수 휴무 · HOTCH POTCH 10:00~20:00', loc:'2~3시간이면 충분. DD intex·TIPPY TOP은 폐점. HOTCH POTCH는 2026.9 역 앞 뮤즈스퀘어 4F로 이전. 뽀빠이카메라가 수요일 쉬니 10/28(수)은 피하기', q:'自由が丘駅'}
 ];
 
-const PACK = {
- '공통':['여권 (유효기간 확인)','귀국 항공권 · 일본 내 연락처 출력','Visit Japan Web QR 캡처 또는 PDF','eSIM (구매 완료 · 로밍도깨비 S 5일 ×2, 출발 전 설치)','스튜디오 & 일반인용 사진 자료','보조배터리','서류 인쇄'],
- '구니':['개인약','머리빗','에스트라 크림','헤어 에센스','비상약: 타이레놀, 대일밴드','약국: 부스코판'],
- '으뉴':['헤어: 판고데기, 헤어오일, 왁스','기초: 제로이드, 선크림 (얼굴+바디), 바디로션','화장품: 코스 메이크업 도구, 디올 코렉터 + 비비','씻기: 폼클렌징, 클렌징 밀크','개인약: 정신과약, 수면약, 지르텍, 탁센, 비타민 C·D, 유산균','코스: 가발, 가발걸이, 실핀, 가발망, 렌즈, 안경, 셔츠, 넥타이, 망토, 바지','그 외: 파우더 시트, 휴족시간, 발바닥 패치']
-};
 
 /* 일본 다녀오면 다들 사 오는 것들 — 체크해서 쓰기 */
 const SHOP = {
@@ -568,7 +563,7 @@ function renderChips(){
  else if(state.tab==='food'){ const base=FOOD.filter(f=>state.ftype==='전체'||foodType(f)===state.ftype); list=['전체',...FOOD_AREAS].map(a=>({id:a,label:a,sub:a==='전체'?base.length:base.filter(f=>f.a===a).length,on:a===state.farea})); }
  else if(state.tab==='place') list=['전체',...PLACE_CHIPS].map(a=>({id:a,label:a,sub:PLACES.filter(p=>placeMatch(p,a)).length,on:a===state.pgroup}));
  else if(state.tab==='ledger') list=[];
- else list=[{id:'flight',label:'항공'},{id:'hotel',label:'숙소·이동'},{id:'studio',label:'스튜디오'},{id:'esim',label:'eSIM'},{id:'pack',label:'챙길 것'},{id:'gift',label:'도쿄역·선물'},{id:'shop',label:'쇼핑'}];
+ else list=[{id:'flight',label:'항공'},{id:'hotel',label:'숙소·이동'},{id:'studio',label:'스튜디오'},{id:'gift',label:'도쿄역·선물'},{id:'shop',label:'쇼핑'}];
  if(!list.length){box.style.display='none';return} box.style.display='';
  list.forEach(c=>{
   const b=document.createElement('button'); b.className='chip'; b.setAttribute('aria-pressed',String(!!c.on));
@@ -698,7 +693,6 @@ function renderMemo(){
  const clHtml=(obj,pre)=>Object.entries(obj).map(([cat,items])=>`<div class="sub-h">${esc(cat)}</div><div class="cl">${items.map((it,i)=>{const o=typeof it==='string'?{t:it}:it;const t=o.t;const id=pre+':'+cat+':'+i;const [tt,rest]=t.split(' — ');return `<label><input type="checkbox" id="${esc(id)}" data-pk="${esc(id)}" ${state.pack[id]?'checked':''}>${o.img?`<img class="thumb" src="${esc(o.img)}" loading="lazy" alt="">`:''}<span>${rest?`<b>${esc(tt)}</b>${nl(rest)}`:nl(t)}</span></label>`}).join('')}</div>`).join('');
  const giftHtml=clHtml(GIFT,'gf');
  const shopHtml=Object.entries(SHOP).map(([cat,items])=>`<div class="sub-h">${esc(cat)}</div><div class="cl">${items.map((t,i)=>{const id='sh:'+cat+':'+i;return `<label><input type="checkbox" id="${esc(id)}" data-pk="${esc(id)}" ${state.pack[id]?'checked':''}><span>${esc(t)}</span></label>`}).join('')}</div>`).join('');
- const packHtml=Object.entries(PACK).map(([who,items])=>`<div class="sub-h">${esc(who)}</div><div class="cl">${items.map((t,i)=>{const id='pk:'+who+':'+i;return `<label><input type="checkbox" id="${esc(id)}" data-pk="${esc(id)}" ${state.pack[id]?'checked':''}><span>${esc(t)}</span></label>`}).join('')}</div>`).join('');
  box.innerHTML=`
  <div class="memo" id="m-flight">
   <h3>항공편 <span class="pill acc">대한항공</span></h3>
@@ -746,37 +740,6 @@ S 300엔 · M 500엔 · L 700엔 · XL 1,000엔. 현금·카드 가능.
 셀카봉·짐벌은 가장 짧게 접고 머리보다 높이 들지 않으면 사용 가능.</p>
   <div class="sub-h">클룩 바우처 (10/25)</div>
   <p>레스토랑·카페 500엔 바우처. 2,000엔 이상 단일 결제, 셀프 계산대 불가, 클룩 앱 필요.</p>
- </div>
-
- <div class="memo" id="m-esim">
-  <h3>eSIM <span class="pill ok">결정: 로밍도깨비 S 올데이 플러스 5일 ×2</span></h3>
-  <p>2개 26,600원 (1인 13,300원). 2026.10.16 기준 가격이라 결제 전 재확인.</p>
-  <div class="sub-h">5일 완전 무제한 · 1인 기준 비교</div>
-  <table class="cmp">
-   <tr><th>상품</th><th>망</th><th class="r">가격</th></tr>
-   <tr class="pick"><td>로밍도깨비 S 올데이 플러스 (네이버)</td><td>로밍 · KDDI/SB</td><td class="r">13,300</td></tr>
-   <tr><td>로밍도깨비 로컬망 KDDI (더블팩)</td><td>로컬 · KDDI</td><td class="r">14,250</td></tr>
-   <tr><td>로밍도깨비 로컬망 소프트뱅크 (더블팩)</td><td>로컬 · SB</td><td class="r">15,105</td></tr>
-   <tr><td>도시락이심 로컬 5G 무제한 5일</td><td>로컬 · SB</td><td class="r">15,700</td></tr>
-   <tr><td>Airalo</td><td>SB · 일 3GB 후 저속</td><td class="r">약 23,000</td></tr>
-   <tr><td>Holafly</td><td>미표기</td><td class="r">24,700</td></tr>
-  </table>
-  <div class="sub-h">S 올데이 플러스를 고른 이유</div>
-  <p>속도 제한 없는 완전 무제한 + 로깨비톡 무료통화 1시간분 (현지 식당·리무진 전화 가능) + 핫스팟 가능 + 100MB 미만 사용 시 전액 환불.
-A 데일리 무제한은 하루 용량 소진 후 384kbps라 지도도 버벅임. B 종량제는 다 쓰면 끊김.</p>
-  <div class="sub-h">도시락이심은 왜 안 샀나</div>
-  <p>로컬망이라 품질은 좋지만 2개 31,400원으로 4,800원 더 비쌈. 통화 불가, 환불 보장 없음. 같은 로컬망이면 로밍도깨비 더블팩(28,500원)이 더 쌈.
-한국시간 자정 기준 날짜 계산이라 10/24~10/28 딱 5일. QR 발송 후 90일 내 사용.</p>
-  <div class="sub-h">기간 계산</div>
-  <p>현지 도착 후 데이터 로밍 켠 시점부터 24시간 × 5일. 10/24 11:20 도착 → 10/29 오전까지라 넉넉함.
-4일이면 10/28 오전 11시쯤 끝나서 09:45 출국편 기준 계산상 되지만 위험해서 5일로.</p>
-  <div class="sub-h">설치 순서</div>
-  <ol class="steps"><li>출발 전 한국에서 QR로 eSIM 설치 (설치만으로는 개통 안 됨)</li><li>한국에서는 eSIM 회선 데이터 로밍 절대 켜지 않기 (켜는 순간 5일 시작)</li><li>하네다 도착 후 설정 → 셀룰러 → 기본 데이터를 eSIM으로, 데이터 로밍 ON</li><li>한국 회선은 데이터 로밍 OFF (요금 폭탄 방지). 전화·문자 수신은 그대로 됨</li></ol>
- </div>
-
- <div class="memo" id="m-pack">
-  <h3>챙길 것</h3>
-  ${packHtml}
  </div>
 
  <div class="memo" id="m-gift">

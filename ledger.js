@@ -153,7 +153,7 @@ function render(){
   if(memoView){ memoView.innerHTML=S.screen==='main'?viewMemo():viewMemoLocked(); bind(memoView); }
 }
 function userHtml(){
-  if(S.screen==='main') return `<button class="lguser" data-act="settings" aria-label="내 계정·설정">${svgUser}<span>${esc(pname(S.me))}</span></button><button class="lguser lguser-out" data-act="logout">로그아웃</button>`;
+  if(S.screen==='main') return `<span class="lguser lguser-name">${svgUser}<span>${esc(pname(S.me))}</span></span><button class="lguser lguser-gear" data-act="settings" aria-label="설정">${svgGear}</button><button class="lguser lguser-out" data-act="logout">로그아웃</button>`;
   if(S.screen==='login'||S.screen==='setup') return `<button class="lguser lguser-off" data-act="login">${svgUser}<span>${S.screen==='setup'?'시작하기':'로그인'}</span></button>`;
   return '';
 }
@@ -217,7 +217,7 @@ function viewHome(){
   // 2) 정산 — 잔액 한 줄 + 보냈어/받았어 (아래쪽)
   const allFlows=[...flows('JPY').map(f=>({...f,cur:'JPY'})),...flows('KRW').map(f=>({...f,cur:'KRW'}))];
   const mine=allFlows.filter(f=>f.from===me||f.to===me), others=allFlows.filter(f=>!(f.from===me||f.to===me));
-  h+=`<div class="lg-head lgbelow"><div class="lgttl">정산 노트</div><div class="lg-head-r"><button class="lgicon" data-act="settings" aria-label="설정">${svgGear}</button></div></div>`;
+  h+=`<div class="lg-head lgbelow"><div class="lgttl">정산 노트</div></div>`;
   h+=`<div class="lghero2"><div class="lghero-k">지금 잔액</div>`;
   if(!sh.length) h+=`<div class="lghero-v lgmuted-t">아직 공용 지출이 없어요</div><div class="lghero-s">"공용 지출"로 넣으면 자동으로 나눠요.</div>`;
   else if(!allFlows.length) h+=`<div class="lghero-v lgok-t">정산 끝 · 주고받을 돈 없음</div><div class="lghero-s">공용 지출 ${sh.length}건이 모두 정리됐어요.</div>`;
@@ -286,7 +286,7 @@ function viewMemo(){
   const secs=[{title:'내 메모',sub:`${pname(S.me)}만 봄`,list:S.memos.filter(m=>ownerOf(m)===S.me)},{title:'공용 메모',sub:'둘 다 보고 체크',list:S.memos.filter(isShared)}];
   secs.forEach(sec=>{
     if(!sec.list.length)return;
-    const list=sec.list.slice().sort((a,b)=>(b.order||b.ts||0)-(a.order||a.ts||0));
+    const list=sec.list.slice().sort((a,b)=>(memoDone(a)?1:0)-(memoDone(b)?1:0)||(b.order||b.ts||0)-(a.order||a.ts||0));
     h+=`<div class="lgsec"><h3>${sec.title} <span class="lgsub">${esc(sec.sub)}</span></h3><span class="lgnum">${list.length}개${list.length>1?' <span class="lgsub">· ⋮⋮ 끌어서 순서 바꾸기</span>':''}</span></div><div class="lgmemolist">${list.map(memoRow).join('')}</div>`;
   });
   if(!S.memos.length) h+=`<div class="lghint" style="text-align:center;margin:6px 0 10px">아래 [내 메모] [공용 메모]로 체크 리스트나 글을 써요.</div>`;
@@ -298,13 +298,14 @@ function memoRow(m){
   const list=m.type!=='text'; const items=m.items||[]; const done=items.filter(i=>i.done).length; const priv=!isShared(m);
   const body=String(m.body||'');
   const title=m.title||(list?'제목 없는 리스트':(body.replace(/\s+/g,' ').trim().slice(0,30)||'제목 없는 글'));
-  const open=S.openMemos.has(m.id);
+  const open=S.openMemos.has(m.id); const mdone=memoDone(m);
   let inner;
   if(list){
     inner=items.length?items.map(it=>{const who=priv?null:whoOf(it); return `<div class="lgli ${it.done?'lgdone':''}"><button type="button" class="lgbox" data-tgl-m="${esc(m.id)}|${esc(it.id)}" aria-label="완료">${svgCheck}</button><span class="lgtx">${esc(it.text)}</span>${who===null?'':`<span class="lgwho ${who===S.me?'lgwho-me':''}">${esc(pname(who))}</span>`}</div>`}).join(''):`<div class="lghint" style="margin:0 0 6px">아직 항목이 없어요.</div>`;
   }else inner=body.trim()?`<div class="lgmemobody">${esc(body)}</div>`:`<div class="lghint" style="margin:0 0 6px">내용이 없어요.</div>`;
-  return `<details class="lgdetails lgmemoacc" data-accm="${esc(m.id)}" ${open?'open':''}><summary><span class="lgmic ${list?'lgmic-list':'lgmic-text'}" title="${list?'체크 리스트':'글'}">${list?svgList:svgText}</span><span class="lgmtitle">${priv?`<span class="lglock">${svgLock}</span>`:''}<span class="lgtrunc">${esc(title)}</span></span><span class="lgmkind ${list?'lgmkind-list':'lgmkind-text'}">${list?'리스트':'글'}</span>${list&&items.length?`<span class="lgmprog ${done===items.length?'lgokt':''}">${done}/${items.length}</span>`:''}<span class="lgdrag" data-drag="${esc(m.id)}" aria-label="끌어서 순서 바꾸기">${svgDrag}</span></summary><div class="lgdetails-b lgmemoin">${inner}<div class="lgmemofoot"><span class="lgsub">${list?`${done}/${items.length} 완료`:''}</span><button type="button" class="lgaddbtn" data-memoedit="${esc(m.id)}">수정</button></div></div></details>`;
+  return `<details class="lgdetails lgmemoacc ${mdone?'lgmdone':''}" data-accm="${esc(m.id)}" ${open?'open':''}><summary><button type="button" class="lgbox lgbox-m" data-mdone="${esc(m.id)}" aria-pressed="${mdone}" aria-label="${list?'전체 체크':'확인 완료'}">${svgCheck}</button><span class="lgmic ${list?'lgmic-list':'lgmic-text'}" title="${list?'체크 리스트':'글'}">${list?svgList:svgText}</span><span class="lgmtitle">${priv?`<span class="lglock">${svgLock}</span>`:''}<span class="lgtrunc">${esc(title)}</span></span><span class="lgmkind ${list?'lgmkind-list':'lgmkind-text'}">${list?'리스트':'글'}</span>${list&&items.length?`<span class="lgmprog ${done===items.length?'lgokt':''}">${done}/${items.length}</span>`:''}<span class="lgdrag" data-drag="${esc(m.id)}" aria-label="끌어서 순서 바꾸기">${svgDrag}</span></summary><div class="lgdetails-b lgmemoin">${inner}<div class="lgmemofoot"><span class="lgsub">${list?`${done}/${items.length} 완료`:''}</span><button type="button" class="lgaddbtn" data-memoedit="${esc(m.id)}">수정</button></div></div></details>`;
 }
+const memoDone=m=>{const items=m.items||[]; return (m.type!=='text'&&items.length)?items.every(i=>i.done):!!m.done};
 const memoItems=m=>(m&&Array.isArray(m.items)?m.items:[]).map(x=>({...x}));
 const whoOf=it=>(it.who===null||it.who===undefined||it.who===''||!S.people[+it.who])?null:+it.who;
 const nextWho=cur=>{const n=S.people.length; if(cur===null||cur===undefined)return 0; return cur+1>=n?null:cur+1};
@@ -390,6 +391,9 @@ function bind(c){
   qa('[data-settle]',c).forEach(b=>b.onclick=()=>{const [f,t,a,cur]=b.dataset.settle.split('|');openSettle({from:+f,to:+t,amount:+a,cur})});
   qa('[data-newmemo]',c).forEach(b=>b.onclick=()=>openMemoEditor(null,{owner:b.dataset.newmemo==='mine'?S.me:null}));
   qa('[data-memoedit]',c).forEach(b=>b.onclick=()=>openMemoEditor(S.memos.find(m=>m.id===b.dataset.memoedit)));
+  qa('[data-mdone]',c).forEach(b=>{b.onclick=ev=>{ev.preventDefault();ev.stopPropagation();const m=S.memos.find(x=>x.id===b.dataset.mdone);if(!m)return;const items=memoItems(m);const nowDone=memoDone(m);
+    if(m.type!=='text'&&items.length){const next=items.map(it=>({...it,done:!nowDone,doneBy:!nowDone?S.me:null}));write([{op:'update',col:'memos',id:m.id,data:{items:next,done:!nowDone}}],!nowDone?'전부 체크했어요':'전부 해제했어요')}
+    else write([{op:'update',col:'memos',id:m.id,data:{done:!nowDone}}],!nowDone?'확인 완료':'다시 올렸어요')}});
   qa('[data-drag]',c).forEach(h=>{h.onclick=ev=>{ev.preventDefault();ev.stopPropagation()}; h.onpointerdown=ev=>startDrag(ev,h)});
   qa('[data-accm]',c).forEach(d=>d.ontoggle=()=>{if(d.open)S.openMemos.add(d.dataset.accm);else S.openMemos.delete(d.dataset.accm)});
   qa('[data-tgl-m]',c).forEach(b=>b.onclick=()=>{const [mid,iid]=b.dataset.tglM.split('|');const m=S.memos.find(x=>x.id===mid);if(!m)return;const items=memoItems(m).map(it=>it.id===iid?{...it,done:!it.done,doneBy:!it.done?S.me:null}:it);write([{op:'update',col:'memos',id:mid,data:{items}}])});
