@@ -263,15 +263,15 @@ function rowHtml(e){
   return `<div class="lgrow ${!priv&&e.settled?'lgsettled':''}">${check}<button class="lgrowbody" data-exp="${esc(e.id)}"><div class="lgmid"><div class="ti">${priv?`<span class="lglock">${svgLock}</span>`:''}<span class="lgtrunc">${esc(e.title||'(내용 없음)')}</span></div><div class="si">${sub}${e.memo?`<span class="lgtrunc">· ${esc(e.memo)}</span>`:''}</div></div><div class="lgamt"><div class="aa">${fmt(e.amount,e.cur)}</div>${right}</div><span class="lgchev" aria-hidden="true"></span></button></div>`;
 }
 function viewMemo(){
+  // 메모가 있는 섹션만 그린다. 새로 쓰는 건 하단 고정 바의 [내 메모]/[공용 메모] 버튼으로.
   let h='';
   const secs=[{k:'mine',title:'내 메모',sub:`${pname(S.me)}만 봄`,list:S.memos.filter(m=>ownerOf(m)===S.me)},{k:'shared',title:'공용 메모',sub:'둘 다 보고 체크',list:S.memos.filter(isShared)}];
   secs.forEach(sec=>{
+    if(!sec.list.length)return;
     h+=`<div class="lgsec"><h3>${sec.title} <span class="lgsub">${esc(sec.sub)}</span></h3></div>`;
-    const list=sec.list.slice().sort((a,b)=>(a.order||a.ts||0)-(b.order||b.ts||0));
-    if(!list.length){h+=`<div class="lgcard"><div class="lgempty">${sec.k==='shared'?'살 것 목록이나 가고 싶은 곳처럼 같이 체크할 걸 올려두세요.':'개인 쇼핑 리스트나 일기처럼 나만 볼 걸 써요.'}</div></div>`;return}
-    list.forEach(m=>{h+=memoHtml(m)});
+    sec.list.slice().sort((a,b)=>(a.order||a.ts||0)-(b.order||b.ts||0)).forEach(m=>{h+=memoHtml(m)});
   });
-  h+=`<div class="lghint" style="text-align:center;margin:10px 0 14px">"편집"에서 제목·공용/개인·삭제, 항목은 글자를 누르면 수정, ×로 삭제해요.</div>`;
+  if(h) h+=`<div class="lghint" style="text-align:center;margin:10px 0 14px">"편집"에서 제목·공용/개인·삭제, 항목은 글자를 누르면 수정, ×로 삭제해요.</div>`;
   h+=`<div class="lgbar"><div class="lgadd2"><button class="lgaddexp lgaddmine" data-newmemo="mine">${svgPlus}내 메모</button><button class="lgaddexp lgaddmine" data-newmemo="shared">${svgPlus}공용 메모</button></div></div>`;
   return h;
 }
