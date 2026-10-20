@@ -217,8 +217,8 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 
 <script>
 /* ---------- constants ---------- */
-/* 구글 시트 Apps Script 웹 앱 URL (backend/Code.gs 배포 후 …/exec 주소). 비어 있으면 안내 화면만 보임 */
-const API_URL = '';
+/* 저장소 API (api/ledger.js — Vercel 서버 함수 + Neon). 같은 도메인이라 상대 경로 */
+const API_URL = '/api/ledger';
 const POLL_MS = 12000;
 const DAYS=[
   {d:'2026-10-24',n:1,w:'토',s:'10/24'},
@@ -322,7 +322,7 @@ function renderWho(){
 async function claimSlot(){ /* 이 버전은 계정 연동 없이 기기별로 '나'를 기억한다 */ }
 function renderBanners(){
   const b=$('#banners'); let h='';
-  if(!API_URL) h+=`<div class="banner">🔧 <div><b>아직 저장소가 연결되지 않았어요.</b> 구글 시트에 backend/Code.gs를 배포하고 그 주소를 이 페이지의 API_URL에 넣으면 시작돼요.</div></div>`;
+  if(!API_URL) h+=`<div class="banner">🔧 <div><b>저장소 주소가 비어 있어요.</b></div></div>`;
   else if(S.pinNeeded) h+=`<div class="banner accent">🔒 <div><b>비밀번호가 필요해요.</b> <button class="linkish" id="pinOpen">비밀번호 입력</button></div></div>`;
   else if(S.dbMissing) h+=`<div class="banner">⚠️ <div><b>저장소에 연결하지 못했어요.</b> ${esc(S.loadError||'네트워크를 확인하고 새로고침해 주세요.')}</div></div>`;
   else if(S.db&&S.settingsLoaded&&!S.hasSettings) h+=`<div class="banner accent">👋 <div><b>먼저 멤버 이름을 정해주세요.</b> 오른쪽 위 톱니바퀴에서 두 사람 이름과 환율을 넣으면 시작돼요.</div></div>`;
@@ -638,7 +638,7 @@ function openSettings(){
     <div class="f"><label>멤버 이름</label><div class="people-list" id="pl"></div><div style="margin-top:8px"><button type="button" class="linkish" id="pAdd" ${ro||people.length>=6?'hidden':''}>+ 멤버 추가</button></div><div class="hint">순서는 바꾸지 마세요. 지출 기록이 멤버 순번으로 연결돼 있어요.</div></div>
     <div class="f"><label>환율 (1엔 = 원)</label><input type="number" id="sRate" step="0.01" min="1" value="${esc(S.rate)}" ${ro?'disabled':''}><div class="hint">원화 환산 표시에만 써요. 정산은 엔은 엔끼리, 원은 원끼리 계산해요.</div></div>
     ${ro?'':`<div class="actions"><button type="submit" class="btn primary" id="sSave">저장</button></div>`}
-    <div class="hint" style="margin-top:16px">데이터는 여행 구글 시트의 _expenses · _checks 탭에 쌓여요. 친구는 같은 주소를 열고 <b>비밀번호</b>만 넣으면 같이 써요. <button type="button" class="linkish" id="pinChange">비밀번호 다시 입력</button></div>
+    <div class="hint" style="margin-top:16px">데이터는 사이트 서버(Neon DB)에 저장돼요. 친구는 같은 주소를 열면 같이 쓰고, 비밀번호가 걸려 있으면 한 번만 넣으면 돼요. <button type="button" class="linkish" id="pinChange">비밀번호 다시 입력</button></div>
   </form>`;
   openSheet(h); const q=s=>document.querySelector(s);
   q('#shClose').onclick=closeSheet;
@@ -686,7 +686,7 @@ const Store={
     try{
       const res=method==='GET'
         ?await fetch(API_URL+'?action=list&pin='+encodeURIComponent(getPin())+'&_='+Date.now(),{signal:ctrl.signal,redirect:'follow'})
-        :await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({...body,pin:getPin()}),signal:ctrl.signal,redirect:'follow'});
+        :await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...body,pin:getPin()}),signal:ctrl.signal,redirect:'follow'});
       const j=await res.json();
       if(!j.ok) throw {code:j.error==='pin'?'pin':'server',message:j.error||'server'};
       return j;
@@ -704,7 +704,7 @@ const Store={
       if(first&&!S.hasSettings&&!$('#sheet').classList.contains('open'))openSettings();
     }catch(e){
       if(e.code==='pin'){S.pinNeeded=true;S.db=null;render();if(!$('#sheet').classList.contains('open'))openPin()}
-      else{S.dbMissing=true;S.loadError=e.code==='network'?'네트워크 오류 또는 배포 주소 문제예요.':String(e.message||'');S.db=null;render()}
+      else{S.dbMissing=true;S.loadError=e.code==='network'?'네트워크 오류예요. 로컬 미리보기(localhost)에서는 서버 API가 없어서 연결되지 않아요.':String(e.message||'');S.db=null;render()}
     }finally{this.loading=false}
   },
   async send(ops){ S.saving++; try{return await this.call({action:'write',ops},'POST')} finally{S.saving--} }
@@ -720,7 +720,7 @@ function makeDb(){
 function openPin(){
   const h=`<div class="grab"></div><h2>비밀번호<button type="button" id="shClose">닫기</button></h2>
   <form id="pinForm"><div class="f pinbox"><label>정산 노트 공용 비밀번호</label><input type="text" inputmode="numeric" autocomplete="off" id="pinInput" value="${esc(getPin())}" placeholder="····"></div>
-  <div class="hint">시트 주인이 Code.gs에 정한 숫자예요. 한 번 넣으면 이 폰에 기억돼요.</div>
+  <div class="hint">사이트 주인이 정한 숫자예요. 한 번 넣으면 이 폰에 기억돼요.</div>
   <div class="actions"><button type="submit" class="btn primary">확인</button></div></form>`;
   openSheet(h); const q=s=>document.querySelector(s);
   q('#shClose').onclick=closeSheet;
