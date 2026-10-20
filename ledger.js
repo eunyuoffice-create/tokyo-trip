@@ -15,7 +15,7 @@ const CATS=['식비','교통','덕질','쇼핑','입장','숙소','기타'];
 const CUR={JPY:{sym:'¥'},KRW:{sym:'₩'}};
 const TABS=[{id:'settle',label:'정산'},{id:'exp',label:'지출'},{id:'memo',label:'메모'}];
 
-const S={screen:'loading',token:'',me:null,people:[],rate:9.2,expenses:[],transfers:[],memos:[],
+const S={screen:'loading',token:'',me:null,people:[],rate:8.4,rateInfo:{mode:'auto',auto:null},expenses:[],transfers:[],memos:[],
   tab:'settle',dayFilter:'all',scope:'all',err:'',saving:0,pending:false,focusAdd:null,loginIdx:null,loaded:false};
 const ls={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}},del:k=>{try{localStorage.removeItem(k)}catch(e){}}};
 let root,view,toastT,pollT;
@@ -52,7 +52,7 @@ async function api(body){
   finally{clearTimeout(t)}
 }
 function applyList(j){
-  S.me=j.me; S.people=j.people||[]; S.rate=+j.rate||S.rate;
+  S.me=j.me; S.people=j.people||[]; S.rate=+j.rate||S.rate; S.rateInfo=j.rateInfo||S.rateInfo;
   S.expenses=Object.entries(j.expenses||{}).map(([id,e])=>({id,...e,amount:+e.amount||0,payer:+e.payer||0,parts:Array.isArray(e.parts)?e.parts.map(Number):[]}));
   S.transfers=Object.entries(j.transfers||{}).map(([id,t])=>({id,...t,amount:+t.amount||0,from:+t.from||0,to:+t.to||0}));
   S.memos=Object.entries(j.memos||{}).map(([id,m])=>({id,...m,items:Array.isArray(m.items)?m.items:[]}));
@@ -71,7 +71,7 @@ async function load(){
 async function boot(){
   S.token=ls.get('tl_token')||''; 
   if(S.token){await load(); if(S.screen==='main')return;}
-  try{ const st=await api({action:'status'}); S.people=st.people||[]; S.rate=+st.rate||S.rate; S.screen=st.setup?'login':'setup'; S.err=''; }
+  try{ const st=await api({action:'status'}); S.people=st.people||[]; S.rate=+st.rate||S.rate; S.rateInfo=st.rateInfo||S.rateInfo; S.screen=st.setup?'login':'setup'; S.err=''; }
   catch(e){ S.screen='error'; S.err=e.code==='network'?'서버에 연결하지 못했어요. 로컬 미리보기라면 `node dev/server.js`로 띄워야 해요.':String(e.message||'') }
   render();
 }
@@ -132,6 +132,7 @@ function myTotals(cur){
   });
   return {paid,share,priv,all};
 }
+const rateLabel=()=>{const ri=S.rateInfo||{};return `1엔 = ${S.rate}원`+(ri.mode==='manual'?' (직접 입력)':(ri.auto?` (${esc(ri.auto.date||'')} ${esc(ri.auto.src||'')} 자동)`:' (기본값)'))};
 const balLine=(b,cur)=>Math.abs(b)<0.5?`<b>정산 끝</b>`:(b>0?`받을 돈 <b class="lgnum" style="color:var(--ok)">${fmt(b,cur)}</b>`:`줄 돈 <b class="lgnum" style="color:var(--accent)">${fmt(-b,cur)}</b>`);
 
 /* ---------- 렌더 ---------- */
@@ -159,7 +160,7 @@ function viewSetup(){
       <div class="mr"><input type="text" placeholder="이름 2" maxlength="12" data-n="1" value="카뮈"><input type="text" inputmode="numeric" class="lgpin" placeholder="비밀번호" maxlength="8" data-p="1"></div>
     </div><div style="margin-top:8px"><button type="button" class="lglink" data-act="setup-add">+ 멤버 추가</button></div></div>
     <div class="lgf"><label>나는</label><div class="lgchips" id="setupMe"><button type="button" class="lgchip" data-i="0" aria-pressed="true">첫 번째</button><button type="button" class="lgchip" data-i="1" aria-pressed="false">두 번째</button></div></div>
-    <div class="lgf"><label>환율 (1엔 = 원, 원화 환산 표시용)</label><input type="number" id="setupRate" step="0.01" min="1" value="${esc(S.rate)}"></div>
+    <div class="lgf"><label>환율 (1엔 = 원) — 비워두면 매일 자동으로 받아와요</label><input type="number" id="setupRate" step="0.01" min="1" placeholder="자동 (지금 ${esc(S.rate)}원)"></div>
     <div class="lgactions"><button type="submit" class="lgbtn lgprimary">시작하기</button></div>
   </form></div>`;
 }
@@ -184,7 +185,7 @@ function viewMain(){
 function viewSettle(){
   let h=''; const me=S.me; const sh=shared();
   const tj=sh.filter(e=>e.cur==='JPY').reduce((a,e)=>a+e.amount,0), tk=sh.filter(e=>e.cur==='KRW').reduce((a,e)=>a+e.amount,0);
-  h+=`<div class="lgcard"><h4>공용 지출 합계</h4><div class="lgstat"><div><div class="sk">엔</div><div class="sv">${fmt(tj,'JPY')}</div></div><div><div class="sk">원</div><div class="sv">${fmt(tk,'KRW')}</div></div></div><div class="lghint">합쳐서 약 <b class="lgnum">${fmt(tj*S.rate+tk,'KRW')}</b> · 1엔 = ${S.rate}원 · 공용 ${sh.length}건${S.people.length?` · 1인 약 <b class="lgnum">${fmt((tj*S.rate+tk)/S.people.length,'KRW')}</b>`:''}</div></div>`;
+  h+=`<div class="lgcard"><h4>공용 지출 합계</h4><div class="lgstat"><div><div class="sk">엔</div><div class="sv">${fmt(tj,'JPY')}</div></div><div><div class="sk">원</div><div class="sv">${fmt(tk,'KRW')}</div></div></div><div class="lghint">합쳐서 약 <b class="lgnum">${fmt(tj*S.rate+tk,'KRW')}</b> · ${rateLabel()} · 공용 ${sh.length}건${S.people.length?` · 1인 약 <b class="lgnum">${fmt((tj*S.rate+tk)/S.people.length,'KRW')}</b>`:''}</div></div>`;
   ['JPY','KRW'].forEach(cur=>{
     const has=sh.some(e=>e.cur===cur)||S.transfers.some(t=>t.cur===cur); if(!has&&cur==='KRW')return;
     const fl=flows(cur), b=balances(cur);
@@ -300,7 +301,7 @@ function bind(){
       if(rows.length<2||rows.some(r=>!r.name||!/^\d{4,8}$/.test(r.pin))){toast('이름과 4~8자리 숫자 비밀번호를 모두 넣어주세요');return}
       const me=+(qa('#setupMe .lgchip[aria-pressed="true"]',view)[0]||{dataset:{i:0}}).dataset.i;
       const btn=sf.querySelector('button[type=submit]'); btn.disabled=true;
-      try{const j=await api({action:'setup',people:rows,rate:parseFloat(q('#setupRate',view).value)||9.2,me}); S.token=j.token; ls.set('tl_token',j.token); ls.set('tl_me',String(j.me)); S.screen='loading'; render(); await load();}
+      try{const j=await api({action:'setup',people:rows,rate:parseFloat(q('#setupRate',view).value)||0,me}); S.token=j.token; ls.set('tl_token',j.token); ls.set('tl_me',String(j.me)); S.screen='loading'; render(); await load();}
       catch(e){btn.disabled=false; if(e.code==='already_setup'){toast('이미 시작된 노트예요');S.screen='loading';render();boot()} else toast(e.message||'실패했어요')}
     };
   }
@@ -421,15 +422,18 @@ function openTransfer(t){
 function openSettings(){
   openSheet(`<h2>설정<button type="button" data-close>닫기</button></h2><form id="setForm">
     <div class="lgf"><label>멤버 이름</label><div class="lgmrows" id="sNames">${S.people.map((p,i)=>`<div class="mr" style="grid-template-columns:1fr auto"><input type="text" data-n="${i}" value="${esc(p.name)}" maxlength="12"><span class="lghint" style="margin:0;align-self:center;width:52px;text-align:right">${i===S.me?'나':''}</span></div>`).join('')}</div></div>
-    <div class="lgf"><label>환율 (1엔 = 원)</label><input type="number" id="sRate" step="0.01" min="1" value="${esc(S.rate)}"></div>
+    <div class="lgf"><div class="lgtoggle"><span>환율 매일 자동으로 받기</span><input type="checkbox" id="sAuto" ${S.rateInfo&&S.rateInfo.mode==='manual'?'':'checked'}></div>
+      <div class="lghint" id="sAutoHint">${S.rateInfo&&S.rateInfo.auto?`지금 자동값: 1엔 = ${esc(S.rateInfo.auto.value)}원 (${esc(S.rateInfo.auto.date||'')} ${esc(S.rateInfo.auto.src||'')} 기준). 하루 한 번 갱신돼요. 카드사 환율과는 조금 달라요.`:'아직 자동 환율을 못 받아왔어요. 네트워크가 되면 하루 한 번 받아와요.'}</div></div>
+    <div class="lgf" id="sRateBox" ${S.rateInfo&&S.rateInfo.mode==='manual'?'':'hidden'}><label>직접 입력 (1엔 = 원)</label><input type="number" id="sRate" step="0.01" min="1" value="${esc(S.rate)}"></div>
     <div class="lgactions" style="margin-top:4px"><button type="submit" class="lgbtn lgprimary">저장</button></div></form>
     <hr style="border:0;border-top:1px solid var(--line);margin:18px 0">
     <form id="pinForm"><div class="lgf"><label>비밀번호 바꾸기</label><div class="lgmrows"><div class="mr"><select id="pWho">${S.people.map((p,i)=>`<option value="${i}" ${i===S.me?'selected':''}>${esc(p.name)}${i===S.me?' (나)':''}</option>`).join('')}</select><input type="text" inputmode="numeric" class="lgpin" id="pNew" placeholder="새 비밀번호" maxlength="8"></div></div><div class="lghint">동행이 잊었을 때 대신 정해줄 수 있어요.</div></div><div class="lgactions" style="margin-top:4px"><button type="submit" class="lgbtn lgghost" style="flex:1">비밀번호 저장</button></div></form>
     <form id="addForm" ${S.people.length>=6?'hidden':''}><div class="lgf" style="margin-top:14px"><label>멤버 추가</label><div class="lgmrows"><div class="mr"><input type="text" id="aName" placeholder="이름" maxlength="12"><input type="text" inputmode="numeric" class="lgpin" id="aPin" placeholder="비밀번호" maxlength="8"></div></div></div><div class="lgactions" style="margin-top:4px"><button type="submit" class="lgbtn lgghost" style="flex:1">추가</button></div></form>
     <div class="lgactions" style="margin-top:18px"><button type="button" class="lgbtn lgdanger" id="sLogout" style="flex:1">이 폰에서 로그아웃</button></div>`);
   const sh=q('.lgsheet'); const g=s=>q(s,sh);
-  const applySettings=async body=>{try{const j=await api({action:'settings',...body});S.people=j.people;S.rate=+j.rate||S.rate;return true}catch(e){toast(e.message||'실패했어요');return false}};
-  g('#setForm').onsubmit=async ev=>{ev.preventDefault();const names=qa('#sNames input',sh).map(i=>i.value.trim());if(await applySettings({names,rate:parseFloat(g('#sRate').value)||S.rate})){toast('저장했어요');closeSheet();render()}};
+  const applySettings=async body=>{try{const j=await api({action:'settings',...body});S.people=j.people;S.rate=+j.rate||S.rate;S.rateInfo=j.rateInfo||S.rateInfo;return true}catch(e){toast(e.message||'실패했어요');return false}};
+  g('#sAuto').onchange=()=>{g('#sRateBox').hidden=g('#sAuto').checked};
+  g('#setForm').onsubmit=async ev=>{ev.preventDefault();const names=qa('#sNames input',sh).map(i=>i.value.trim());const body={names};if(g('#sAuto').checked)body.rateAuto=true;else body.rate=parseFloat(g('#sRate').value)||S.rate;if(await applySettings(body)){toast('저장했어요');closeSheet();load()}};
   g('#pinForm').onsubmit=async ev=>{ev.preventDefault();const pin=g('#pNew').value.trim();if(!/^\d{4,8}$/.test(pin)){toast('숫자 4~8자리');return}if(await applySettings({setPin:{me:+g('#pWho').value,pin}})){toast('비밀번호를 바꿨어요');g('#pNew').value=''}};
   g('#addForm').onsubmit=async ev=>{ev.preventDefault();const name=g('#aName').value.trim(),pin=g('#aPin').value.trim();if(!name||!/^\d{4,8}$/.test(pin)){toast('이름과 숫자 4~8자리');return}if(await applySettings({addMember:{name,pin}})){toast('추가했어요');closeSheet();render()}};
   g('#sLogout').onclick=()=>{closeSheet();logout()};

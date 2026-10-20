@@ -26,7 +26,31 @@ function readToken(secret, t) {
   return +me;
 }
 const ownerOf = d => (d && d.owner !== null && d.owner !== undefined && d.owner !== '') ? +d.owner : null;
-const publicTrip = trip => ({ people: (trip.people || []).map(p => ({ name: p.name || '' })), rate: +trip.rate || 9.2 });
+const DEFAULT_RATE = 8.4;
+function publicTrip(trip) {
+  const auto = trip.rateAuto && +trip.rateAuto.value > 0 ? trip.rateAuto : null;
+  const manual = +trip.rateManual > 0 ? +trip.rateManual : (trip.rate && trip.rateManualLegacy ? +trip.rate : 0);
+  const rate = manual || (auto ? +auto.value : 0) || DEFAULT_RATE;
+  return { people: (trip.people || []).map(p => ({ name: p.name || '' })), rate: +rate.toFixed(3),
+    rateInfo: { mode: manual ? 'manual' : 'auto', auto: auto ? { value: +(+auto.value).toFixed(3), date: auto.date, src: auto.src } : null } };
+}
+/* 환율 자동 갱신: 하루 한 번 공개 환율(JPY→KRW) 받아 settings/trip.rateAuto 에 저장 */
+async function fetchRate() {
+  const get = async (url, pick) => { const c = new AbortController(); const t = setTimeout(() => c.abort(), 4000);
+    try { const r = await fetch(url, { signal: c.signal }); const j = await r.json(); return pick(j); } finally { clearTimeout(t); } };
+  try { return await get('https://open.er-api.com/v6/latest/JPY', j => ({ value: +j.rates.KRW, date: String(j.time_last_update_utc || '').slice(5, 16).trim(), src: 'ExchangeRate-API' })); } catch (_) {}
+  try { return await get('https://api.frankfurter.dev/v1/latest?base=JPY&symbols=KRW', j => ({ value: +j.rates.KRW, date: j.date, src: 'ECB' })); } catch (_) {}
+  return null;
+}
+async function refreshRate(db, trip) {
+  if (!trip) return trip;
+  const at = trip.rateAuto && trip.rateAuto.at || 0;
+  if (Date.now() - at < 6 * 3600e3) return trip;           // 6시간 안에 받아왔으면 그대로
+  const r = await fetchRate();
+  const next = { ...trip, rateAuto: r && r.value > 0 ? { ...r, at: Date.now() } : { ...(trip.rateAuto || {}), at: Date.now() } };
+  try { await db.put('settings', 'trip', next); } catch (_) {}
+  return next;
+}
 
 // 교차 출처 허용: 깃허브 페이지(eunyuoffice-create.github.io)와 로컬에서 같은 서버를 쓴다. 인증은 토큰(본문)이라 쿠키 없음.
 const ORIGINS = [/^https:\/\/[a-z0-9-]+\.github\.io$/, /^https:\/\/[a-z0-9-]+\.vercel\.app$/, /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/];
@@ -49,9 +73,10 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, db, hasUrl: hasDbUrl(), envNames: dbEnvNames() });
     }
     const db = await store();
-    const trip = await db.get('settings', 'trip');
+    let trip = await db.get('settings', 'trip');
+    if (trip && (action === 'list' || action === 'status')) trip = await refreshRate(db, trip);
 
-    if (action === 'status') return res.status(200).json({ ok: true, setup: !!trip, ...(trip ? publicTrip(trip) : { people: [], rate: 9.2 }) });
+    if (action === 'status') return res.status(200).json({ ok: true, setup: !!trip, ...(trip ? publicTrip(trip) : { people: [], rate: DEFAULT_RATE, rateInfo: { mode: 'auto', auto: null } }) });
 
     if (action === 'setup') {
       if (trip) return res.status(409).json({ ok: false, error: 'already_setup' });
@@ -59,7 +84,7 @@ export default async function handler(req, res) {
       if (people.length < 2 || people.length > 6) return res.status(400).json({ ok: false, error: '멤버는 2~6명' });
       for (const p of people) if (!String(p.name || '').trim() || !/^\d{4,8}$/.test(String(p.pin || ''))) return res.status(400).json({ ok: false, error: '이름과 4~8자리 숫자 비밀번호가 필요해요' });
       const secret = randomBytes(32).toString('hex');
-      const doc = { secret, rate: +body.rate || 9.2, people: people.map(p => ({ name: String(p.name).trim().slice(0, 12), pinHash: hashPin(secret, p.pin) })), created: Date.now() };
+      const doc = { secret, rateManual: +body.rate > 0 ? +body.rate : 0, people: people.map(p => ({ name: String(p.name).trim().slice(0, 12), pinHash: hashPin(secret, p.pin) })), created: Date.now() };
       await db.put('settings', 'trip', doc);
       const me = Math.min(Math.max(+body.me || 0, 0), people.length - 1);
       return res.status(200).json({ ok: true, token: makeToken(secret, me), me, ...publicTrip(doc) });
@@ -111,7 +136,8 @@ export default async function handler(req, res) {
     if (action === 'settings') {
       const next = { ...trip, people: trip.people.map(p => ({ ...p })) };
       if (Array.isArray(body.names)) body.names.forEach((n, i) => { if (next.people[i] && String(n || '').trim()) next.people[i].name = String(n).trim().slice(0, 12); });
-      if (body.rate) next.rate = +body.rate || next.rate;
+      if (body.rateAuto === true) { next.rateManual = 0; }
+      else if (body.rate !== undefined && body.rate !== null && body.rate !== '') { next.rateManual = +body.rate > 0 ? +body.rate : 0; }
       if (body.addMember) {
         const { name, pin } = body.addMember;
         if (next.people.length >= 6) return res.status(400).json({ ok: false, error: '멤버는 최대 6명' });
