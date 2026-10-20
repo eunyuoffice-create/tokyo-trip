@@ -15,9 +15,9 @@ const CATS=['식비','교통','덕질','쇼핑','입장','숙소','기타'];
 const CUR={JPY:{sym:'¥'},KRW:{sym:'₩'}};
 
 const S={screen:'loading',token:'',me:null,people:[],rate:8.4,rateInfo:{mode:'auto',auto:null},expenses:[],transfers:[],memos:[],
-  scope:'mine',err:'',saving:0,pending:false,focusAdd:null,loginIdx:null,loaded:false};
+  scope:'mine',err:'',saving:0,pending:false,loginIdx:null,loaded:false};
 const ls={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}},del:k=>{try{localStorage.removeItem(k)}catch(e){}}};
-let root,view,memoRoot,memoView,ov,toastT,pollT;
+let root,view,memoRoot,memoView,userEl,ov,toastT,pollT;
 const roots=()=>[root,memoRoot].filter(Boolean);
 const inRoots=a=>roots().some(r=>r.contains(a));
 
@@ -33,12 +33,13 @@ const pname=i=>(S.people[i]&&S.people[i].name)||`멤버${i+1}`;
 const ownerOf=d=>(d.owner===null||d.owner===undefined||d.owner==='')?null:+d.owner;
 const isShared=d=>ownerOf(d)===null;
 const q=(sel,el)=>{ if(el)return el.querySelector(sel); for(const r of roots()){const x=r.querySelector(sel); if(x)return x} return ov?ov.querySelector(sel):null };
-const qa=(sel,el)=>el?[...el.querySelectorAll(sel)]:roots().flatMap(r=>[...r.querySelectorAll(sel)]);
+const qa=(sel,el)=>el?[...el.querySelectorAll(sel)]:[...roots(),ov].filter(Boolean).flatMap(r=>[...r.querySelectorAll(sel)]);
 const toast=m=>{const t=q('.lgtoast',ov);if(!t)return;t.textContent=m;t.classList.add('lgshow');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('lgshow'),1800)};
 const svgCheck='<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>';
 const svgX='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const svgLock='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
 const svgMore='<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>';
+const svgUser='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>';
 const svgGear='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>';
 
 /* ---------- api ---------- */
@@ -137,24 +138,31 @@ const rateLabel=()=>{const ri=S.rateInfo||{};return `1엔 = ${S.rate}원`+(ri.mo
 const balLine=(b,cur)=>Math.abs(b)<0.5?`<b>정산 끝</b>`:(b>0?`받을 돈 <b class="lgnum" style="color:var(--ok)">${fmt(b,cur)}</b>`:`줄 돈 <b class="lgnum" style="color:var(--accent)">${fmt(-b,cur)}</b>`);
 
 /* ---------- 렌더 ---------- */
-/* 글 메모 textarea 나 내용이 남아 있는 항목 입력칸에 커서가 있으면 다시 그리지 않는다 (입력 중 내용 보호) */
-function isEditing(){ const a=document.activeElement; if(!a||!inRoots(a)||(ov&&ov.contains(a)))return false; if(a.matches('textarea.lgbody'))return true; if(a.matches('[data-addli]')&&a.value)return true; return false; }
+/* 입력칸은 전부 시트(ov) 안에 있어서 목록을 다시 그려도 입력이 끊기지 않는다 */
+function isEditing(){ return false; }
 function render(){
   if(isEditing()){S.pending=true;return}
   S.pending=false;
-  const a=document.activeElement; if(a&&inRoots(a)&&a.matches&&a.matches('[data-addli]'))S.focusAdd=a.dataset.addli;
   let h='';
   if(S.screen==='loading') h=`<div class="lgcard"><div class="lgempty">불러오는 중…</div></div>`;
   else if(S.screen==='error') h=`<div class="lgbanner">⚠️ <div><b>정산 노트를 열지 못했어요.</b> ${esc(S.err)} <button class="lglink" data-act="retry">다시 시도</button></div></div>`;
-  else if(S.screen==='setup') h=viewSetup();
-  else if(S.screen==='login') h=viewLogin();
+  else if(S.screen==='setup'||S.screen==='login') h=viewLocked();
   else h=viewMain();
   view.innerHTML=h; bind(view);
+  if(userEl){ userEl.innerHTML=userHtml(); bind(userEl); }
   if(memoView){ memoView.innerHTML=S.screen==='main'?viewMemo():viewMemoLocked(); bind(memoView); }
-  if(S.focusAdd){const inp=q(`[data-addli="${S.focusAdd}"]`); if(inp)inp.focus(); S.focusAdd=null}
 }
-function viewSetup(){
-  return `<div class="lgauth"><h3>정산 노트 시작</h3><p>같이 쓰는 멤버와 각자 비밀번호를 정해요. 개인 지출·개인 메모는 그 비밀번호로 들어온 사람만 볼 수 있어요. 처음 한 번만 하면 돼요.</p>
+function userHtml(){
+  if(S.screen==='main') return `<button class="lguser" data-act="settings" aria-label="내 계정·설정">${svgUser}<span>${esc(pname(S.me))}</span></button><button class="lguser lguser-out" data-act="logout">로그아웃</button>`;
+  if(S.screen==='login'||S.screen==='setup') return `<button class="lguser lguser-off" data-act="login">${svgUser}<span>${S.screen==='setup'?'시작하기':'로그인'}</span></button>`;
+  return '';
+}
+function viewLocked(){
+  const setup=S.screen==='setup';
+  return `<div class="lgcard lgauthcard"><div class="lgauthic">${svgUser}</div><div><b>${setup?'정산 노트를 아직 시작하지 않았어요':'로그인하면 정산 노트가 열려요'}</b><p>${setup?'멤버와 각자 비밀번호를 정하면 바로 쓸 수 있어요.':'내 지출과 메모는 나만 보고, 공용만 같이 봐요. 이 폰에 한 번만 기억돼요.'}</p><button class="lgbtn lgprimary lgsmbtn" data-act="login">${setup?'시작하기':'로그인'}</button></div></div>`;
+}
+function setupFormHtml(){
+  return `<h2>정산 노트 시작<button type="button" data-close>닫기</button></h2><p class="lghint" style="margin:0 0 12px">같이 쓰는 멤버와 각자 숫자 비밀번호를 정해요. 개인 지출·개인 메모는 그 비밀번호로 들어온 사람만 봐요. 처음 한 번만 하면 돼요.</p>
   <form id="setupForm">
     <div class="lgf"><label>멤버 (이름 · 숫자 비밀번호 4~8자리)</label><div class="lgmrows" id="setupRows">
       <div class="mr"><input type="text" placeholder="이름 1" maxlength="12" data-n="0" value="은유"><input type="text" inputmode="numeric" class="lgpin" placeholder="비밀번호" maxlength="8" data-p="0"></div>
@@ -163,18 +171,24 @@ function viewSetup(){
     <div class="lgf"><label>나는</label><div class="lgchips" id="setupMe"><button type="button" class="lgchip" data-i="0" aria-pressed="true">첫 번째</button><button type="button" class="lgchip" data-i="1" aria-pressed="false">두 번째</button></div></div>
     <div class="lgf"><label>환율 (1엔 = 원) — 비워두면 매일 자동으로 받아와요</label><input type="number" id="setupRate" step="0.01" min="1" placeholder="자동 (지금 ${esc(S.rate)}원)"></div>
     <div class="lgactions"><button type="submit" class="lgbtn lgprimary">시작하기</button></div>
-  </form></div>`;
+  </form>`;
 }
-function viewLogin(){
-  if(!S.people.length) return `<div class="lgauth"><h3>정산 노트</h3><p>아직 멤버가 없어요.</p><div class="lgactions"><button class="lgbtn lgprimary" data-act="retry">새로고침</button></div></div>`;
+function loginFormHtml(){
+  if(!S.people.length) return `<h2>정산 노트<button type="button" data-close>닫기</button></h2><p class="lghint">아직 멤버가 없어요.</p><div class="lgactions"><button class="lgbtn lgprimary" data-act="retry">새로고침</button></div>`;
   const idx=S.loginIdx!==null?S.loginIdx:(+ls.get('tl_me')||0);
-  return `<div class="lgauth"><h3>정산 노트</h3><p>누구인지 고르고 비밀번호를 넣어주세요. 이 폰에 기억돼요.</p>
+  return `<h2>로그인<button type="button" data-close>닫기</button></h2><p class="lghint" style="margin:0 0 12px">누구인지 고르고 비밀번호를 넣어주세요. 이 폰에 기억돼요.</p>
   <form id="loginForm">
     <div class="lgf"><label>나는</label><div class="lgchips" id="loginWho">${S.people.map((p,i)=>`<button type="button" class="lgchip" data-i="${i}" aria-pressed="${i===idx}">${esc(p.name)}</button>`).join('')}</div></div>
     <div class="lgf"><label>비밀번호</label><input type="password" inputmode="numeric" class="lgpin" id="loginPin" maxlength="8" autocomplete="current-password"></div>
     <div class="lgactions"><button type="submit" class="lgbtn lgprimary">들어가기</button></div>
     <div class="lghint">비밀번호를 잊었으면 <button type="button" class="lglink" data-act="forgot">새로 정하기</button> (사이트 입장 비밀번호로 확인해요)</div>
-  </form></div>`;
+  </form>`;
+}
+function openLogin(){
+  if(S.screen!=='login'&&S.screen!=='setup'){ if(S.screen==='main')openSettings(); return; }
+  openSheet(S.screen==='setup'?setupFormHtml():loginFormHtml());
+  const sh=q('.lgsheet',ov); bind(sh);
+  setTimeout(()=>{const i=q('#loginPin',sh); if(i)i.focus()},250);
 }
 function viewMain(){
   let h='';
@@ -203,7 +217,7 @@ function viewHome(){
   // 2) 정산 — 잔액 한 줄 + 보냈어/받았어 (아래쪽)
   const allFlows=[...flows('JPY').map(f=>({...f,cur:'JPY'})),...flows('KRW').map(f=>({...f,cur:'KRW'}))];
   const mine=allFlows.filter(f=>f.from===me||f.to===me), others=allFlows.filter(f=>!(f.from===me||f.to===me));
-  h+=`<div class="lg-head lgbelow"><div class="lgttl">정산 노트</div><div class="lg-head-r"><span class="lgme">${esc(pname(S.me))}</span><button class="lgicon" data-act="settings" aria-label="설정">${svgGear}</button></div></div>`;
+  h+=`<div class="lg-head lgbelow"><div class="lgttl">정산 노트</div><div class="lg-head-r"><button class="lgicon" data-act="settings" aria-label="설정">${svgGear}</button></div></div>`;
   h+=`<div class="lghero2"><div class="lghero-k">지금 잔액</div>`;
   if(!sh.length) h+=`<div class="lghero-v lgmuted-t">아직 공용 지출이 없어요</div><div class="lghero-s">"공용 지출"로 넣으면 자동으로 나눠요.</div>`;
   else if(!allFlows.length) h+=`<div class="lghero-v lgok-t">정산 끝 · 주고받을 돈 없음</div><div class="lghero-s">공용 지출 ${sh.length}건이 모두 정리됐어요.</div>`;
@@ -243,8 +257,8 @@ function historyHtml(){
   return h+`</div></details>`;
 }
 function viewMemoLocked(){
-  const msg=S.screen==='loading'?'정산 노트 불러오는 중…':S.screen==='error'?'정산 노트 서버에 연결하지 못해서 메모를 못 불러왔어요.':'정산 탭에서 로그인하면 내 메모와 공용 체크리스트가 여기에 나와요.';
-  return `<div class="lgcard"><div class="lgempty lgtightempty">${msg}${(S.screen==='login'||S.screen==='setup')?` <button class="lglink" data-act="go-ledger">정산 탭 열기</button>`:''}</div></div>`;
+  const msg=S.screen==='loading'?'정산 노트 불러오는 중…':S.screen==='error'?'정산 노트 서버에 연결하지 못해서 메모를 못 불러왔어요.':'로그인하면 내 메모와 공용 체크리스트가 여기에 나와요.';
+  return `<div class="lgcard"><div class="lgempty lgtightempty">${msg}${(S.screen==='login'||S.screen==='setup')?` <button class="lglink" data-act="login">${S.screen==='setup'?'시작하기':'로그인'}</button>`:''}</div></div>`;
 }
 function rowHtml(e){
   const me=S.me; const priv=!isShared(e); const sh=sharesOf(e); const parts=sh.map((v,i)=>v>0?i:-1).filter(i=>i>=0);
@@ -262,54 +276,84 @@ function rowHtml(e){
   const check=priv?'':`<button class="lgbox lgbox-s" data-settled="${esc(e.id)}" aria-label="이 건 정산 완료" aria-pressed="${!!e.settled}">${svgCheck}</button>`;
   return `<div class="lgrow ${!priv&&e.settled?'lgsettled':''}">${check}<button class="lgrowbody" data-exp="${esc(e.id)}"><div class="lgmid"><div class="ti">${priv?`<span class="lglock">${svgLock}</span>`:''}<span class="lgtrunc">${esc(e.title||'(내용 없음)')}</span></div><div class="si">${sub}${e.memo?`<span class="lgtrunc">· ${esc(e.memo)}</span>`:''}</div></div><div class="lgamt"><div class="aa">${fmt(e.amount,e.cur)}</div>${right}</div><span class="lgchev" aria-hidden="true"></span></button></div>`;
 }
+
+/* ---------- 메모: 목록은 한 줄씩, 쓰기·보기는 시트에서 ---------- */
+const svgList='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/></svg>';
+const svgText='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5h14M5 10h14M5 15h9"/></svg>';
 function viewMemo(){
-  // 메모가 있는 섹션만 그린다. 새로 쓰는 건 하단 고정 바의 [내 메모]/[공용 메모] 버튼으로.
   let h='';
-  const secs=[{k:'mine',title:'내 메모',sub:`${pname(S.me)}만 봄`,list:S.memos.filter(m=>ownerOf(m)===S.me)},{k:'shared',title:'공용 메모',sub:'둘 다 보고 체크',list:S.memos.filter(isShared)}];
+  const secs=[{title:'내 메모',sub:`${pname(S.me)}만 봄`,list:S.memos.filter(m=>ownerOf(m)===S.me)},{title:'공용 메모',sub:'둘 다 보고 체크',list:S.memos.filter(isShared)}];
   secs.forEach(sec=>{
     if(!sec.list.length)return;
-    h+=`<div class="lgsec"><h3>${sec.title} <span class="lgsub">${esc(sec.sub)}</span></h3></div>`;
-    sec.list.slice().sort((a,b)=>(a.order||a.ts||0)-(b.order||b.ts||0)).forEach(m=>{h+=memoHtml(m)});
+    const list=sec.list.slice().sort((a,b)=>(b.upd||b.order||b.ts||0)-(a.upd||a.order||a.ts||0));
+    h+=`<div class="lgsec"><h3>${sec.title} <span class="lgsub">${esc(sec.sub)}</span></h3><span class="lgnum">${list.length}개</span></div><div class="lgcard lgtight">${list.map(memoRow).join('')}</div>`;
   });
-  if(h) h+=`<div class="lghint" style="text-align:center;margin:10px 0 14px">"편집"에서 제목·공용/개인·삭제, 항목은 글자를 누르면 수정, ×로 삭제해요.</div>`;
+  if(!S.memos.length) h+=`<div class="lghint" style="text-align:center;margin:6px 0 10px">아래 [내 메모] [공용 메모]로 체크 리스트나 글을 써요.</div>`;
   h+=`<div class="lgbar"><div class="lgadd2"><button class="lgaddexp lgaddmine" data-newmemo="mine">${svgPlus}내 메모</button><button class="lgaddexp lgaddmine" data-newmemo="shared">${svgPlus}공용 메모</button></div></div>`;
   return h;
 }
-function memoHtml(m){
-  const priv=!isShared(m);
-  let h=`<div class="lgmemo" data-memo="${esc(m.id)}"><div class="lgmh"><button class="lgtt" data-memoedit="${esc(m.id)}">${priv?`<span class="lglock">${svgLock}</span>`:''}${m.title?esc(m.title):`<span class="lgph">${m.type==='text'?'제목 없는 글':'제목 없는 리스트'}</span>`}</button><button class="lgaddbtn" data-memoedit="${esc(m.id)}">편집</button></div>`;
-  if(m.type==='text'){
-    h+=`<textarea class="lgbody" data-body="${esc(m.id)}" placeholder="여기에 그냥 써요. 줄바꿈 그대로 보여요." rows="3">${esc(m.body||'')}</textarea><div class="lgsaverow"><span class="lgsave" data-mark="${esc(m.id)}"></span><button type="button" class="lgaddbtn" data-savebody="${esc(m.id)}">저장</button></div>`;
-  }else{
-    const items=(m.items||[]).slice().sort((a,b)=>(a.done?1:0)-(b.done?1:0)); const done=items.filter(i=>i.done).length;
-    items.forEach(it=>{const who=(!priv&&it.who!==null&&it.who!==undefined&&it.who!==''&&S.people[+it.who])?+it.who:null;
-      const whoTag=priv?'':`<button class="lgwho ${who===null?'lgwho-none':who===S.me?'lgwho-me':''}" data-liwho="${esc(m.id)}|${esc(it.id)}" aria-label="담당 바꾸기">${who===null?'담당':esc(pname(who))}</button>`;
-      h+=`<div class="lgli ${it.done?'lgdone':''}"><button class="lgbox" data-li="${esc(m.id)}|${esc(it.id)}" aria-label="완료">${svgCheck}</button><button class="lgtx" data-liedit="${esc(m.id)}|${esc(it.id)}"><span>${esc(it.text)}</span></button>${whoTag}<button class="lgx" data-lidel="${esc(m.id)}|${esc(it.id)}" aria-label="삭제">${svgX}</button></div>`});
-    const pre=S.addWho&&S.addWho[m.id]; const preIdx=(pre===undefined||pre===null)?null:+pre;
-    h+=`<form class="lgaddli" data-addform="${esc(m.id)}"><span class="lgplus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span><input type="text" data-addli="${esc(m.id)}" placeholder="항목 추가" autocomplete="off" maxlength="200">${priv?'':`<button type="button" class="lgwho ${preIdx===null?'lgwho-none':preIdx===S.me?'lgwho-me':''}" data-addwho="${esc(m.id)}" aria-label="새 항목 담당">${preIdx===null?'담당':esc(pname(preIdx))}</button>`}<button type="submit" class="lgaddbtn">입력</button></form>`;
-    if(items.length)h+=`<div class="lgsave" style="text-align:right">${done}/${items.length} 완료</div>`;
-  }
-  return h+`</div>`;
+function memoRow(m){
+  const list=m.type!=='text'; const items=m.items||[]; const done=items.filter(i=>i.done).length; const priv=!isShared(m);
+  const body=String(m.body||'').replace(/\s+/g,' ').trim();
+  const title=m.title||(list?'제목 없는 리스트':(body.slice(0,30)||'제목 없는 글'));
+  const sub=list?(items.length?(items.length>done?items.filter(i=>!i.done).slice(0,4).map(i=>i.text).join(' · '):'모두 완료'):'항목 없음'):(m.title?(body||'내용 없음'):(body.length>30?body.slice(30):'글'));
+  return `<button class="lgrow" data-memo="${esc(m.id)}"><span class="lgmic">${list?svgList:svgText}</span><div class="lgmid"><div class="ti">${priv?`<span class="lglock">${svgLock}</span>`:''}<span class="lgtrunc">${esc(title)}</span></div><div class="si"><span class="lgtrunc">${esc(sub)}</span></div></div>${list&&items.length?`<div class="lgamt"><div class="ab ${done===items.length?'lgokt':''}">${done}/${items.length}</div></div>`:''}<span class="lgchev" aria-hidden="true"></span></button>`;
 }
+const memoItems=m=>(m&&Array.isArray(m.items)?m.items:[]).map(x=>({...x}));
+const whoOf=it=>(it.who===null||it.who===undefined||it.who===''||!S.people[+it.who])?null:+it.who;
+const nextWho=cur=>{const n=S.people.length; if(cur===null||cur===undefined)return 0; return cur+1>=n?null:cur+1};
+function openMemoEditor(m,opts={}){
+  const isNew=!m; const me=S.me;
+  const d={id:m?.id,type:m?(m.type==='text'?'text':'list'):(opts.type||'list'),title:m?.title||'',owner:m?ownerOf(m):(opts.owner===undefined?null:opts.owner),body:m?.body||'',items:memoItems(m),addWho:null};
+  const shared=()=>d.owner===null;
+  const whoBtn=(who,attr)=>`<button type="button" class="lgwho ${who===null?'lgwho-none':who===me?'lgwho-me':''}" ${attr}>${who===null?'담당':esc(pname(who))}</button>`;
+  const itemsHtml=()=>d.items.length?d.items.map(it=>{const who=whoOf(it); return `<div class="lgli ${it.done?'lgdone':''}"><button type="button" class="lgbox" data-tgl="${esc(it.id)}" aria-label="완료">${svgCheck}</button><input type="text" class="lgtxin" data-txt="${esc(it.id)}" value="${esc(it.text)}" maxlength="200">${shared()?whoBtn(who,`data-who="${esc(it.id)}"`):''}<button type="button" class="lgx" data-del="${esc(it.id)}" aria-label="삭제">${svgX}</button></div>`}).join(''):`<div class="lghint" style="margin:2px 0 8px">아직 항목이 없어요. 아래에 쓰고 "입력"을 눌러요.</div>`;
+  openSheet(`<h2><span id="mHead">${isNew?(shared()?'공용 메모 쓰기':'내 메모 쓰기'):(shared()?'공용 메모':'내 메모')}</span><button type="button" data-close>닫기</button></h2><form id="memoForm" autocomplete="off">
+    ${isNew?`<div class="lgf"><div class="lgchips" id="mType"><button type="button" class="lgchip" data-t="list" aria-pressed="${d.type==='list'}">${svgList} 체크 리스트</button><button type="button" class="lgchip" data-t="text" aria-pressed="${d.type==='text'}">${svgText} 글</button></div></div>`:''}
+    <div class="lgf"><input type="text" id="mTitle" placeholder="제목" value="${esc(d.title)}" maxlength="40"></div>
+    <div class="lgf" id="mBodyBox" ${d.type==='text'?'':'hidden'}><textarea id="mBody" rows="7" placeholder="여기에 그냥 써요. 줄바꿈 그대로 남아요.">${esc(d.body)}</textarea></div>
+    <div class="lgf" id="mListBox" ${d.type==='list'?'':'hidden'}><div id="mItems">${itemsHtml()}</div>
+      <div class="lgaddli"><span class="lgplus">${svgPlus}</span><input type="text" id="mAdd" placeholder="항목 추가" maxlength="200"><span id="mAddWho">${shared()?whoBtn(null,'id="mAddWhoBtn"'):''}</span><button type="button" class="lgaddbtn" id="mAddBtn">입력</button></div>
+      <div class="lghint" id="mItemsHint">${isNew?'':'체크·추가·삭제는 바로 저장돼요. 글자를 고치면 칸을 벗어날 때 저장돼요.'}</div></div>
+    <div class="lgf"><label>누가 보나</label><div class="lgchips" id="mOwner"><button type="button" class="lgchip" data-o="mine" aria-pressed="${!shared()}">개인 · 나만</button><button type="button" class="lgchip" data-o="shared" aria-pressed="${shared()}">공용 · 모두</button></div></div>
+    <div class="lgactions">${isNew?'':'<button type="button" class="lgbtn lgdanger" id="mDel">삭제</button>'}<button type="submit" class="lgbtn lgprimary">${isNew?'저장':'저장하고 닫기'}</button></div></form>`);
+  const sh=q('.lgsheet',ov); const g=sel=>q(sel,sh);
+  const persistItems=()=>{ if(isNew)return; write([{op:'update',col:'memos',id:d.id,data:{items:d.items}}]); };
+  const paintItems=()=>{ g('#mItems').innerHTML=itemsHtml(); g('#mAddWho').innerHTML=shared()?whoBtn(d.addWho,'id="mAddWhoBtn"'):''; wireItems(); };
+  const wireItems=()=>{
+    qa('[data-tgl]',sh).forEach(b=>b.onclick=()=>{d.items=d.items.map(it=>it.id===b.dataset.tgl?{...it,done:!it.done,doneBy:!it.done?me:null}:it);paintItems();persistItems()});
+    qa('[data-del]',sh).forEach(b=>b.onclick=()=>{d.items=d.items.filter(it=>it.id!==b.dataset.del);paintItems();persistItems()});
+    qa('[data-who]',sh).forEach(b=>b.onclick=()=>{d.items=d.items.map(it=>it.id===b.dataset.who?{...it,who:nextWho(whoOf(it))}:it);paintItems();persistItems()});
+    qa('[data-txt]',sh).forEach(inp=>{inp.onchange=()=>{const t=inp.value.trim(); d.items=t?d.items.map(it=>it.id===inp.dataset.txt?{...it,text:t}:it):d.items.filter(it=>it.id!==inp.dataset.txt); if(!t)paintItems(); persistItems()}; inp.onkeydown=ev=>{if(ev.key==='Enter'){ev.preventDefault();inp.blur()}}});
+    const wb=g('#mAddWhoBtn'); if(wb)wb.onclick=()=>{d.addWho=nextWho(d.addWho); g('#mAddWho').innerHTML=whoBtn(d.addWho,'id="mAddWhoBtn"'); wireItems();};
+  };
+  const addItem=()=>{const inp=g('#mAdd'); const t=inp.value.trim(); if(!t)return; d.items=[...d.items,{id:uid(),text:t,done:false,who:shared()?d.addWho:null,ts:Date.now()}]; inp.value=''; paintItems(); persistItems(); inp.focus();};
+  g('#mAddBtn').onclick=addItem; g('#mAdd').onkeydown=ev=>{if(ev.key==='Enter'){ev.preventDefault();addItem()}};
+  qa('#mType .lgchip',sh).forEach(b=>b.onclick=()=>{d.type=b.dataset.t;qa('#mType .lgchip',sh).forEach(x=>x.setAttribute('aria-pressed',x===b));g('#mBodyBox').hidden=d.type!=='text';g('#mListBox').hidden=d.type!=='list';});
+  qa('#mOwner .lgchip',sh).forEach(b=>b.onclick=()=>{d.owner=b.dataset.o==='shared'?null:me;qa('#mOwner .lgchip',sh).forEach(x=>x.setAttribute('aria-pressed',x===b));if(isNew)g('#mHead').textContent=shared()?'공용 메모 쓰기':'내 메모 쓰기';paintItems();});
+  wireItems();
+  g('#memoForm').onsubmit=async ev=>{ev.preventDefault();
+    const pending=g('#mAdd').value.trim(); if(pending&&d.type==='list')addItem();
+    const data={type:d.type,owner:d.owner,title:g('#mTitle').value.trim(),body:d.type==='text'?g('#mBody').value:'',items:d.type==='list'?d.items:[]};
+    if(isNew&&!data.title&&!data.body.trim()&&!data.items.length){toast('내용을 써주세요');return}
+    closeSheet();
+    if(isNew){const now=Date.now(); await write([{op:'set',col:'memos',id:uid(),data:{...data,ts:now,order:now}}],'저장했어요')}
+    else await write([{op:'update',col:'memos',id:d.id,data}],'저장했어요');
+  };
+  arm(g('#mDel'),async()=>{closeSheet();await write([{op:'delete',col:'memos',id:d.id}],'삭제했어요')});
+  setTimeout(()=>{const f=isNew?g('#mTitle'):null; if(f)f.focus()},250);
+}
+
 /* ---------- 바인딩 ---------- */
 function bind(c){
-  qa('[data-act]',c).forEach(b=>b.onclick=()=>{const a=b.dataset.act; if(a==='retry'){S.screen='loading';render();boot()} else if(a==='settings')openSettings(); else if(a==='setup-add')setupAddRow(); else if(a==='add-shared')openExpense(null,{priv:false}); else if(a==='add-mine')openExpense(null,{priv:true}); else if(a==='forgot')openForgot(); else if(a==='go-ledger'){const t=[...document.querySelectorAll('[role="tab"][data-tab="ledger"]')].find(x=>!x.closest('.lg')); if(t)t.click(); else location.href='ledger.html';}});
+  qa('[data-act]',c).forEach(b=>b.onclick=()=>{const a=b.dataset.act; if(a==='retry'){S.screen='loading';render();boot()} else if(a==='settings')openSettings(); else if(a==='setup-add')setupAddRow(); else if(a==='login')openLogin(); else if(a==='logout'){logout();toast('로그아웃했어요')} else if(a==='add-shared')openExpense(null,{priv:false}); else if(a==='add-mine')openExpense(null,{priv:true}); else if(a==='forgot')openForgot(); });
   qa('[data-scope]',c).forEach(b=>b.onclick=()=>{S.scope=b.dataset.scope;render()});
   qa('[data-exp]',c).forEach(b=>b.onclick=()=>openExpense(S.expenses.find(e=>e.id===b.dataset.exp)));
   qa('[data-settled]',c).forEach(b=>b.onclick=()=>{const e=S.expenses.find(x=>x.id===b.dataset.settled);if(!e)return;write([{op:'update',col:'expenses',id:e.id,data:{settled:!e.settled,settledBy:!e.settled?S.me:null,settleId:null}}],e.settled?'다시 잔액에 넣었어요':'이 건만 정산 완료했어요')});
   qa('[data-tr]',c).forEach(b=>b.onclick=()=>openRecord(S.transfers.find(t=>t.id===b.dataset.tr)));
   qa('[data-settle]',c).forEach(b=>b.onclick=()=>{const [f,t,a,cur]=b.dataset.settle.split('|');openSettle({from:+f,to:+t,amount:+a,cur})});
-  qa('[data-newmemo]',c).forEach(b=>b.onclick=()=>chooseMemo(b.dataset.newmemo==='mine'?S.me:null));
-  qa('[data-memoedit]',c).forEach(b=>b.onclick=()=>openMemo(S.memos.find(m=>m.id===b.dataset.memoedit)));
-  qa('[data-li]',c).forEach(b=>b.onclick=()=>{const [mid,iid]=b.dataset.li.split('|');toggleItem(mid,iid)});
-  qa('[data-lidel]',c).forEach(b=>b.onclick=()=>{const [mid,iid]=b.dataset.lidel.split('|');delItem(mid,iid)});
-  qa('[data-liedit]',c).forEach(b=>b.onclick=()=>{const [mid,iid]=b.dataset.liedit.split('|');openItem(mid,iid)});
-  qa('[data-liwho]',c).forEach(b=>b.onclick=()=>{const [mid,iid]=b.dataset.liwho.split('|');cycleWho(mid,iid)});
-  qa('[data-addwho]',c).forEach(b=>b.onclick=()=>{S.addWho=S.addWho||{};const cur=S.addWho[b.dataset.addwho];const next=nextWho(cur===undefined?null:cur);S.addWho[b.dataset.addwho]=next;const inp=q(`[data-addli="${b.dataset.addwho}"]`);const val=inp?inp.value:'';render();const inp2=q(`[data-addli="${b.dataset.addwho}"]`);if(inp2){inp2.value=val}});
-  qa('[data-addform]',c).forEach(f=>f.onsubmit=ev=>{ev.preventDefault();const inp=f.querySelector('input');const t=inp.value.trim();if(!t)return;inp.value='';addItem(f.dataset.addform,t)});
-  qa('[data-savebody]',c).forEach(b=>b.onclick=async()=>{const id=b.dataset.savebody;const ta=q(`[data-body="${id}"]`);if(ta)queueBody(id,ta.value);await flushBody(id);toast('저장했어요')});
-  qa('textarea.lgbody',c).forEach(ta=>{autosize(ta); ta.oninput=()=>{autosize(ta);queueBody(ta.dataset.body,ta.value)}; ta.onblur=()=>{flushBody(ta.dataset.body); if(S.pending)setTimeout(()=>{if(!isEditing())render()},50)}; });
-  qa('input',c).forEach(i=>{i.addEventListener('blur',()=>{if(S.pending)setTimeout(()=>{if(!isEditing())render()},50)})});
+  qa('[data-newmemo]',c).forEach(b=>b.onclick=()=>openMemoEditor(null,{owner:b.dataset.newmemo==='mine'?S.me:null}));
+  qa('[data-memo]',c).forEach(b=>b.onclick=()=>openMemoEditor(S.memos.find(m=>m.id===b.dataset.memo)));
   // setup / login (정산 탭 쪽에만 있다)
   const sf=q('#setupForm',c); if(sf){
     qa('#setupMe .lgchip',c).forEach(b=>b.onclick=()=>qa('#setupMe .lgchip',c).forEach(x=>x.setAttribute('aria-pressed',x===b)));
@@ -318,7 +362,7 @@ function bind(c){
       if(rows.length<2||rows.some(r=>!r.name||!/^\d{4,8}$/.test(r.pin))){toast('이름과 4~8자리 숫자 비밀번호를 모두 넣어주세요');return}
       const me=+(qa('#setupMe .lgchip[aria-pressed="true"]',c)[0]||{dataset:{i:0}}).dataset.i;
       const btn=sf.querySelector('button[type=submit]'); btn.disabled=true;
-      try{const j=await api({action:'setup',people:rows,rate:parseFloat(q('#setupRate',c).value)||0,me}); S.token=j.token; ls.set('tl_token',j.token); ls.set('tl_me',String(j.me)); S.screen='loading'; render(); await load();}
+      try{const j=await api({action:'setup',people:rows,rate:parseFloat(q('#setupRate',c).value)||0,me}); closeSheet(); S.token=j.token; ls.set('tl_token',j.token); ls.set('tl_me',String(j.me)); S.screen='loading'; render(); await load();}
       catch(e){btn.disabled=false; if(e.code==='already_setup'){toast('이미 시작된 노트예요');S.screen='loading';render();boot()} else toast(e.message||'실패했어요')}
     };
   }
@@ -328,59 +372,12 @@ function bind(c){
       const me=+(qa('#loginWho .lgchip[aria-pressed="true"]',c)[0]||{dataset:{i:0}}).dataset.i; const pin=q('#loginPin',c).value.trim();
       if(!pin){toast('비밀번호를 넣어주세요');return}
       const btn=lf.querySelector('button[type=submit]'); btn.disabled=true;
-      try{const j=await api({action:'login',me,pin}); S.token=j.token; ls.set('tl_token',j.token); ls.set('tl_me',String(j.me)); S.screen='loading'; render(); await load();}
+      try{const j=await api({action:'login',me,pin}); closeSheet(); S.token=j.token; ls.set('tl_token',j.token); ls.set('tl_me',String(j.me)); S.screen='loading'; render(); await load();}
       catch(e){btn.disabled=false; toast(e.code==='pin'?`${pname(me)} 비밀번호가 맞지 않아요`:(e.message||'실패했어요')); q('#loginPin',c).value=''; q('#loginPin',c).focus();}
     };
   }
 }
-function setupAddRow(){ const rows=q('#setupRows',view); const n=rows.children.length; if(n>=6)return; const d=document.createElement('div'); d.className='mr'; d.innerHTML=`<input type="text" placeholder="이름 ${n+1}" maxlength="12" data-n="${n}"><input type="text" inputmode="numeric" class="lgpin" placeholder="비밀번호" maxlength="8" data-p="${n}">`; rows.appendChild(d); const me=q('#setupMe',view); const b=document.createElement('button'); b.type='button'; b.className='lgchip'; b.dataset.i=n; b.setAttribute('aria-pressed','false'); b.textContent=['첫','두','세','네','다섯','여섯'][n]+' 번째'; b.onclick=()=>qa('#setupMe .lgchip',view).forEach(x=>x.setAttribute('aria-pressed',x===b)); me.appendChild(b); }
-function autosize(ta){ ta.style.height='auto'; ta.style.height=Math.max(72,ta.scrollHeight+2)+'px'; }
-
-/* 메모 동작 */
-const bodyTimers={};
-function queueBody(id,val){ const m=S.memos.find(x=>x.id===id); if(m)m.body=val; const mark=q(`[data-mark="${id}"]`); if(mark)mark.textContent='입력 중…'; clearTimeout(bodyTimers[id]); bodyTimers[id]=setTimeout(()=>flushBody(id),900); }
-async function flushBody(id){ clearTimeout(bodyTimers[id]); const m=S.memos.find(x=>x.id===id); if(!m||m._saved===m.body)return; const val=m.body||''; const ok=await write([{op:'update',col:'memos',id,data:{body:val}}],null,{silent:true}); if(ok){m._saved=val; const mark=q(`[data-mark="${id}"]`); if(mark){mark.textContent='저장됨'; setTimeout(()=>{if(mark.textContent==='저장됨')mark.textContent=''},1500)}} }
-async function newMemo(type,owner){
-  const id=uid(); const order=Date.now();
-  const ok=await write([{op:'set',col:'memos',id,data:{type,owner,title:'',items:[],body:'',ts:order,order}}]);
-  if(ok){ if(type==='list'){S.focusAdd=id;render()} else {const ta=q(`[data-body="${id}"]`); if(ta)ta.focus()} }
-}
-function chooseMemo(owner){
-  openSheet(`<h2>${owner===null?'공용 메모 추가':'내 메모 추가'}<button type="button" data-close>닫기</button></h2><div class="lgopts">
-    <button type="button" data-mk="list"><span class="lgic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/></svg></span><div><b>체크 리스트</b><span>항목을 하나씩 넣고 체크해요. 살 것, 할 일.</span></div></button>
-    <button type="button" data-mk="text"><span class="lgic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5h14M5 10h14M5 15h9"/></svg></span><div><b>글</b><span>그냥 써요. 줄바꿈 그대로 남아요. 메모, 일기.</span></div></button></div>`);
-  qa('[data-mk]',q('.lgsheet')).forEach(b=>b.onclick=()=>{closeSheet();newMemo(b.dataset.mk,owner)});
-}
-function memoItems(m){return (m.items||[]).map(x=>({...x}))}
-const nextWho=cur=>{const n=S.people.length; if(cur===null||cur===undefined)return 0; return cur+1>=n?null:cur+1};
-async function cycleWho(mid,iid){ const m=S.memos.find(x=>x.id===mid); if(!m)return; const items=memoItems(m).map(it=>{if(it.id!==iid)return it; const cur=(it.who===null||it.who===undefined||it.who==='')?null:+it.who; return {...it,who:nextWho(cur)}}); await write([{op:'update',col:'memos',id:mid,data:{items}}]); }
-async function addItem(mid,text){ const m=S.memos.find(x=>x.id===mid); if(!m)return; const pre=S.addWho&&S.addWho[mid]; const who=isShared(m)&&pre!==undefined&&pre!==null?+pre:null; const items=[...memoItems(m),{id:uid(),text,done:false,who,ts:Date.now()}]; S.focusAdd=mid; await write([{op:'update',col:'memos',id:mid,data:{items}}]); }
-async function toggleItem(mid,iid){ const m=S.memos.find(x=>x.id===mid); if(!m)return; const items=memoItems(m).map(it=>it.id===iid?{...it,done:!it.done,doneBy:!it.done?S.me:null}:it); await write([{op:'update',col:'memos',id:mid,data:{items}}]); }
-async function delItem(mid,iid){ const m=S.memos.find(x=>x.id===mid); if(!m)return; const items=memoItems(m).filter(it=>it.id!==iid); await write([{op:'update',col:'memos',id:mid,data:{items}}]); }
-function openItem(mid,iid){
-  const m=S.memos.find(x=>x.id===mid); const it=m&&(m.items||[]).find(x=>x.id===iid); if(!it)return;
-  const sharedMemo=isShared(m); let who=(it.who===null||it.who===undefined||it.who==='')?null:+it.who;
-  openSheet(`<h2>항목 수정<button type="button" data-close>닫기</button></h2><form id="itemForm"><div class="lgf"><label>내용</label><textarea id="itText" maxlength="500">${esc(it.text)}</textarea></div>
-    ${sharedMemo?`<div class="lgf"><label>담당</label><div class="lgchips" id="itWho"><button type="button" class="lgchip lgsm" data-w="" aria-pressed="${who===null}">없음</button>${S.people.map((p,i)=>`<button type="button" class="lgchip lgsm" data-w="${i}" aria-pressed="${who===i}">${esc(pname(i))}${i===S.me?' (나)':''}</button>`).join('')}</div><div class="lghint">누가 챙길지 정해두면 항목 옆에 이름이 붙어요.</div></div>`:''}
-    <div class="lgactions"><button type="button" class="lgbtn lgdanger" id="itDel">삭제</button><button type="submit" class="lgbtn lgprimary">저장</button></div></form>`);
-  const sh=q('.lgsheet');
-  qa('#itWho .lgchip',sh).forEach(b=>b.onclick=()=>{who=b.dataset.w===''?null:+b.dataset.w;qa('#itWho .lgchip',sh).forEach(x=>x.setAttribute('aria-pressed',x===b))});
-  q('#itemForm',sh).onsubmit=async ev=>{ev.preventDefault();const t=q('#itText',sh).value.trim();if(!t)return;const items=memoItems(m).map(x=>x.id===iid?{...x,text:t,who:sharedMemo?who:null}:x);closeSheet();await write([{op:'update',col:'memos',id:mid,data:{items}}])};
-  arm(q('#itDel',sh),async()=>{closeSheet();await delItem(mid,iid)});
-  setTimeout(()=>q('#itText',sh).focus(),250);
-}
-function openMemo(m){
-  if(!m)return;
-  const d={title:m.title||'',owner:ownerOf(m)};
-  openSheet(`<h2>메모 설정<button type="button" data-close>닫기</button></h2><form id="memoForm">
-    <div class="lgf"><label>제목</label><input type="text" id="mTitle" value="${esc(d.title)}" maxlength="40" placeholder="${m.type==='text'?'예: 하라주쿠에서 느낀 것':'예: 돈키호테 살 것'}"></div>
-    <div class="lgf"><label>누가 보나</label><div class="lgchips" id="mOwner"><button type="button" class="lgchip" data-o="mine" aria-pressed="${d.owner!==null}">개인 · 나만</button><button type="button" class="lgchip" data-o="shared" aria-pressed="${d.owner===null}">공용 · 모두</button></div><div class="lghint">개인으로 바꾸면 다른 멤버 화면에서 바로 사라져요.</div></div>
-    <div class="lgactions"><button type="button" class="lgbtn lgdanger" id="mDel">삭제</button><button type="submit" class="lgbtn lgprimary">저장</button></div></form>`);
-  const sh=q('.lgsheet');
-  qa('#mOwner .lgchip',sh).forEach(b=>b.onclick=()=>{d.owner=b.dataset.o==='shared'?null:S.me;qa('#mOwner .lgchip',sh).forEach(x=>x.setAttribute('aria-pressed',x===b))});
-  q('#memoForm',sh).onsubmit=async ev=>{ev.preventDefault();closeSheet();await write([{op:'update',col:'memos',id:m.id,data:{title:q('#mTitle',sh).value.trim(),owner:d.owner}}],'저장했어요')};
-  arm(q('#mDel',sh),async()=>{closeSheet();await write([{op:'delete',col:'memos',id:m.id}],'삭제했어요')});
-}
+function setupAddRow(){ const rows=q('#setupRows'); if(!rows)return; const n=rows.children.length; if(n>=6)return; const d=document.createElement('div'); d.className='mr'; d.innerHTML=`<input type="text" placeholder="이름 ${n+1}" maxlength="12" data-n="${n}"><input type="text" inputmode="numeric" class="lgpin" placeholder="비밀번호" maxlength="8" data-p="${n}">`; rows.appendChild(d); const me=q('#setupMe'); const b=document.createElement('button'); b.type='button'; b.className='lgchip'; b.dataset.i=n; b.setAttribute('aria-pressed','false'); b.textContent=['첫','두','세','네','다섯','여섯'][n]+' 번째'; b.onclick=()=>qa('#setupMe .lgchip').forEach(x=>x.setAttribute('aria-pressed',x===b)); me.appendChild(b); }
 function arm(btn,fn){ if(!btn)return; btn.onclick=()=>{ if(btn.dataset.arm!=='1'){btn.dataset.arm='1';const o=btn.textContent;btn.textContent='정말 삭제?';setTimeout(()=>{btn.dataset.arm='';btn.textContent=o},2500);return} fn(); }; }
 
 /* ---------- 시트 ---------- */
@@ -515,6 +512,7 @@ function mount(el,memoEl){
   root=el; root.classList.add('lg'); root.innerHTML=`<div class="lg-view"></div>`; view=q('.lg-view',root);
   if(!ov){ ov=document.createElement('div'); ov.className='lg lgov'; ov.innerHTML=`<div class="lgscrim"></div><div class="lgsheet" role="dialog" aria-modal="true"><div class="lgin"></div></div><div class="lgtoast"></div>`; document.body.appendChild(ov); q('.lgscrim',ov).onclick=closeSheet; }
   memoRoot=memoEl||document.getElementById('ledger-memo-root')||null;
+  userEl=document.getElementById('ledger-user')||null; if(userEl)userEl.classList.add('lgslot');
   if(memoRoot){ memoRoot.classList.add('lg'); memoRoot.innerHTML=`<div class="lg-view"></div>`; memoView=q('.lg-view',memoRoot); }
   roots().forEach(r=>{const p=r.closest('.panel'); if(p)p.classList.add('lg-haspad')});
   render(); boot();
@@ -522,7 +520,7 @@ function mount(el,memoEl){
   clearInterval(pollT); pollT=setInterval(()=>{if(document.visibilityState==='visible'&&S.screen==='main'&&!S.saving&&visible())load()},POLL_MS);
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&S.screen==='main')load()});
 }
-window.Ledger={mount,state:S,reload:load,openExpense,openSettle};
+window.Ledger={mount,state:S,reload:load,openExpense,openSettle,openLogin};
 const auto=document.getElementById('ledger-root');
 if(auto){ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>mount(auto)); else mount(auto); }
 })();

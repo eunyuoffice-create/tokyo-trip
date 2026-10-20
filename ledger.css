@@ -244,3 +244,32 @@
 .lg .lgtopseg{margin:0 0 6px}
 .lg .lg-head.lgbelow{margin:22px 0 6px;padding-top:16px;border-top:1px solid var(--line)}
 .lg .lghint{min-width:0}
+
+/* 헤더 계정 버튼 (사이트 헤더 안, .lg 바깥) */
+.lgslot{display:inline-flex;align-items:center}
+.lgslot button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;padding:0}
+.lgslot .lguser{display:inline-flex;align-items:center;gap:5px;height:26px;padding:0 10px 0 7px;border-radius:999px;background:var(--chip);font-size:12px;font-weight:700;color:var(--fg);white-space:nowrap}
+.lgslot .lguser svg{width:14px;height:14px}
+.lgslot .lguser.lguser-off{background:var(--accent-soft);color:var(--accent)}
+.lg .lgauthcard{display:flex;gap:12px;align-items:flex-start;padding:16px}
+.lg .lgauthcard .lgauthic{width:40px;height:40px;border-radius:12px;background:var(--chip);display:grid;place-items:center;color:var(--muted);flex-shrink:0}
+.lg .lgauthcard .lgauthic svg{width:20px;height:20px}
+.lg .lgauthcard b{display:block;font-size:14.5px;margin-bottom:2px}
+.lg .lgauthcard p{margin:0 0 10px;font-size:13px;color:var(--muted);line-height:1.5}
+.lg .lgbtn.lgsmbtn{height:38px;font-size:14px;padding:0 16px;flex:0 0 auto}
+.brand-r{display:flex;align-items:center;gap:8px;flex-shrink:0}
+
+/* 메모 목록 줄 + 메모 시트 */
+.lg .lgrow .lgmic{width:32px;height:32px;border-radius:9px;background:var(--chip);display:grid;place-items:center;color:var(--muted);flex-shrink:0}
+.lg .lgrow .lgmic svg{width:16px;height:16px}
+.lg .lgrow .ab.lgokt{color:var(--ok);font-weight:600}
+.lg .lgsheet .lgli{padding:3px 0}
+.lg .lgsheet .lgli .lgtxin{flex:1;min-width:0;height:34px;border:0;border-bottom:1px solid transparent;background:none;padding:0 2px;font-size:14.5px;border-radius:0}
+.lg .lgsheet .lgli .lgtxin:focus{outline:none;border-bottom-color:var(--accent)}
+.lg .lgsheet .lgli.lgdone .lgtxin{color:var(--muted);text-decoration:line-through}
+.lg .lgsheet .lgaddli{margin-top:6px}
+.lg .lgsheet .lgaddli input{height:36px}
+.lg .lgchip svg{width:14px;height:14px}
+.lg .lgsheet #mTitle{font-weight:600}
+.lgslot{gap:6px}
+.lgslot .lguser.lguser-out{background:none;color:var(--muted);font-weight:600;padding:0 4px}
