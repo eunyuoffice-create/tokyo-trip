@@ -54,12 +54,18 @@ async function seedIfNeeded(){
 
 /* 정적 추가 목록(FOOD_EXTRA)을 DB에 없는 id 만 골라 추가 — 멱등 */
 async function importExtras(){
-  const S=T(); if(!loggedIn()||!C.loaded||!C.food||C.importing)return; const extra=(S.FOOD_EXTRA||[]).filter(x=>!C.food.some(f=>f.id===x.id)); if(!extra.length)return;
+  const S=T(); if(!loggedIn()||!C.loaded||!C.food||C.importing)return;
+  const all=S.FOOD_EXTRA||[]; const extra=all.filter(x=>!C.food.some(f=>f.id===x.id));
+  // 이미 들어간 항목 중 정적 목록의 버전(xv)이 올라간 것: 조사해서 채운 칸만 갱신 (사용자가 고친 이름·지역은 건드리지 않음)
+  const upd=all.filter(x=>x.xv&&C.food.some(f=>f.id===x.id&&(f.xv||0)<x.xv));
+  if(!extra.length&&!upd.length)return;
   C.importing=true;
   try{ let order=(C.food.length?Math.max(...C.food.map(f=>f.order||0)):0);
     const docs=extra.map(x=>{const {id,...d}=x; order+=1000; return {id,data:{...d,order}}});
     for(let i=0;i<docs.length;i+=25) await L().api({action:'write',ops:docs.slice(i,i+25).map(x=>({op:'set',col:'food',id:x.id,data:x.data}))});
-    await fetchContent(); toast(`맛집 ${docs.length}곳을 추가했어요`);
+    const ups=upd.map(x=>{const d={xv:x.xv}; ['h','closed','pr','note','q','link','k','loc'].forEach(k=>{if(x[k]!==undefined)d[k]=x[k]}); if(x.a&&!C.food.find(f=>f.id===x.id).userArea)d.a=x.a; return {op:'update',col:'food',id:x.id,data:d}});
+    for(let i=0;i<ups.length;i+=25) await L().api({action:'write',ops:ups.slice(i,i+25)});
+    await fetchContent(); toast(docs.length?`맛집 ${docs.length}곳을 추가했어요`:`맛집 ${ups.length}곳 정보를 갱신했어요`);
   }catch(e){ toast('맛집 추가 실패: '+(e.message||e)); }
   finally{ C.importing=false; }
 }
@@ -213,7 +219,7 @@ function openEditor(tab,id){
       ${F.chips('eA','지역',S.FOOD_AREAS,it?.a||S.FOOD_AREAS[0],'')}
       ${F.chips('eTy','분류 (비우면 종류로 자동 판단)',['음식','카페'],it?.t||'','')}
       <div class="lgrow2">${F.text('eK','종류',it?.k,'예: 라멘, 타르트')}${F.text('ePr','가격대',it?.pr,'예: 1,000~2,000엔')}</div>
-      ${F.text('eH','영업시간',it?.h,'예: 11:00~22:00 · 무휴')}
+      <div class="lgrow2">${F.text('eH','영업시간',it?.h,'예: 11:00~22:00')}${F.text('eClosed','휴무일',it?.closed,'예: 수 휴무 / 무휴')}</div>
       ${F.chips('eS','별점',['1','2','3','4','5'],it?.s?String(it.s):'','')}
       ${F.area('eNote','메모 (위치·팁)',it?.note,'예: 東口 도보 3분. 현금만',3)}
       ${F.text('eTag','라벨 (카드 이름 옆 작은 표시)',it?.tag,'예: 트위터 추천')}
@@ -242,7 +248,7 @@ function openEditor(tab,id){
     if(tab==='plan'){ if(!v('#eTitle')){toast('제목을 넣어주세요');return} const day=v('#eDay');
       data={day,t:v('#eT'),ts:v('#eTs'),p:v('#eP'),title:v('#eTitle'),pills:v('#ePills')?v('#ePills').split(',').map(x=>x.trim()).filter(Boolean):[],big:g('#eBig').checked,links:readLinks(sh,'eLinks'),d:readD(sh),r:readR(sh),order:(it&&it.day===day)?it.order:nextOrder()}; }
     else if(tab==='food'){ if(!v('#eN')){toast('가게 이름을 넣어주세요');return}
-      data={a:v('#eA')||S.FOOD_AREAS[0],n:v('#eN'),k:v('#eK'),h:v('#eH'),pr:v('#ePr'),note:v('#eNote'),tag:v('#eTag'),q:v('#eQ'),links:readLinks(sh,'eLinks'),order:it?it.order:nextOrder()}; if(v('#eTy'))data.t=v('#eTy'); if(v('#eS'))data.s=+v('#eS'); }
+      data={a:v('#eA')||S.FOOD_AREAS[0],n:v('#eN'),k:v('#eK'),h:v('#eH'),pr:v('#ePr'),note:v('#eNote'),closed:v('#eClosed'),tag:v('#eTag'),q:v('#eQ'),links:readLinks(sh,'eLinks'),order:it?it.order:nextOrder()}; if(v('#eTy'))data.t=v('#eTy'); if(v('#eS'))data.s=+v('#eS'); }
     else { if(!v('#eN')){toast('이름을 넣어주세요');return}
       data={g:v('#eG')||S.PLACE_GROUPS[0],area:v('#eArea')||v('#eG'),n:v('#eN'),k:v('#eK'),h:v('#eH'),res:v('#eRes'),loc:v('#eLoc'),tag:v('#eTag'),q:v('#eQ'),links:readLinks(sh,'eLinks'),order:it?it.order:nextOrder()}; if(g('#eU').checked)data.u=true; }
     Object.keys(data).forEach(k=>{ if(data[k]===''||data[k]===null||data[k]===undefined||data[k]===false||(Array.isArray(data[k])&&!data[k].length))delete data[k]; });
