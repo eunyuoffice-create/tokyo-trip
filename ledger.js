@@ -16,7 +16,7 @@ const CUR={JPY:{sym:'¥'},KRW:{sym:'₩'}};
 const TABS=[{id:'settle',label:'정산'},{id:'exp',label:'지출'},{id:'memo',label:'메모'}];
 
 const S={screen:'loading',token:'',me:null,people:[],rate:8.4,rateInfo:{mode:'auto',auto:null},expenses:[],transfers:[],memos:[],
-  tab:'settle',dayFilter:'all',scope:'all',err:'',saving:0,pending:false,focusAdd:null,loginIdx:null,loaded:false};
+  tab:'settle',dayFilter:'all',scope:'mine',err:'',saving:0,pending:false,focusAdd:null,loginIdx:null,loaded:false};
 const ls={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}},del:k=>{try{localStorage.removeItem(k)}catch(e){}}};
 let root,view,toastT,pollT;
 
@@ -246,14 +246,14 @@ function viewExp(){
     <div class="lghero-s">공용 몫 ${fmt(tj.share,'JPY')} <span class="lgdot">·</span> 개인 ${fmt(tj.priv,'JPY')} <span class="lgdot">·</span> 내가 낸 공용 ${fmt(tj.paid,'JPY')}</div>
     <div class="lghero-s">${balLine(bj,'JPY')}${(tk.share||tk.priv||tk.paid)?' · '+balLine(bk,'KRW'):''}</div></div>`;
   h+=`<button class="lgaddexp" data-act="add-exp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>지출 추가</button>`;
-  h+=`<div class="lgfilters"><div class="lgseg2"><button data-scope="all" aria-pressed="${S.scope==='all'}">전체</button><button data-scope="shared" aria-pressed="${S.scope==='shared'}">공용</button><button data-scope="mine" aria-pressed="${S.scope==='mine'}">개인</button></div>
+  h+=`<div class="lgfilters"><div class="lgseg2"><button data-scope="mine" aria-pressed="${S.scope==='mine'}">개인</button><button data-scope="shared" aria-pressed="${S.scope==='shared'}">공용</button><button data-scope="all" aria-pressed="${S.scope==='all'}">전체</button></div>
   <div class="lgchips lgscroll"><button class="lgchip lgsm" data-day="all" aria-pressed="${S.dayFilter==='all'}">모든 날</button>`;
   ALLDAYS.forEach(d=>{const c=S.expenses.filter(e=>e.day===d.d).length; if(d.d==='pre'&&!c)return; h+=`<button class="lgchip lgsm" data-day="${d.d}" aria-pressed="${S.dayFilter===d.d}">${d.d==='pre'?'출발 전':`${d.n}일차`}</button>`});
   h+=`</div></div>`;
   let list=S.expenses.slice().sort((a,b)=>(b.day||'').localeCompare(a.day||'')||(b.ts||0)-(a.ts||0));
   if(S.scope==='shared')list=list.filter(isShared); else if(S.scope==='mine')list=list.filter(e=>!isShared(e));
   if(S.dayFilter!=='all')list=list.filter(e=>e.day===S.dayFilter);
-  if(!list.length)return h+`<div class="lgcard"><div class="lgempty"><b>${S.expenses.length?'이 조건에 맞는 지출이 없어요':'아직 지출이 없어요'}</b>위의 "지출 추가"로 넣어요. 공용은 같이 나누고, 개인은 나만 봐요.</div></div>`;
+  if(!list.length)return h+`<div class="lgcard"><div class="lgempty"><b>${S.expenses.length?'이 조건에 맞는 지출이 없어요':'아직 지출이 없어요'}</b>위의 "지출 추가"로 넣어요. 개인은 나만 보고, 공용은 같이 나눠요.</div></div>`;
   const groups=[]; list.forEach(e=>{let g=groups.find(x=>x.day===e.day); if(!g){g={day:e.day,items:[]};groups.push(g)} g.items.push(e)});
   groups.forEach(g=>{
     const sj=g.items.filter(e=>e.cur==='JPY').reduce((a,e)=>a+e.amount,0), sk=g.items.filter(e=>e.cur==='KRW').reduce((a,e)=>a+e.amount,0);
@@ -264,7 +264,7 @@ function viewExp(){
 }
 function viewMemo(){
   let h='';
-  const secs=[{k:'shared',title:'공용 메모',sub:'둘 다 보고 체크',list:S.memos.filter(isShared)},{k:'mine',title:'내 메모',sub:`${pname(S.me)}만 봄`,list:S.memos.filter(m=>ownerOf(m)===S.me)}];
+  const secs=[{k:'mine',title:'내 메모',sub:`${pname(S.me)}만 봄`,list:S.memos.filter(m=>ownerOf(m)===S.me)},{k:'shared',title:'공용 메모',sub:'둘 다 보고 체크',list:S.memos.filter(isShared)}];
   secs.forEach(sec=>{
     h+=`<div class="lgsec"><h3>${sec.title} <span class="lgsub">${esc(sec.sub)}</span></h3><button class="lglink" data-newmemo="${sec.k}">+ 추가</button></div>`;
     const list=sec.list.slice().sort((a,b)=>(a.order||a.ts||0)-(b.order||b.ts||0));
@@ -375,7 +375,7 @@ function openMemo(m){
   const d={title:m.title||'',owner:ownerOf(m)};
   openSheet(`<h2>메모 설정<button type="button" data-close>닫기</button></h2><form id="memoForm">
     <div class="lgf"><label>제목</label><input type="text" id="mTitle" value="${esc(d.title)}" maxlength="40" placeholder="${m.type==='text'?'예: 하라주쿠에서 느낀 것':'예: 돈키호테 살 것'}"></div>
-    <div class="lgf"><label>누가 보나</label><div class="lgchips" id="mOwner"><button type="button" class="lgchip" data-o="shared" aria-pressed="${d.owner===null}">공용 · 모두</button><button type="button" class="lgchip" data-o="mine" aria-pressed="${d.owner!==null}">개인 · 나만</button></div><div class="lghint">개인으로 바꾸면 다른 멤버 화면에서 바로 사라져요.</div></div>
+    <div class="lgf"><label>누가 보나</label><div class="lgchips" id="mOwner"><button type="button" class="lgchip" data-o="mine" aria-pressed="${d.owner!==null}">개인 · 나만</button><button type="button" class="lgchip" data-o="shared" aria-pressed="${d.owner===null}">공용 · 모두</button></div><div class="lghint">개인으로 바꾸면 다른 멤버 화면에서 바로 사라져요.</div></div>
     <div class="lgactions"><button type="button" class="lgbtn lgdanger" id="mDel">삭제</button><button type="submit" class="lgbtn lgprimary">저장</button></div></form>`);
   const sh=q('.lgsheet');
   qa('#mOwner .lgchip',sh).forEach(b=>b.onclick=()=>{d.owner=b.dataset.o==='shared'?null:S.me;qa('#mOwner .lgchip',sh).forEach(x=>x.setAttribute('aria-pressed',x===b))});
@@ -391,9 +391,9 @@ function closeSheet(){ q('.lgsheet').classList.remove('lgopen'); q('.lgscrim').c
 function openExpense(e){
   const isNew=!e; const n=S.people.length;
   const d={id:e?.id,title:e?.title||'',amount:e?.amount||'',cur:e?.cur||'JPY',day:e?.day||todayKey(),cat:e?.cat||'식비',
-    priv:e?!isShared(e):false,payer:e?e.payer:S.me,parts:e?(e.parts&&e.parts.length?e.parts.slice():[...Array(n).keys()]):[...Array(n).keys()],custom:e?.custom?{...e.custom}:null,memo:e?.memo||''};
+    priv:e?!isShared(e):true,payer:e?e.payer:S.me,parts:e?(e.parts&&e.parts.length?e.parts.slice():[...Array(n).keys()]):[...Array(n).keys()],custom:e?.custom?{...e.custom}:null,memo:e?.memo||''};
   openSheet(`<h2>${isNew?'지출 추가':'지출 수정 · 삭제'}<button type="button" data-close>닫기</button></h2><form id="expForm">
-    <div class="lgf"><div class="lgchips" id="fScope"><button type="button" class="lgchip" data-s="shared" aria-pressed="${!d.priv}">공용 · 같이 나눔</button><button type="button" class="lgchip" data-s="mine" aria-pressed="${d.priv}">개인 · 나만 봄</button></div></div>
+    <div class="lgf"><div class="lgchips" id="fScope"><button type="button" class="lgchip" data-s="mine" aria-pressed="${d.priv}">개인 · 나만 봄</button><button type="button" class="lgchip" data-s="shared" aria-pressed="${!d.priv}">공용 · 같이 나눔</button></div></div>
     <div class="lgf"><label>금액</label><div class="lgamount"><input type="text" inputmode="decimal" id="fAmt" placeholder="0" value="${d.amount?esc(d.amount):''}"><div class="lgseg" id="fCur"><button type="button" data-c="JPY" aria-pressed="${d.cur==='JPY'}">¥</button><button type="button" data-c="KRW" aria-pressed="${d.cur==='KRW'}">₩</button></div></div></div>
     <div class="lgf"><label>내용</label><input type="text" id="fTitle" placeholder="예: 모츠나베 야마야, 리무진 버스" value="${esc(d.title)}" maxlength="80"></div>
     <div class="lgf"><label>날짜</label><div class="lgchips" id="fDay">${ALLDAYS.map(x=>`<button type="button" class="lgchip lgsm" data-d="${x.d}" aria-pressed="${d.day===x.d}">${x.d==='pre'?'출발 전':`D${x.n} ${x.s} ${x.w}`}</button>`).join('')}</div></div>
