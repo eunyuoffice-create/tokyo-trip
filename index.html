@@ -68,6 +68,28 @@ main{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px
 .wx-note{font-size:11px;color:var(--muted);white-space:nowrap;padding-left:4px}
 @media (min-width:900px){.wx{flex:1 1 auto;margin-inline:0;padding-inline:0}.wx-day{height:36px;font-size:13.5px;padding:0 12px}.wx-note{font-size:12.5px}}
 .btn.tool{background:var(--surface);border-color:var(--line);font-weight:600;padding:7px 12px}
+#infobox{position:fixed;inset:0;z-index:60}
+#infobox[hidden]{display:none}
+#infobox .ib-scrim{position:absolute;inset:0;background:rgba(23,28,40,.45)}
+#infobox .ib-card{position:absolute;left:0;right:0;bottom:0;max-height:92dvh;background:var(--surface);border-radius:20px 20px 0 0;display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom,0px)}
+#infobox .ib-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px;border-bottom:1px solid var(--line)}
+#infobox .ib-head h2{margin:0;font-size:17px;font-weight:700}
+#infobox .ib-x{height:32px;padding:0 12px;border-radius:999px;background:var(--chip);font-size:13px;font-weight:600}
+#infobox .ib-body{overflow:auto;padding:12px 16px 20px;font-size:14px;line-height:1.55}
+.ib-note{margin:0 0 10px;font-size:12.5px;color:var(--muted)}
+.ib-grid{display:grid;grid-template-columns:1fr;gap:8px}
+.ib-item{background:var(--bg);border-radius:12px;padding:10px 12px}
+.ib-item.hl{background:var(--warn-soft)}
+.ib-item h3{margin:0 0 6px;font-size:14.5px;font-weight:700}
+.ib-item h3 small{display:block;font-size:12px;color:var(--muted);font-weight:500}
+.ib-row{display:flex;gap:8px;align-items:flex-start;font-size:13px;margin-top:4px;color:var(--fg)}
+.ib-row span:last-child{flex:1;min-width:0;color:var(--muted)}
+.ib-tag{flex:0 0 auto;font-family:var(--mono);font-size:11.5px;font-weight:700;padding:2px 7px;border-radius:6px;background:var(--chip)}
+.ib-tag.ok{background:var(--ok-soft);color:var(--ok)} .ib-tag.no{background:var(--accent-soft);color:var(--accent)}
+.ib-h{margin:16px 0 6px;font-size:14px;font-weight:700}
+.ib-ul{margin:0;padding-left:18px} .ib-ul li{margin:3px 0}
+.ib-src{margin:14px 0 0;font-size:12px;color:var(--muted)} .ib-src a{color:var(--accent)}
+@media (min-width:900px){#infobox .ib-card{left:50%;right:auto;bottom:auto;top:50%;transform:translate(-50%,-50%);width:720px;max-height:86vh;border-radius:20px;padding-bottom:0}.ib-grid{grid-template-columns:1fr 1fr}#infobox .ib-body{font-size:15.5px;padding:16px 22px 24px}.ib-row{font-size:14.5px}.ib-item h3{font-size:16px}}
 #lightbox{position:fixed;inset:0;z-index:60;background:rgba(23,28,40,.88);display:flex;align-items:center;justify-content:center;padding:16px;cursor:zoom-out}
 #lightbox[hidden]{display:none}
 #lightbox img{max-width:min(100%,560px);max-height:92vh;border-radius:12px;background:#fff;object-fit:contain}
@@ -665,6 +687,30 @@ function renderChips(){
  const on=box.querySelector('[aria-pressed="true"]'); if(on) on.scrollIntoView({inline:'center',block:'nearest'});
 }
 
+/* 정보 팝업 (글 내용) */
+function openInfo(title,html){
+ let m=document.getElementById('infobox');
+ if(!m){ m=document.createElement('div'); m.id='infobox'; m.innerHTML='<div class="ib-scrim"></div><div class="ib-card" role="dialog" aria-modal="true"><div class="ib-head"><h2></h2><button type="button" class="ib-x">닫기</button></div><div class="ib-body"></div></div>'; document.body.appendChild(m);
+  const close=()=>{m.hidden=true;document.body.style.overflow=''}; m.querySelector('.ib-scrim').onclick=close; m.querySelector('.ib-x').onclick=close; }
+ m.querySelector('h2').textContent=title; m.querySelector('.ib-body').innerHTML=html; m.querySelector('.ib-body').scrollTop=0; m.hidden=false; document.body.style.overflow='hidden';
+}
+/* 인천국제공항 "제한물품" 안내 (https://www.airport.kr/ap_ko/905/subview.do) 2026-10-20 기준 요약. 김포·하네다도 같은 국제 기준 */
+const RESTRICTED_HTML=`
+<p class="ib-note">인천국제공항 안내를 2026.10.20에 옮겨 적은 거예요. 김포·하네다 국제선도 같은 기준이고, 정확한 건 항공사·공항에 확인.</p>
+<div class="ib-grid">
+ <div class="ib-item"><h3>💧 액체류 <small>화장품·세면용품·의약품 (스프레이·젤 포함)</small></h3><div class="ib-row"><span class="ib-tag no">기내 ✕</span><span>개별 100ml 이하 용기를 1L 투명 지퍼백(20.5×20.5cm) 1개에 넣으면 가능</span></div><div class="ib-row"><span class="ib-tag ok">위탁 ○</span><span>비인화성 스프레이는 1개 500ml 이하, 총 2L까지</span></div></div>
+ <div class="ib-item"><h3>🥫 고추장·김치 등 액체·젤 음식</h3><div class="ib-row"><span class="ib-tag no">기내 ✕</span><span>100ml 이하 용기 + 1L 지퍼백이면 가능</span></div><div class="ib-row"><span class="ib-tag ok">위탁 ○</span><span>용량 제한 없음</span></div></div>
+ <div class="ib-item"><h3>🔪 창·도검류 <small>칼, 가위 등</small></h3><div class="ib-row"><span class="ib-tag no">기내 ✕</span><span>둥근 날 버터칼, 안전면도기, 전기면도기는 기내 가능. 눈썹칼·미용가위는 위탁으로</span></div><div class="ib-row"><span class="ib-tag ok">위탁 ○</span><span></span></div></div>
+ <div class="ib-item"><h3>⚡ 전자충격기·총기·호신용품</h3><div class="ib-row"><span class="ib-tag no">기내 ✕</span><span></span></div><div class="ib-row"><span class="ib-tag ok">위탁 △</span><span>허가 서류 확인 후 분리·보관함에 넣은 경우만</span></div></div>
+ <div class="ib-item"><h3>🔧 공구류 <small>망치, 렌치 등</small></h3><div class="ib-row"><span class="ib-tag no">기내 ✕</span><span></span></div><div class="ib-row"><span class="ib-tag ok">위탁 ○</span><span></span></div></div>
+ <div class="ib-item hl"><h3>🔋 보조배터리 <small>리튬 배터리</small></h3><div class="ib-row"><span class="ib-tag ok">기내 ○</span><span>160Wh 이하 1인 최대 2개 (100Wh 초과는 항공사 승인). 160Wh 초과는 반입 불가</span></div><div class="ib-row"><span class="ib-tag no">위탁 ✕</span><span>부치는 가방에는 절대 넣지 않기</span></div></div>
+ <div class="ib-item"><h3>🔥 인화성 가스·액체, 방사능물질</h3><div class="ib-row"><span class="ib-tag no">기내 ✕</span><span></span></div><div class="ib-row"><span class="ib-tag no">위탁 ✕</span><span>스프레이류는 위 액체류 기준 참고</span></div></div>
+</div>
+<h3 class="ib-h">기내 반입 물품 허용 기준</h3>
+<ul class="ib-ul"><li>액체는 100ml 이하 용기를 1L 이하 투명 비닐봉투에 담고 입구를 밀봉하면 반입 가능.</li><li>면세점 구매품은 "액체물 면세품 전용봉투"에 넣은 경우만 용량 제한 없이 가능 (최종 목적지까지 미개봉).</li></ul>
+<h3 class="ib-h">우리 짐 기준 체크</h3>
+<ul class="ib-ul"><li>헤어오일·왁스·선크림·클렌징 밀크·치약: 100ml 이하로 소분해 지퍼백, 아니면 위탁.</li><li>판고데기: 기내·위탁 모두 가능 (배터리 내장형은 기내).</li><li>보조배터리: 기내 가방에. 위탁 ✕.</li><li>스튜디오 반입 금지인 눈썹칼·미용가위는 위탁 가방에.</li></ul>
+<p class="ib-src">출처: <a href="https://www.airport.kr/ap_ko/905/subview.do" target="_blank" rel="noopener">인천국제공항 제한물품 안내 ↗</a> · 문의 1577-2600</p>`;
 /* 이미지 크게 보기 (탭하면 닫힘) */
 function openLightbox(src,alt){
  let lb=document.getElementById('lightbox');
@@ -690,6 +736,7 @@ function renderWx(){
  if(!WX||!Object.keys(WX.days||{}).length){ el.innerHTML=`<span class="wx-note">${WX&&WX.err?'예보를 못 가져왔어요':'도쿄 예보 불러오는 중…'}</span>`; if(!WX||!WX.err) loadWeather(); return; }
  el.innerHTML=DAYS.map(d=>{const w=WX.days[d.date]; if(!w) return ''; return `<button type="button" class="wx-day" data-date="${d.date}" aria-pressed="${d.date===state.day}"><span class="wd">${d.date.slice(8)}일 ${d.w}</span><span class="wi">${wxIcon(w.code)}</span><span class="wt"><b>${w.hi}°</b>/${w.lo}°</span>${w.pop>=30?`<span class="wp">☔${w.pop}%</span>`:''}</button>`}).join('')+`<span class="wx-note">도쿄 예보 · ${new Date(WX.at).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})} 기준</span>`;
  el.querySelectorAll('.wx-day').forEach(b=>b.onclick=()=>{state.day=b.dataset.date; save(); render();});
+ const on=el.querySelector('.wx-day[aria-pressed="true"]'); if(on&&el.scrollWidth>el.clientWidth){ const r=on.getBoundingClientRect(), c=el.getBoundingClientRect(); el.scrollLeft+= (r.left+r.width/2)-(c.left+c.width/2); }
  if(Date.now()-WX.at>=3*3600e3) loadWeather();
 }
 /* ---------- RENDER: plan ---------- */
@@ -710,8 +757,9 @@ function routeHtml(r){
 function renderPlan(){
  const box=document.getElementById('p-plan');
  const days=getDays(); const day=days.find(d=>d.date===state.day)||days[0];
- box.innerHTML=`<div class="toolrow"><button type="button" class="btn tool" id="outfit-btn">🌡 기온별 옷차림</button><div class="wx" id="wx-strip"></div></div><div class="sec-h"><h2>${day.n}일차 · ${day.date.slice(5).replace('-','월 ')}일 ${day.w}요일</h2><span class="cnt">${day.items.length}개</span></div><div class="tl"></div>`;
+ box.innerHTML=`<div class="toolrow"><button type="button" class="btn tool" id="outfit-btn">🌡 기온별 옷차림</button><button type="button" class="btn tool" id="restrict-btn">✈ 기내 반입 제한물품</button><div class="wx" id="wx-strip"></div></div><div class="sec-h"><h2>${day.n}일차 · ${day.date.slice(5).replace('-','월 ')}일 ${day.w}요일</h2><span class="cnt">${day.items.length}개</span></div><div class="tl"></div>`;
  box.querySelector('#outfit-btn').onclick=()=>openLightbox('img/outfit.png','기온별 옷차림');
+ box.querySelector('#restrict-btn').onclick=()=>openInfo('기내 반입 제한물품',RESTRICTED_HTML);
  renderWx();
  const tl=box.querySelector('.tl');
  day.items.forEach((it,i)=>{
