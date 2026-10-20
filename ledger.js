@@ -305,7 +305,15 @@ function memoRow(m){
   const open=S.openMemos.has(m.id); const mdone=memoDone(m);
   let inner;
   if(list){
-    inner=items.length?items.map(it=>{const who=priv?null:whoOf(it); return `<div class="lgli ${it.done?'lgdone':''}"><button type="button" class="lgbox" data-tgl-m="${esc(m.id)}|${esc(it.id)}" aria-label="완료">${svgCheck}</button><span class="lgtx">${linkify(it.text)}</span>${who===null?'':`<span class="lgwho ${who===S.me?'lgwho-me':''}">${esc(pname(who))}</span>`}</div>`}).join(''):`<div class="lghint" style="margin:0 0 6px">아직 항목이 없어요.</div>`;
+    const li=it=>`<div class="lgli ${it.done?'lgdone':''}"><button type="button" class="lgbox" data-tgl-m="${esc(m.id)}|${esc(it.id)}" aria-label="완료">${svgCheck}</button><span class="lgtx">${linkify(it.text)}</span></div>`;
+    if(!items.length) inner=`<div class="lghint" style="margin:0 0 6px">아직 항목이 없어요.</div>`;
+    else if(priv) inner=items.map(li).join('');
+    else{
+      // 공용 체크리스트: 담당자별로 묶어서 (나 → 다른 멤버 → 담당 없음)
+      const groups=[]; const order=[S.me,...S.people.map((p,i)=>i).filter(i=>i!==S.me),null];
+      order.forEach(w=>{const sub=items.filter(it=>whoOf(it)===w); if(sub.length)groups.push({w,sub})});
+      inner=groups.map(g=>`<div class="lgwgrp"><div class="lgwgrp-h"><span class="lgwho ${g.w===null?'lgwho-none':g.w===S.me?'lgwho-me':''}">${g.w===null?'담당 없음':esc(pname(g.w))}</span><span class="lgsub">${g.sub.filter(i=>i.done).length}/${g.sub.length}</span></div>${g.sub.map(li).join('')}</div>`).join('');
+    }
   }else inner=body.trim()?`<div class="lgmemobody">${linkify(body)}</div>`:`<div class="lghint" style="margin:0 0 6px">내용이 없어요.</div>`;
   return `<details class="lgdetails lgmemoacc ${mdone?'lgmdone':''}" data-accm="${esc(m.id)}" ${open?'open':''}><summary><button type="button" class="lgbox lgbox-m" data-mdone="${esc(m.id)}" aria-pressed="${mdone}" aria-label="${list?'전체 체크':'확인 완료'}">${svgCheck}</button><span class="lgmic ${list?'lgmic-list':'lgmic-text'}" title="${list?'체크 리스트':'글'}">${list?svgList:svgText}</span><span class="lgmtitle">${priv?`<span class="lglock">${svgLock}</span>`:''}<span class="lgtrunc">${esc(title)}</span></span>${list&&items.length?`<span class="lgmprog ${done===items.length?'lgokt':''}">${done}/${items.length}</span>`:''}<span class="lgchevbtn" aria-hidden="true"></span></summary><div class="lgdetails-b lgmemoin">${inner}<div class="lgmemofoot"><span class="lgsub">${list?`${done}/${items.length} 완료`:''}</span><button type="button" class="lgaddbtn" data-memoedit="${esc(m.id)}">수정</button></div></div></details>`;
 }

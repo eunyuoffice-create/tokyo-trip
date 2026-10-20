@@ -459,3 +459,10 @@ body.body-edit .ev,body.body-edit .card{-webkit-user-select:none;user-select:non
   .lg .lgtoast{bottom:40px}
   .lgslot .lguser{height:32px;font-size:14px} .lgslot .lguser.lguser-gear,.lgslot .lguser.lguser-off{width:34px;height:32px}
 }
+
+/* 공용 체크리스트: 담당자별 묶음 */
+.lg .lgwgrp{margin-top:6px}
+.lg .lgwgrp:first-child{margin-top:0}
+.lg .lgwgrp-h{display:flex;align-items:center;gap:8px;padding:4px 0 2px;border-bottom:1px dashed var(--line);margin-bottom:2px}
+.lg .lgwgrp-h .lgwho{height:22px;font-size:11.5px}
+.lg .lgwgrp-h .lgsub{font-family:var(--mono);font-size:11.5px}
