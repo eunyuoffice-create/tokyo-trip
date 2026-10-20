@@ -422,3 +422,6 @@ body.body-edit .ev,body.body-edit .card{-webkit-user-select:none;user-select:non
 /* 필수 표시 */
 .lg .lgreq{color:var(--accent);font-weight:700;margin-left:1px}
 .lg .lgf label .lgreq{font-size:13px;line-height:0}
+/* 시트 머리글(제목 · 닫기)은 스크롤해도 상단 고정 */
+.lg .lgsheet h2{position:sticky;top:-8px;z-index:3;background:var(--surface);margin:0 -16px 12px;padding:6px 16px 10px;box-shadow:0 6px 10px -8px rgba(23,28,40,.18)}
+.lg .lgsheet h2 button{height:32px;padding:0 10px;border-radius:999px;background:var(--chip);color:var(--fg);font-weight:600}
