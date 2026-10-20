@@ -577,7 +577,7 @@ function renderChips(){
  else if(state.tab==='food'){ const base=FOOD.filter(f=>state.ftype==='전체'||foodType(f)===state.ftype); list=['전체',...FOOD_AREAS].map(a=>({id:a,label:a,sub:a==='전체'?base.length:base.filter(f=>f.a===a).length,on:a===state.farea})); }
  else if(state.tab==='place') list=['전체',...PLACE_CHIPS].map(a=>({id:a,label:a,sub:PLACES.filter(p=>placeMatch(p,a)).length,on:a===state.pgroup}));
  else if(state.tab==='ledger') list=[];
- else list=[{id:'flight',label:'항공'},{id:'hotel',label:'숙소·이동'},{id:'studio',label:'스튜디오'},{id:'esim',label:'eSIM'},{id:'pack',label:'챙길 것'},{id:'gift',label:'도쿄역·선물'},{id:'shop',label:'쇼핑'},{id:'cost',label:'비용'}];
+ else list=[{id:'flight',label:'항공'},{id:'hotel',label:'숙소·이동'},{id:'studio',label:'스튜디오'},{id:'esim',label:'eSIM'},{id:'pack',label:'챙길 것'},{id:'gift',label:'도쿄역·선물'},{id:'shop',label:'쇼핑'}];
  if(!list.length){box.style.display='none';return} box.style.display='';
  list.forEach(c=>{
   const b=document.createElement('button'); b.className='chip'; b.setAttribute('aria-pressed',String(!!c.on));
@@ -841,17 +841,7 @@ A 데일리 무제한은 하루 용량 소진 후 384kbps라 지도도 버벅임
   ${shopHtml}
  </div>
 
- <div class="memo" id="m-cost">
-  <h3>비용 정산</h3>
-  <table class="cost">
-   <tr><td>항공권 (2인)</td><td class="r">933,800</td><td class="who">카뮈</td></tr>
-   <tr><td>스튜디오 공식 (¥110,000)</td><td class="r">981,411</td><td class="who">카뮈</td></tr>
-   <tr><td>스튜디오 클룩</td><td class="r">114,600</td><td class="who">카뮈</td></tr>
-   <tr><td>호텔 레솔 이케부쿠로</td><td class="r">655,194</td><td class="who">은유</td></tr>
-   <tr><td>합계 (원)</td><td class="r">2,685,005</td><td class="who">인당 1,342,503</td></tr>
-  </table>
-  <p style="margin-top:8px;font-size:12.5px;color:var(--muted)">귀가 택시비 참고: 김포 → 분당 약 3.5~4.0만, 인천 → 분당 약 6.2~6.5만</p>
- </div>`;
+`;
  box.querySelectorAll('[data-pk]').forEach(cb=>cb.onchange=()=>{ state.pack[cb.dataset.pk]=cb.checked; if(!cb.checked) delete state.pack[cb.dataset.pk]; save(); });
  /* 문장 끝 줄바꿈 (메모 문단 전체) */
  box.querySelectorAll('p').forEach(pp=>{ const w=document.createTreeWalker(pp,NodeFilter.SHOW_TEXT); let n; while((n=w.nextNode())){ n.nodeValue=n.nodeValue.replace(/(?<=[가-힣\)\]])\. (?=\S)/g,'.\n'); } });

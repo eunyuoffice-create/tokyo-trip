@@ -61,6 +61,28 @@ function cors(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   res.setHeader('Access-Control-Max-Age', '86400');
 }
+/* 출발 전 결제(원화) — 메모 탭의 '비용 정산' 표를 공용 지출로 1회 옮김 (settings/trip.seeded 로 중복 방지) */
+const PRE_COSTS = [
+  { id: 'seed-flight', title: '항공권 (2인)', amount: 933800, payer: '카뮈', cat: '교통' },
+  { id: 'seed-studio', title: '스튜디오 투어 공식 (¥110,000)', amount: 981411, payer: '카뮈', cat: '입장' },
+  { id: 'seed-klook', title: '스튜디오 클룩', amount: 114600, payer: '카뮈', cat: '입장' },
+  { id: 'seed-hotel', title: '호텔 레솔 이케부쿠로', amount: 655194, payer: '은유', cat: '숙소' },
+];
+async function seedPreCosts(db, trip) {
+  if (trip.seeded) return trip;
+  const idx = n => { const i = trip.people.findIndex(p => p.name === n); return i >= 0 ? i : (n === '은유' ? 0 : 1); };
+  const parts = trip.people.map((_, i) => i);
+  let t = Date.now() - PRE_COSTS.length;
+  for (const c of PRE_COSTS) {
+    if (await db.get('expenses', c.id)) continue;
+    await db.put('expenses', c.id, { owner: null, title: c.title, amount: c.amount, cur: 'KRW', day: 'pre', cat: c.cat, payer: idx(c.payer), parts, custom: null, memo: '출발 전 결제', ts: t++, by: idx(c.payer) });
+  }
+  if (!(await db.get('memos', 'seed-taxi')))
+    await db.put('memos', 'seed-taxi', { owner: null, type: 'text', title: '귀가 택시비 참고', body: '김포 → 분당 약 3.5~4.0만\n인천 → 분당 약 6.2~6.5만', ts: Date.now(), order: Date.now(), by: 0 });
+  const next = { ...trip, seeded: true };
+  await db.put('settings', 'trip', next);
+  return next;
+}
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   cors(req, res);
@@ -75,6 +97,7 @@ export default async function handler(req, res) {
     const db = await store();
     let trip = await db.get('settings', 'trip');
     if (trip && (action === 'list' || action === 'status')) trip = await refreshRate(db, trip);
+    if (trip && action === 'list') trip = await seedPreCosts(db, trip);
 
     if (action === 'status') return res.status(200).json({ ok: true, setup: !!trip, ...(trip ? publicTrip(trip) : { people: [], rate: DEFAULT_RATE, rateInfo: { mode: 'auto', auto: null } }) });
 
