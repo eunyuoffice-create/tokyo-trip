@@ -314,3 +314,11 @@
 .lg .lgmkind-text{background:#E3ECFB;color:#2F5FB3}
 .lg .lgsheet #mType .lgchip[data-t="list"][aria-pressed="true"]{background:var(--ok);color:#fff}
 .lg .lgsheet #mType .lgchip[data-t="text"][aria-pressed="true"]{background:#2F5FB3;color:#fff}
+
+/* 메모 끌어서 정렬 */
+.lg .lgmemoacc summary .lgdrag{width:28px;height:28px;display:grid;place-items:center;color:var(--muted);opacity:.55;flex-shrink:0;touch-action:none;cursor:grab;border-radius:8px;margin-right:-4px}
+.lg .lgmemoacc summary .lgdrag svg{width:16px;height:16px}
+.lg .lgmemoacc summary .lgdrag:active{cursor:grabbing;background:var(--chip);opacity:1}
+.lg .lgmemoacc.lgdragging{position:relative;z-index:5;box-shadow:0 10px 28px rgba(23,28,40,.18);opacity:.95;transition:none}
+.lg .lgmemolist details{transition:transform .12s}
+.lg .lgmemolist{min-width:0}

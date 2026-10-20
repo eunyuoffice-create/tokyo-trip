@@ -139,7 +139,7 @@ const balLine=(b,cur)=>Math.abs(b)<0.5?`<b>정산 끝</b>`:(b>0?`받을 돈 <b c
 
 /* ---------- 렌더 ---------- */
 /* 입력칸은 전부 시트(ov) 안에 있어서 목록을 다시 그려도 입력이 끊기지 않는다 */
-function isEditing(){ return false; }
+function isEditing(){ return !!S.dragging; }
 function render(){
   if(isEditing()){S.pending=true;return}
   S.pending=false;
@@ -278,6 +278,7 @@ function rowHtml(e){
 }
 
 /* ---------- 메모: 목록은 한 줄씩, 쓰기·보기는 시트에서 ---------- */
+const svgDrag='<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.8"/><circle cx="15" cy="6" r="1.8"/><circle cx="9" cy="12" r="1.8"/><circle cx="15" cy="12" r="1.8"/><circle cx="9" cy="18" r="1.8"/><circle cx="15" cy="18" r="1.8"/></svg>';
 const svgList='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="7" height="7" rx="1.5"/><path d="M5 7.5l1.5 1.5L9 6"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 7.5h7M14 17.5h7"/></svg>';
 const svgText='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17v3z"/><path d="M13.5 6.5l3 3"/><path d="M4 4h7"/></svg>';
 function viewMemo(){
@@ -285,8 +286,8 @@ function viewMemo(){
   const secs=[{title:'내 메모',sub:`${pname(S.me)}만 봄`,list:S.memos.filter(m=>ownerOf(m)===S.me)},{title:'공용 메모',sub:'둘 다 보고 체크',list:S.memos.filter(isShared)}];
   secs.forEach(sec=>{
     if(!sec.list.length)return;
-    const list=sec.list.slice().sort((a,b)=>(b.upd||b.order||b.ts||0)-(a.upd||a.order||a.ts||0));
-    h+=`<div class="lgsec"><h3>${sec.title} <span class="lgsub">${esc(sec.sub)}</span></h3><span class="lgnum">${list.length}개</span></div>${list.map(memoRow).join('')}`;
+    const list=sec.list.slice().sort((a,b)=>(b.order||b.ts||0)-(a.order||a.ts||0));
+    h+=`<div class="lgsec"><h3>${sec.title} <span class="lgsub">${esc(sec.sub)}</span></h3><span class="lgnum">${list.length}개${list.length>1?' <span class="lgsub">· ⋮⋮ 끌어서 순서 바꾸기</span>':''}</span></div><div class="lgmemolist">${list.map(memoRow).join('')}</div>`;
   });
   if(!S.memos.length) h+=`<div class="lghint" style="text-align:center;margin:6px 0 10px">아래 [내 메모] [공용 메모]로 체크 리스트나 글을 써요.</div>`;
   h+=`<div class="lgbar"><div class="lgadd2"><button class="lgaddexp lgaddmine" data-newmemo="mine">${svgPlus}내 메모</button><button class="lgaddexp lgaddmine" data-newmemo="shared">${svgPlus}공용 메모</button></div></div>`;
@@ -302,7 +303,7 @@ function memoRow(m){
   if(list){
     inner=items.length?items.map(it=>{const who=priv?null:whoOf(it); return `<div class="lgli ${it.done?'lgdone':''}"><button type="button" class="lgbox" data-tgl-m="${esc(m.id)}|${esc(it.id)}" aria-label="완료">${svgCheck}</button><span class="lgtx">${esc(it.text)}</span>${who===null?'':`<span class="lgwho ${who===S.me?'lgwho-me':''}">${esc(pname(who))}</span>`}</div>`}).join(''):`<div class="lghint" style="margin:0 0 6px">아직 항목이 없어요.</div>`;
   }else inner=body.trim()?`<div class="lgmemobody">${esc(body)}</div>`:`<div class="lghint" style="margin:0 0 6px">내용이 없어요.</div>`;
-  return `<details class="lgdetails lgmemoacc" data-accm="${esc(m.id)}" ${open?'open':''}><summary><span class="lgmic ${list?'lgmic-list':'lgmic-text'}" title="${list?'체크 리스트':'글'}">${list?svgList:svgText}</span><span class="lgmtitle">${priv?`<span class="lglock">${svgLock}</span>`:''}<span class="lgtrunc">${esc(title)}</span></span><span class="lgmkind ${list?'lgmkind-list':'lgmkind-text'}">${list?'리스트':'글'}</span>${list&&items.length?`<span class="lgmprog ${done===items.length?'lgokt':''}">${done}/${items.length}</span>`:''}</summary><div class="lgdetails-b lgmemoin">${inner}<div class="lgmemofoot"><span class="lgsub">${list?`${done}/${items.length} 완료`:''}</span><button type="button" class="lgaddbtn" data-memoedit="${esc(m.id)}">수정</button></div></div></details>`;
+  return `<details class="lgdetails lgmemoacc" data-accm="${esc(m.id)}" ${open?'open':''}><summary><span class="lgmic ${list?'lgmic-list':'lgmic-text'}" title="${list?'체크 리스트':'글'}">${list?svgList:svgText}</span><span class="lgmtitle">${priv?`<span class="lglock">${svgLock}</span>`:''}<span class="lgtrunc">${esc(title)}</span></span><span class="lgmkind ${list?'lgmkind-list':'lgmkind-text'}">${list?'리스트':'글'}</span>${list&&items.length?`<span class="lgmprog ${done===items.length?'lgokt':''}">${done}/${items.length}</span>`:''}<span class="lgdrag" data-drag="${esc(m.id)}" aria-label="끌어서 순서 바꾸기">${svgDrag}</span></summary><div class="lgdetails-b lgmemoin">${inner}<div class="lgmemofoot"><span class="lgsub">${list?`${done}/${items.length} 완료`:''}</span><button type="button" class="lgaddbtn" data-memoedit="${esc(m.id)}">수정</button></div></div></details>`;
 }
 const memoItems=m=>(m&&Array.isArray(m.items)?m.items:[]).map(x=>({...x}));
 const whoOf=it=>(it.who===null||it.who===undefined||it.who===''||!S.people[+it.who])?null:+it.who;
@@ -349,6 +350,36 @@ function openMemoEditor(m,opts={}){
   setTimeout(()=>{const f=isNew?g('#mTitle'):null; if(f)f.focus()},250);
 }
 
+/* 메모 아코디언 끌어서 순서 바꾸기 (포인터 이벤트 → 터치·마우스 공통) */
+function startDrag(ev,handle){
+  if(ev.button&&ev.button!==0)return;
+  const card=handle.closest('details[data-accm]'); const listEl=card&&card.parentElement; if(!card||!listEl||!listEl.classList.contains('lgmemolist'))return;
+  ev.preventDefault(); ev.stopPropagation();
+  const startY=ev.clientY; let moved=false; const h=card.getBoundingClientRect().height;
+  S.dragging=true; card.classList.add('lgdragging'); listEl.classList.add('lgdraglist');
+  try{handle.setPointerCapture(ev.pointerId)}catch(e){}
+  const onMove=e=>{
+    const dy=e.clientY-startY; if(Math.abs(dy)>4)moved=true;
+    card.style.transform=`translateY(${dy}px)`;
+    const sibs=[...listEl.children].filter(x=>x!==card); const cy=e.clientY;
+    for(const sb of sibs){ const r=sb.getBoundingClientRect(); const mid=r.top+r.height/2;
+      const before=card.compareDocumentPosition(sb)&Node.DOCUMENT_POSITION_FOLLOWING; // sb가 card 뒤에 있나
+      if(before&&cy>mid){ listEl.insertBefore(sb,card); startYAdjust(-r.height); break; }
+      if(!before&&cy<mid){ listEl.insertBefore(card,sb); startYAdjust(r.height); break; }
+    }
+  };
+  let adjust=0; const startYAdjust=d=>{adjust+=d; card.style.transform=`translateY(${(lastY-startY)-adjust}px)`;};
+  let lastY=startY; const move=e=>{lastY=e.clientY; onMove({clientY:e.clientY}); card.style.transform=`translateY(${(lastY-startY)-adjust}px)`};
+  const end=async()=>{
+    handle.removeEventListener('pointermove',move); handle.removeEventListener('pointerup',end); handle.removeEventListener('pointercancel',end);
+    card.style.transform=''; card.classList.remove('lgdragging'); listEl.classList.remove('lgdraglist'); S.dragging=false;
+    if(!moved){render();return}
+    const ids=[...listEl.children].map(x=>x.dataset.accm); const base=Date.now(); const ops=[];
+    ids.forEach((id,i)=>{const m=S.memos.find(x=>x.id===id); const order=base-i*1000; if(m&&m.order!==order)ops.push({op:'update',col:'memos',id,data:{order}})});
+    if(ops.length)await write(ops,'순서를 바꿨어요'); else render();
+  };
+  handle.addEventListener('pointermove',move); handle.addEventListener('pointerup',end); handle.addEventListener('pointercancel',end);
+}
 /* ---------- 바인딩 ---------- */
 function bind(c){
   qa('[data-act]',c).forEach(b=>b.onclick=()=>{const a=b.dataset.act; if(a==='retry'){S.screen='loading';render();boot()} else if(a==='settings')openSettings(); else if(a==='setup-add')setupAddRow(); else if(a==='login')openLogin(); else if(a==='logout'){logout();toast('로그아웃했어요')} else if(a==='add-shared')openExpense(null,{priv:false}); else if(a==='add-mine')openExpense(null,{priv:true}); else if(a==='forgot')openForgot(); });
@@ -359,6 +390,7 @@ function bind(c){
   qa('[data-settle]',c).forEach(b=>b.onclick=()=>{const [f,t,a,cur]=b.dataset.settle.split('|');openSettle({from:+f,to:+t,amount:+a,cur})});
   qa('[data-newmemo]',c).forEach(b=>b.onclick=()=>openMemoEditor(null,{owner:b.dataset.newmemo==='mine'?S.me:null}));
   qa('[data-memoedit]',c).forEach(b=>b.onclick=()=>openMemoEditor(S.memos.find(m=>m.id===b.dataset.memoedit)));
+  qa('[data-drag]',c).forEach(h=>{h.onclick=ev=>{ev.preventDefault();ev.stopPropagation()}; h.onpointerdown=ev=>startDrag(ev,h)});
   qa('[data-accm]',c).forEach(d=>d.ontoggle=()=>{if(d.open)S.openMemos.add(d.dataset.accm);else S.openMemos.delete(d.dataset.accm)});
   qa('[data-tgl-m]',c).forEach(b=>b.onclick=()=>{const [mid,iid]=b.dataset.tglM.split('|');const m=S.memos.find(x=>x.id===mid);if(!m)return;const items=memoItems(m).map(it=>it.id===iid?{...it,done:!it.done,doneBy:!it.done?S.me:null}:it);write([{op:'update',col:'memos',id:mid,data:{items}}])});
   // setup / login (정산 탭 쪽에만 있다)
