@@ -137,6 +137,7 @@ const dRow=(x)=>{const kind=kindOf(x); const text=kind==='s'?x:kind==='k'?x.k:x.
 const rRow=(x={})=>`<div class="crow croute"><div class="ckind"><span class="lgsub">이동 경로</span><button type="button" class="lgx" data-delrow aria-label="삭제">×</button></div>
   <div class="lgrow2"><input type="text" class="rf" placeholder="출발 (예: 이케부쿠로역)" value="${esc(x.f||'')}"><input type="text" class="rt" placeholder="도착 (예: 스튜디오 투어 도쿄)" value="${esc(x.t||'')}"></div>
   <textarea class="rhow" rows="2" placeholder="설명 (예: 세이부선 약 20분 + 도보 2분)">${esc(x.how||'')}</textarea>
+  <div class="lgrow2"><input type="text" class="rprice" placeholder="가격 (예: 1,400엔)" value="${esc(x.price||'')}"><input type="text" class="rurl" inputmode="url" autocapitalize="off" placeholder="구글맵 링크 붙여넣기 (선택)" value="${esc(x.url||'')}"></div>
   <div class="lgrow2"><input type="text" class="rfq" placeholder="출발 구글맵 검색어 (비우면 출발과 같음)" value="${esc(x.fq||'')}"><input type="text" class="rtq" placeholder="도착 구글맵 검색어" value="${esc(x.tq||'')}"></div>
   <div class="lgchips rmode">${[['transit','🚃 전철·버스'],['walking','🚶 도보'],['driving','🚕 택시']].map(([m,l])=>`<button type="button" class="lgchip lgsm" data-m="${m}" aria-pressed="${(x.mode||'transit')===m}">${l}</button>`).join('')}</div></div>`;
 function wireRows(sh){
@@ -147,7 +148,7 @@ function wireRows(sh){
   sh.querySelectorAll('.crow textarea').forEach(ta=>{const grow=()=>{ta.style.height='auto';ta.style.height=Math.max(44,ta.scrollHeight+2)+'px'}; ta.oninput=grow; grow();});
 }
 const readD=sh=>[...sh.querySelectorAll('[data-rows="eD"] .crow')].map(r=>{const kind=r.dataset.kind; const t=(r.querySelector('.ctext').value||'').trim(); if(!t)return null; if(kind==='k')return {k:t}; if(kind==='l'){let u=(r.querySelector('.curl').value||'').trim(); if(!u)return t; if(!/^https?:\/\//i.test(u))u='https://'+u; return {l:t,u}} return t;}).filter(Boolean);
-const readR=sh=>{const out=[...sh.querySelectorAll('[data-rows="eR"] .crow')].map(r=>{const g=c=>(r.querySelector(c)?.value||'').trim(); const f=g('.rf'),t=g('.rt'); if(!f&&!t&&!g('.rhow'))return null; const mode=r.querySelector('.rmode [aria-pressed="true"]')?.dataset.m||'transit'; return {f,t,how:g('.rhow'),fq:g('.rfq')||f,tq:g('.rtq')||t,mode}}).filter(Boolean); return out.length?(out.length===1?out[0]:out):null};
+const readR=sh=>{const out=[...sh.querySelectorAll('[data-rows="eR"] .crow')].map(r=>{const g=c=>(r.querySelector(c)?.value||'').trim(); const f=g('.rf'),t=g('.rt'); if(!f&&!t&&!g('.rhow'))return null; const mode=r.querySelector('.rmode [aria-pressed="true"]')?.dataset.m||'transit'; let url=g('.rurl'); if(url&&!/^https?:\/\//i.test(url))url='https://'+url; const o={f,t,how:g('.rhow'),fq:g('.rfq')||f,tq:g('.rtq')||t,mode}; if(g('.rprice'))o.price=g('.rprice'); if(url)o.url=url; return o;}).filter(Boolean); return out.length?(out.length===1?out[0]:out):null};
 /* ---------- 편집 시트 ---------- */
 const F={
   text:(id,label,val,ph='',extra='')=>`<div class="lgf"><label>${label}</label><input type="text" id="${id}" value="${esc(val||'')}" placeholder="${esc(ph)}" ${extra}></div>`,

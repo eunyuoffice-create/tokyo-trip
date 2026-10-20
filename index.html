@@ -69,6 +69,8 @@ main{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px
 .ev .route .rf{font-weight:600;color:var(--fg)}
 .ev .route .rh{white-space:pre-line}
 .ev .route a{color:var(--accent);font-weight:600;text-decoration:none;align-self:flex-start;margin-top:2px}
+.ev .route .rprice{font-family:var(--mono);font-weight:600;color:var(--fg);background:var(--surface);border-radius:6px;padding:0 6px;margin-left:4px;font-size:12px}
+.ev .route .racts{display:flex;gap:10px;flex-wrap:wrap}
 .ev .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .btn.link{border-color:transparent;background:#E3ECFB;color:#2F5FB3}
 .ev .more{margin-top:6px;font-size:13px;color:var(--muted);text-align:left;display:inline-flex;align-items:center;gap:4px}
@@ -603,7 +605,7 @@ const linksHtml=ls=>(Array.isArray(ls)&&ls.length)?ls.filter(x=>x&&x.u).map(x=>`
 const dirUrl=(fq,tq,mode)=>'https://www.google.com/maps/dir/?api=1&origin='+encodeURIComponent(fq)+'&destination='+encodeURIComponent(tq)+'&travelmode='+(mode||'transit');
 function routeHtml(r){
  if(!r) return '';
- return (Array.isArray(r)?r:[r]).map(x=>`<div class="route"><span class="rf">${x.mode==='walking'?'🚶':x.mode==='driving'?'🚕':'🚃'} ${esc(x.f)} → ${esc(x.t)}</span><span class="rh">${nl(x.how)}</span><a href="${dirUrl(x.fq,x.tq,x.mode)}" target="_blank" rel="noopener">구글맵 경로 보기 ↗</a></div>`).join('');
+ return (Array.isArray(r)?r:[r]).map(x=>`<div class="route"><span class="rf">${x.mode==='walking'?'🚶':x.mode==='driving'?'🚕':'🚃'} ${esc(x.f)} → ${esc(x.t)}${x.price?` <span class="rprice">${esc(x.price)}</span>`:''}</span>${x.how?`<span class="rh">${nl(x.how)}</span>`:''}<span class="racts">${x.url?`<a href="${esc(x.url)}" target="_blank" rel="noopener">구글맵으로 이동하기 ↗</a>`:`<a href="${dirUrl(x.fq||x.f,x.tq||x.t,x.mode)}" target="_blank" rel="noopener">구글맵 경로 보기 ↗</a>`}</span></div>`).join('');
 }
 function renderPlan(){
  const box=document.getElementById('p-plan');
