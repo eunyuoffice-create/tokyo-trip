@@ -12,17 +12,16 @@
 .lg .lghint.bad{color:var(--accent)}
 
 /* 머리 */
-.lg-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
-.lg-head .lgttl{font-size:17px;font-weight:700;letter-spacing:-.01em;display:flex;align-items:center;gap:8px;min-width:0}
-.lg-head .lgttl small{font-family:var(--mono);font-weight:500;color:var(--muted);font-size:12px}
-.lg-head .lgme{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px 0 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12.5px;font-weight:700;white-space:nowrap}
-.lg-head .lgme i{width:8px;height:8px;border-radius:50%;background:var(--accent);display:inline-block}
+.lg-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:2px 0 10px}
+.lg-head .lgttl{font-size:16px;font-weight:700;letter-spacing:-.01em;min-width:0}
+.lg-head-r{display:flex;align-items:center;gap:8px}
+.lg-head .lgme{display:inline-flex;align-items:center;height:28px;padding:0 10px;border-radius:999px;background:var(--chip);color:var(--muted);font-size:12.5px;font-weight:600;white-space:nowrap}
 .lg .lgicon{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;color:var(--muted);background:var(--surface);box-shadow:var(--shadow);flex-shrink:0}
 .lg .lgicon svg{width:17px;height:17px}
-.lg-tabs{display:flex;background:var(--chip);border-radius:12px;padding:3px;margin-bottom:10px}
+.lg-tabs{display:flex;background:var(--chip);border-radius:12px;padding:3px;margin-bottom:12px}
 .lg-tabs button{flex:1;height:34px;border-radius:9px;font-size:13.5px;font-weight:600;color:var(--muted)}
 .lg-tabs button[aria-selected="true"]{background:var(--surface);color:var(--fg);box-shadow:var(--shadow)}
-.lg-tabs button .bn{font-family:var(--mono);font-size:11px;margin-left:3px;color:var(--accent)}
+
 
 /* 칩 */
 .lg .lgchip{flex-shrink:0;display:inline-flex;align-items:center;gap:4px;height:30px;padding:0 12px;border-radius:999px;background:var(--chip);font-size:13px;font-weight:500;white-space:nowrap}
@@ -36,15 +35,44 @@
 .lg .lgbanner{margin:8px 0;padding:10px 12px;border-radius:12px;background:var(--warn-soft);font-size:13px;display:flex;gap:8px;align-items:flex-start}
 .lg .lgbanner.lgok{background:var(--ok-soft)} .lg .lgbanner.lgaccent{background:var(--accent-soft)}
 .lg .lgbanner b{font-weight:600}
-.lg .lgcard{background:var(--surface);border-radius:14px;box-shadow:var(--shadow);padding:14px;margin:10px 0;min-width:0}
+.lg .lgcard{background:var(--surface);border-radius:14px;box-shadow:var(--shadow);padding:14px;margin:8px 0;min-width:0}
+.lg .lgcard.lgtight{padding-block:2px}
+/* 상단 요약 */
+.lg .lghero{padding:4px 2px 12px}
+.lg .lghero-k{font-size:12px;color:var(--muted);letter-spacing:.02em;margin-bottom:4px}
+.lg .lghero-v{font-size:22px;font-weight:700;letter-spacing:-.02em;line-height:1.3;overflow-wrap:anywhere}
+.lg .lghero-v b.lgnum{font-weight:700;font-size:24px}
+.lg .lghero-v.lgok-t{color:var(--ok)} .lg .lghero-v.lgacc-t{color:var(--accent)}
+.lg .lghero-v .lgsub{font-size:13px;font-weight:500;color:var(--muted);font-family:var(--sans)}
+.lg .lghero-eq{font-size:13px;font-weight:500;color:var(--muted);font-family:var(--mono);margin-left:4px;white-space:nowrap}
+.lg .lghero-s{font-size:12.5px;color:var(--muted);margin-top:6px;font-variant-numeric:tabular-nums;line-height:1.5}
+.lg .lghero-s b{font-weight:600}
+.lg .lgdot{opacity:.5;margin:0 2px}
+/* 접힘 */
+.lg .lgdetails{background:var(--surface);border-radius:14px;box-shadow:var(--shadow);margin:8px 0;min-width:0}
+.lg .lgdetails summary{list-style:none;cursor:pointer;padding:12px 14px;font-size:13.5px;font-weight:600;color:var(--muted);display:flex;align-items:center;justify-content:space-between}
+.lg .lgdetails summary::-webkit-details-marker{display:none}
+.lg .lgdetails summary::after{content:"";width:8px;height:8px;border-right:1.5px solid var(--muted);border-bottom:1.5px solid var(--muted);transform:rotate(45deg);margin-right:4px;transition:transform .15s}
+.lg .lgdetails[open] summary::after{transform:rotate(-135deg)}
+.lg .lgdetails-b{padding:0 14px 12px}
+.lg .lgsubh{font-size:12px;font-weight:600;color:var(--muted);margin:6px 0 2px}
+.lg .lgsub2{display:block;font-size:11.5px;color:var(--muted);font-weight:400;font-family:var(--mono)}
+.lg .lglink{color:var(--accent);font-weight:600;font-size:13px}
+.lg .lgtrunc{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+/* 필터 */
+.lg .lgfilters{display:flex;flex-direction:column;gap:8px;margin:4px 0 6px}
+.lg .lgseg2{display:inline-flex;align-self:flex-start;background:var(--chip);border-radius:10px;padding:2px}
+.lg .lgseg2 button{height:28px;padding:0 14px;border-radius:8px;font-size:13px;font-weight:600;color:var(--muted)}
+.lg .lgseg2 button[aria-pressed="true"]{background:var(--surface);color:var(--fg);box-shadow:var(--shadow)}
 .lg .lgcard h4{font-size:12.5px;font-weight:600;color:var(--muted);letter-spacing:.02em;margin-bottom:8px}
 .lg .lgstat{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .lg .lgstat>div{min-width:0}
 .lg .lgstat .sk{font-size:12px;color:var(--muted)}
 .lg .lgstat .sv{font-size:19px;font-weight:600;font-family:var(--mono);letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .lg .lgstat .sv small{font-size:12px;color:var(--muted);font-weight:500}
-.lg .lgsec{display:flex;align-items:baseline;justify-content:space-between;margin:16px 0 6px}
-.lg .lgsec h3{font-size:14px;font-weight:700}
+.lg .lgsec{display:flex;align-items:baseline;justify-content:space-between;margin:14px 0 4px;padding:0 2px}
+.lg .lgsec h3{font-size:13.5px;font-weight:700}
+.lg .lgsec h3 .lgsub{font-weight:500;font-size:12px;color:var(--muted);margin-left:4px;font-family:var(--sans);opacity:1}
 .lg .lgsec .lgnum{font-size:12.5px;color:var(--muted)}
 .lg .lgsec .lgact{display:flex;gap:6px}
 .lg .lglink{color:var(--accent);font-weight:600;font-size:13px}
@@ -52,24 +80,24 @@
 .lg .lgempty b{display:block;color:var(--fg);font-weight:600;margin-bottom:4px}
 
 /* 지출 행 */
-.lg .lgrow{display:flex;align-items:flex-start;gap:10px;padding:11px 0;border-top:1px solid var(--line);text-align:left;width:100%}
+.lg .lgrow{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line);text-align:left;width:100%}
 .lg .lgrow:first-child{border-top:0}
 .lg .lgrow .lgcat{width:36px;height:36px;border-radius:10px;background:var(--chip);display:grid;place-items:center;font-size:11px;font-weight:600;flex-shrink:0;color:var(--muted)}
 .lg .lgrow .lgmid{flex:1;min-width:0}
-.lg .lgrow .ti{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:5px}
+.lg .lgrow .ti{font-weight:500;font-size:14.5px;display:flex;align-items:center;gap:5px;min-width:0}
 .lg .lgrow .ti .lglock{display:inline-flex;color:var(--muted)} .lg .lgrow .ti .lglock svg{width:12px;height:12px}
-.lg .lgrow .si{font-size:12px;color:var(--muted);margin-top:1px}
+.lg .lgrow .si{font-size:12px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lg .lgrow .si .lgmine{color:var(--accent);font-weight:600}
 .lg .lgrow .lgamt{text-align:right;flex-shrink:0}
-.lg .lgrow .lgamt .aa{font-family:var(--mono);font-weight:600;font-size:15px}
+.lg .lgrow .lgamt .aa{font-family:var(--mono);font-weight:600;font-size:14.5px}
 .lg .lgrow .lgamt .ab{font-size:11px;color:var(--muted);font-family:var(--mono)}
 .lg .lgrow .lgamt .ab.lgowe{color:var(--accent);font-weight:600}
 
 /* 정산 */
-.lg .lgflow{display:flex;align-items:center;gap:8px;padding:12px 0;border-top:1px solid var(--line)}
+.lg .lgflow{display:flex;align-items:center;gap:8px;padding:11px 0;border-top:1px solid var(--line)}
 .lg .lgflow:first-child{border-top:0}
 .lg .lgflow .fp{font-weight:600} .lg .lgflow .lgarr{color:var(--muted)}
-.lg .lgflow .lgamt{margin-left:auto;font-family:var(--mono);font-weight:600;font-size:16px}
+.lg .lgflow .lgamt{margin-left:auto;font-family:var(--mono);font-weight:600;font-size:15px}
 .lg .lgflow .lgamt.lgin{color:var(--ok)} .lg .lgflow .lgamt.lgout{color:var(--accent)}
 .lg .lgmini{height:30px;padding:0 10px;border-radius:8px;background:var(--chip);font-size:12px;font-weight:600;flex-shrink:0}
 .lg .lgbal{display:grid;grid-template-columns:1fr auto;gap:4px 12px;font-size:14px;padding:6px 0}
@@ -78,21 +106,22 @@
 .lg .lgsub{font-size:12px;color:var(--muted)}
 
 /* 메모 */
-.lg .lgmemo{background:var(--surface);border-radius:14px;box-shadow:var(--shadow);padding:12px 14px;margin:8px 0;min-width:0}
-.lg .lgmemo .lgmh{display:flex;align-items:center;gap:8px;margin-bottom:6px}
-.lg .lgmemo .lgmh button.lgtt{flex:1;min-width:0;text-align:left;font-weight:700;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lg .lgmemo{background:var(--surface);border-radius:14px;box-shadow:var(--shadow);padding:10px 14px 10px;margin:8px 0;min-width:0}
+.lg .lgmemo .lgmh{display:flex;align-items:center;gap:8px;margin-bottom:2px}
+.lg .lgmemo .lgmh button.lgtt{flex:1;min-width:0;text-align:left;font-weight:700;font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:6px;height:30px}
+.lg .lgmemo .lgmh .lglock{display:inline-flex;color:var(--muted)} .lg .lgmemo .lgmh .lglock svg{width:13px;height:13px}
 .lg .lgmemo .lgmh .lgtt .lgph{color:var(--muted);font-weight:500}
 .lg .lgmemo .lgmh .lgtag{font-size:11px;font-weight:600;color:var(--muted);background:var(--chip);border-radius:999px;padding:2px 8px;flex-shrink:0}
 .lg .lgmemo .lgmh .lgtag.lgpriv{color:var(--accent);background:var(--accent-soft)}
 .lg .lgmemo .lgmh .lgmore{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;color:var(--muted);flex-shrink:0}
 .lg .lgmemo .lgmh .lgmore svg{width:16px;height:16px}
-.lg .lgli{display:flex;align-items:flex-start;gap:9px;padding:6px 0}
+.lg .lgli{display:flex;align-items:flex-start;gap:9px;padding:5px 0}
 .lg .lgli .lgbox{width:22px;height:22px;border-radius:7px;border:2px solid var(--line);flex-shrink:0;margin-top:2px;display:grid;place-items:center;background:var(--surface)}
 .lg .lgli .lgbox svg{width:13px;height:13px;display:none}
 .lg .lgli.lgdone .lgbox{background:var(--ok);border-color:var(--ok)} .lg .lgli.lgdone .lgbox svg{display:block}
-.lg .lgli .lgtx{flex:1;min-width:0;text-align:left;font-size:14.5px;line-height:1.45;overflow-wrap:anywhere;white-space:pre-wrap;padding-top:1px}
+.lg .lgli .lgtx{flex:1;min-width:0;text-align:left;font-size:14px;line-height:1.5;overflow-wrap:anywhere;white-space:pre-wrap;padding-top:1px}
 .lg .lgli.lgdone .lgtx{color:var(--muted);text-decoration:line-through}
-.lg .lgli .lgx{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;color:var(--muted);opacity:.6;flex-shrink:0}
+.lg .lgli .lgx{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;color:var(--muted);opacity:.45;flex-shrink:0}
 .lg .lgli .lgx svg{width:13px;height:13px}
 .lg .lgaddli{display:flex;align-items:center;gap:9px;padding:4px 0 0}
 .lg .lgaddli .lgplus{width:22px;height:22px;border-radius:7px;border:2px dashed var(--line);display:grid;place-items:center;color:var(--muted);flex-shrink:0}
@@ -104,7 +133,7 @@
 .lg textarea.lgbody::placeholder{color:var(--muted)}
 .lg .lgsaverow{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:4px}
 .lg .lgsave{font-size:11px;color:var(--muted);min-height:14px}
-.lg .lgaddbtn{height:30px;padding:0 12px;border-radius:8px;background:var(--chip);font-size:12.5px;font-weight:600;color:var(--fg);flex-shrink:0}
+.lg .lgaddbtn{height:28px;padding:0 11px;border-radius:8px;background:var(--chip);font-size:12px;font-weight:600;color:var(--muted);flex-shrink:0}
 .lg .lgaddbtn:active{background:var(--line)}
 
 /* 로그인·설정 화면 */

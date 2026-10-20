@@ -176,8 +176,8 @@ function viewLogin(){
   </form></div>`;
 }
 function viewMain(){
-  let h=`<div class="lg-head"><div class="lgttl">정산 노트 <small>10.24–28</small><span class="lgme"><i></i>${esc(pname(S.me))}</span></div><button class="lgicon" data-act="settings" aria-label="설정">${svgGear}</button></div>`;
-  h+=`<div class="lg-tabs" role="tablist">${TABS.map(t=>`<button role="tab" data-tab="${t.id}" aria-selected="${S.tab===t.id}">${t.label}${t.id==='memo'&&S.memos.length?`<span class="bn">${S.memos.length}</span>`:''}</button>`).join('')}</div>`;
+  let h=`<div class="lg-head"><div class="lgttl">정산 노트</div><div class="lg-head-r"><span class="lgme">${esc(pname(S.me))}</span><button class="lgicon" data-act="settings" aria-label="설정">${svgGear}</button></div></div>`;
+  h+=`<div class="lg-tabs" role="tablist">${TABS.map(t=>`<button role="tab" data-tab="${t.id}" aria-selected="${S.tab===t.id}">${t.label}</button>`).join('')}</div>`;
   if(S.err) h+=`<div class="lgbanner">⚠️ <div>${esc(S.err)}</div></div>`;
   if(S.tab==='settle')h+=viewSettle(); else if(S.tab==='exp')h+=viewExp(); else h+=viewMemo();
   return h;
@@ -185,107 +185,114 @@ function viewMain(){
 function viewSettle(){
   let h=''; const me=S.me; const sh=shared();
   const tj=sh.filter(e=>e.cur==='JPY').reduce((a,e)=>a+e.amount,0), tk=sh.filter(e=>e.cur==='KRW').reduce((a,e)=>a+e.amount,0);
-  h+=`<div class="lgcard"><h4>공용 지출 합계</h4><div class="lgstat"><div><div class="sk">엔</div><div class="sv">${fmt(tj,'JPY')}</div></div><div><div class="sk">원</div><div class="sv">${fmt(tk,'KRW')}</div></div></div><div class="lghint">합쳐서 약 <b class="lgnum">${fmt(tj*S.rate+tk,'KRW')}</b> · ${rateLabel()} · 공용 ${sh.length}건${S.people.length?` · 1인 약 <b class="lgnum">${fmt((tj*S.rate+tk)/S.people.length,'KRW')}</b>`:''}</div></div>`;
-  ['JPY','KRW'].forEach(cur=>{
-    const has=sh.some(e=>e.cur===cur)||S.transfers.some(t=>t.cur===cur); if(!has&&cur==='KRW')return;
-    const fl=flows(cur), b=balances(cur);
-    h+=`<div class="lgcard"><h4>${cur==='JPY'?'엔 (¥)':'원 (₩)'} 정산</h4>`;
-    if(!sh.some(e=>e.cur===cur)) h+=`<div class="lgempty">아직 ${cur==='JPY'?'엔':'원'} 공용 지출이 없어요</div>`;
-    else if(!fl.length) h+=`<div class="lgbanner lgok" style="margin:0">✅ <div><b>정산할 게 없어요.</b> 다들 낸 만큼 썼어요.</div></div>`;
-    else fl.slice().sort((a,b)=>((b.from===me||b.to===me)?1:0)-((a.from===me||a.to===me)?1:0)).forEach(f=>{
-      h+=`<div class="lgflow"><span class="fp">${esc(pname(f.from))}</span><span class="lgarr">→</span><span class="fp">${esc(pname(f.to))}</span><span class="lgamt ${f.from===me?'lgout':f.to===me?'lgin':''}">${fmt(f.amount,cur)}</span><button class="lgmini" data-settle="${f.from}|${f.to}|${f.amount}|${cur}">보냈어</button></div>`;
+  const allFlows=[...flows('JPY').map(f=>({...f,cur:'JPY'})),...flows('KRW').map(f=>({...f,cur:'KRW'}))];
+  const mine=allFlows.filter(f=>f.from===me||f.to===me);
+  // 상단 요약: 내 기준 한 줄
+  let big, tone='';
+  if(!sh.length){big='아직 공용 지출이 없어요'}
+  else if(!mine.length){big='정산 끝 · 주고받을 돈 없음';tone='lgok-t'}
+  else{const f=mine[0]; big=f.to===me?`${esc(pname(f.from))}에게 받을 돈 <b class="lgnum">${fmt(f.amount,f.cur)}</b>`:`${esc(pname(f.to))}에게 줄 돈 <b class="lgnum">${fmt(f.amount,f.cur)}</b>`; tone=f.to===me?'lgok-t':'lgacc-t'; if(mine.length>1)big+=` <span class="lgsub">외 ${mine.length-1}건</span>`}
+  const total=tj*S.rate+tk;
+  h+=`<div class="lghero"><div class="lghero-k">나의 정산</div><div class="lghero-v ${tone}">${big}</div>
+    <div class="lghero-s">공용 지출 ${tj?fmt(tj,'JPY'):''}${tj&&tk?' + ':''}${tk?fmt(tk,'KRW'):''}${sh.length?` <span class="lgdot">·</span> 약 ${fmt(total,'KRW')}${S.people.length?` <span class="lgdot">·</span> 1인 ${fmt(total/S.people.length,'KRW')}`:''}`:''}</div></div>`;
+  // 주고받을 돈 목록
+  if(allFlows.length){
+    h+=`<div class="lgcard lgtight">`;
+    allFlows.sort((a,b)=>((b.from===me||b.to===me)?1:0)-((a.from===me||a.to===me)?1:0)).forEach(f=>{
+      h+=`<div class="lgflow"><span class="fp">${esc(pname(f.from))}</span><span class="lgarr">→</span><span class="fp">${esc(pname(f.to))}</span><span class="lgamt ${f.from===me?'lgout':f.to===me?'lgin':''}">${fmt(f.amount,f.cur)}</span><button class="lgmini" data-settle="${f.from}|${f.to}|${f.amount}|${f.cur}">보냈어</button></div>`;
     });
-    h+=`<div class="lgsub" style="margin-top:12px">멤버별 잔액 (+ 받을 돈 / − 줄 돈)</div><div class="lgbal">`;
-    b.forEach((v,i)=>{h+=`<span class="bn">${esc(pname(i))}${i===me?' <span class="lgsub">(나)</span>':''}</span><span class="sv ${v>0.5?'lgpos':v<-0.5?'lgneg':''}">${v>0.5?'+':''}${fmt(v,cur)}</span>`});
-    h+=`</div></div>`;
-  });
-  h+=`<div class="lgcard"><h4>멤버별 낸 돈 · 몫 (공용, 엔)</h4><div class="lgbal">`;
-  S.people.forEach((p,i)=>{let paid=0,share=0; sh.filter(e=>e.cur==='JPY').forEach(e=>{if(e.payer===i)paid+=e.amount;share+=sharesOf(e)[i]||0}); h+=`<span class="bn">${esc(pname(i))}</span><span class="sv">낸 ${fmt(paid,'JPY')} · 몫 ${fmt(share,'JPY')}</span>`});
-  h+=`</div><div class="lghint">공용 지출만 계산해요. 개인 지출은 각자 시트에만 보여요.</div></div>`;
-  // 공용 지출 목록 (최근)
-  const list=sh.slice().sort((a,b)=>(b.day||'').localeCompare(a.day||'')||(b.ts||0)-(a.ts||0));
-  h+=`<div class="lgsec"><h3>공용 지출</h3><span class="lgnum">${list.length}건</span></div>`;
-  h+=list.length?`<div class="lgcard" style="padding-block:4px">${list.map(rowHtml).join('')}</div>`:`<div class="lgcard"><div class="lgempty"><b>아직 공용 지출이 없어요</b>지출 탭에서 "공용"으로 추가하면 여기서 나눠 계산돼요.</div></div>`;
-  if(S.transfers.length){
-    h+=`<div class="lgsec"><h3>정산 기록</h3><span class="lgnum">${S.transfers.length}건</span></div><div class="lgcard" style="padding-block:4px">`;
-    S.transfers.slice().sort((a,b)=>(b.ts||0)-(a.ts||0)).forEach(t=>{h+=`<button class="lgrow" data-tr="${esc(t.id)}"><div class="lgcat">송금</div><div class="lgmid"><div class="ti">${esc(pname(t.from))} → ${esc(pname(t.to))}</div><div class="si">${esc(new Date(t.ts||0).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}))}${t.memo?' · '+esc(t.memo):''}</div></div><div class="lgamt"><div class="aa">${fmt(t.amount,t.cur)}</div></div></button>`});
     h+=`</div>`;
   }
+  // 자세히 (접힘)
+  if(sh.length){
+    h+=`<details class="lgdetails"><summary>멤버별 잔액 · 낸 돈 · 몫</summary><div class="lgdetails-b">`;
+    ['JPY','KRW'].forEach(cur=>{ if(!sh.some(e=>e.cur===cur))return; const b=balances(cur);
+      h+=`<div class="lgsubh">${cur==='JPY'?'엔':'원'}</div><div class="lgbal">`;
+      S.people.forEach((p,i)=>{let paid=0,share=0; sh.filter(e=>e.cur===cur).forEach(e=>{if(e.payer===i)paid+=e.amount;share+=sharesOf(e)[i]||0}); const v=b[i]||0;
+        h+=`<span class="bn">${esc(pname(i))}${i===me?' <span class="lgsub">나</span>':''}<span class="lgsub2">낸 ${fmt(paid,cur)} · 몫 ${fmt(share,cur)}</span></span><span class="bv ${v>0.5?'lgpos':v<-0.5?'lgneg':''}">${v>0.5?'+':''}${fmt(v,cur)}</span>`});
+      h+=`</div>`;});
+    h+=`<div class="lghint">${rateLabel()} · 공용 지출만 계산해요.</div></div></details>`;
+  }
+  if(S.transfers.length){
+    h+=`<details class="lgdetails"><summary>정산 기록 ${S.transfers.length}건</summary><div class="lgdetails-b lgtight">`;
+    S.transfers.slice().sort((a,b)=>(b.ts||0)-(a.ts||0)).forEach(t=>{h+=`<button class="lgrow" data-tr="${esc(t.id)}"><div class="lgmid"><div class="ti">${esc(pname(t.from))} → ${esc(pname(t.to))}</div><div class="si">${esc(new Date(t.ts||0).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}))}${t.memo?' · '+esc(t.memo):''}</div></div><div class="lgamt"><div class="aa">${fmt(t.amount,t.cur)}</div></div></button>`});
+    h+=`</div></details>`;
+  }
+  // 최근 공용 지출
+  const list=sh.slice().sort((a,b)=>(b.day||'').localeCompare(a.day||'')||(b.ts||0)-(a.ts||0));
+  h+=`<div class="lgsec"><h3>공용 지출</h3>${list.length>6?`<button class="lglink" data-act="all-shared">전체 ${list.length}건</button>`:`<span class="lgnum">${list.length}건</span>`}</div>`;
+  h+=list.length?`<div class="lgcard lgtight">${list.slice(0,6).map(rowHtml).join('')}</div>`:`<div class="lgcard"><div class="lgempty">지출 탭에서 "공용"으로 추가하면 여기서 나눠 계산돼요.</div></div>`;
   return h;
 }
 function rowHtml(e){
   const me=S.me; const priv=!isShared(e); const sh=sharesOf(e); const parts=sh.map((v,i)=>v>0?i:-1).filter(i=>i>=0);
   let sub, right='';
-  if(priv){ sub=`개인 지출 · ${esc(dayLabel(e.day))}`; }
+  if(priv){ sub=`개인 · ${esc(e.cat||'기타')}`; }
   else{
     const who=parts.length===S.people.length?'모두':parts.map(pname).join('·');
-    sub=`<span class="${e.payer===me?'lgmine':''}">${esc(pname(e.payer))}</span> 결제 · ${esc(who)}${parts.length>1?' 나눔':''}`;
+    sub=`<span class="${e.payer===me?'lgmine':''}">${esc(pname(e.payer))}</span> 결제 · ${esc(who)}${parts.length>1?' 나눔':''} · ${esc(e.cat||'기타')}`;
     const mine=sh[me]||0;
-    if(e.payer===me&&parts.length>1) right=`<div class="ab">받을 돈 ${fmt(e.amount-mine,e.cur)}</div>`;
+    if(e.payer===me&&parts.length>1) right=`<div class="ab">받을 ${fmt(e.amount-mine,e.cur)}</div>`;
     else if(e.payer!==me&&mine>0) right=`<div class="ab lgowe">내 몫 ${fmt(mine,e.cur)}</div>`;
-    else if(parts.length>1) right=`<div class="ab">1인 ${fmt(e.amount/parts.length,e.cur)}</div>`;
   }
-  return `<button class="lgrow" data-exp="${esc(e.id)}"><div class="lgcat">${esc(e.cat||'기타')}</div><div class="lgmid"><div class="ti">${priv?`<span class="lglock">${svgLock}</span>`:''}<span style="overflow:hidden;text-overflow:ellipsis">${esc(e.title||'(제목 없음)')}</span></div><div class="si">${sub}${e.memo?` · ${esc(e.memo)}`:''}</div></div><div class="lgamt"><div class="aa">${fmt(e.amount,e.cur)}</div>${right}</div></button>`;
+  return `<button class="lgrow" data-exp="${esc(e.id)}"><div class="lgmid"><div class="ti">${priv?`<span class="lglock">${svgLock}</span>`:''}<span class="lgtrunc">${esc(e.title||'(제목 없음)')}</span></div><div class="si">${sub}${e.memo?` · ${esc(e.memo)}`:''}</div></div><div class="lgamt"><div class="aa">${fmt(e.amount,e.cur)}</div>${right}</div></button>`;
 }
 function viewExp(){
   let h=''; const me=S.me; const tj=myTotals('JPY'), tk=myTotals('KRW');
   const bj=balances('JPY')[me]||0, bk=balances('KRW')[me]||0;
-  h+=`<div class="lgcard"><h4>${esc(pname(me))}의 시트</h4><div class="lgstat">
-    <div><div class="sk">공용 중 내 몫</div><div class="sv">${fmt(tj.share,'JPY')}</div></div>
-    <div><div class="sk">개인 지출</div><div class="sv">${fmt(tj.priv,'JPY')}</div></div>
-    <div><div class="sk">내가 낸 공용</div><div class="sv">${fmt(tj.paid,'JPY')}</div></div>
-    <div><div class="sk">내 총 지출</div><div class="sv">${fmt(tj.share+tj.priv,'JPY')}</div></div>
-    ${(tk.share||tk.priv)?`<div><div class="sk">원화 · 내 몫</div><div class="sv">${fmt(tk.share,'KRW')}</div></div><div><div class="sk">원화 · 개인</div><div class="sv">${fmt(tk.priv,'KRW')}</div></div>`:''}
-  </div><div class="lghint">${balLine(bj,'JPY')}${(tk.share||tk.priv||tk.paid)?' · '+balLine(bk,'KRW'):''} · 총 약 <b class="lgnum">${fmt((tj.share+tj.priv)*S.rate+tk.share+tk.priv,'KRW')}</b></div></div>`;
-  h+=`<div class="lgchips" style="margin-top:12px"><button class="lgchip lgsm" data-scope="all" aria-pressed="${S.scope==='all'}">전체</button><button class="lgchip lgsm" data-scope="shared" aria-pressed="${S.scope==='shared'}">공용</button><button class="lgchip lgsm" data-scope="mine" aria-pressed="${S.scope==='mine'}">개인</button></div>`;
-  h+=`<div class="lgchips lgscroll" style="margin-top:8px"><button class="lgchip lgsm" data-day="all" aria-pressed="${S.dayFilter==='all'}">전체</button>`;
-  ALLDAYS.forEach(d=>{const c=S.expenses.filter(e=>e.day===d.d).length; if(d.d==='pre'&&!c)return; h+=`<button class="lgchip lgsm" data-day="${d.d}" aria-pressed="${S.dayFilter===d.d}">${d.d==='pre'?'출발 전':`D${d.n} ${d.w}`}${c?` <span class="lgnum lgmuted">${c}</span>`:''}</button>`});
-  h+=`</div>`;
+  const totalJ=tj.share+tj.priv, totalK=tk.share+tk.priv;
+  h+=`<div class="lghero"><div class="lghero-k">${esc(pname(me))}의 지출</div><div class="lghero-v"><b class="lgnum">${fmt(totalJ,'JPY')}</b>${totalK?` <span class="lgsub">+ ${fmt(totalK,'KRW')}</span>`:''} <span class="lghero-eq">≈ ${fmt(totalJ*S.rate+totalK,'KRW')}</span></div>
+    <div class="lghero-s">공용 몫 ${fmt(tj.share,'JPY')} <span class="lgdot">·</span> 개인 ${fmt(tj.priv,'JPY')} <span class="lgdot">·</span> 내가 낸 공용 ${fmt(tj.paid,'JPY')}</div>
+    <div class="lghero-s">${balLine(bj,'JPY')}${(tk.share||tk.priv||tk.paid)?' · '+balLine(bk,'KRW'):''}</div></div>`;
+  h+=`<div class="lgfilters"><div class="lgseg2"><button data-scope="all" aria-pressed="${S.scope==='all'}">전체</button><button data-scope="shared" aria-pressed="${S.scope==='shared'}">공용</button><button data-scope="mine" aria-pressed="${S.scope==='mine'}">개인</button></div>
+  <div class="lgchips lgscroll"><button class="lgchip lgsm" data-day="all" aria-pressed="${S.dayFilter==='all'}">모든 날</button>`;
+  ALLDAYS.forEach(d=>{const c=S.expenses.filter(e=>e.day===d.d).length; if(d.d==='pre'&&!c)return; h+=`<button class="lgchip lgsm" data-day="${d.d}" aria-pressed="${S.dayFilter===d.d}">${d.d==='pre'?'출발 전':`${d.n}일차`}</button>`});
+  h+=`</div></div>`;
   let list=S.expenses.slice().sort((a,b)=>(b.day||'').localeCompare(a.day||'')||(b.ts||0)-(a.ts||0));
   if(S.scope==='shared')list=list.filter(isShared); else if(S.scope==='mine')list=list.filter(e=>!isShared(e));
   if(S.dayFilter!=='all')list=list.filter(e=>e.day===S.dayFilter);
-  if(!list.length)return h+`<div class="lgcard"><div class="lgempty"><b>${S.expenses.length?'이 조건에 맞는 지출이 없어요':'아직 지출이 없어요'}</b>오른쪽 아래 버튼으로 추가해요. 공용은 같이 나누고, 개인은 나만 봐요.</div></div>`;
+  if(!list.length)return h+`<div class="lgcard"><div class="lgempty"><b>${S.expenses.length?'이 조건에 맞는 지출이 없어요':'아직 지출이 없어요'}</b>오른쪽 아래 + 버튼으로 추가해요. 공용은 같이 나누고, 개인은 나만 봐요.</div></div>`;
   const groups=[]; list.forEach(e=>{let g=groups.find(x=>x.day===e.day); if(!g){g={day:e.day,items:[]};groups.push(g)} g.items.push(e)});
   groups.forEach(g=>{
     const sj=g.items.filter(e=>e.cur==='JPY').reduce((a,e)=>a+e.amount,0), sk=g.items.filter(e=>e.cur==='KRW').reduce((a,e)=>a+e.amount,0);
-    h+=`<div class="lgsec"><h3>${esc(dayLabel(g.day))}</h3><span class="lgnum">${sj?fmt(sj,'JPY'):''}${sj&&sk?' · ':''}${sk?fmt(sk,'KRW'):''}</span></div><div class="lgcard" style="padding-block:4px">${g.items.map(rowHtml).join('')}</div>`;
+    h+=`<div class="lgsec"><h3>${esc(dayLabel(g.day))}</h3><span class="lgnum">${sj?fmt(sj,'JPY'):''}${sj&&sk?' · ':''}${sk?fmt(sk,'KRW'):''}</span></div><div class="lgcard lgtight">${g.items.map(rowHtml).join('')}</div>`;
   });
   return h;
 }
 function viewMemo(){
   let h='';
-  const secs=[{k:'shared',title:'공용 메모',list:S.memos.filter(isShared),owner:null},{k:'mine',title:'내 메모',list:S.memos.filter(m=>ownerOf(m)===S.me),owner:S.me}];
+  const secs=[{k:'shared',title:'공용 메모',sub:'둘 다 보고 체크',list:S.memos.filter(isShared)},{k:'mine',title:'내 메모',sub:`${pname(S.me)}만 봄`,list:S.memos.filter(m=>ownerOf(m)===S.me)}];
   secs.forEach(sec=>{
-    h+=`<div class="lgsec"><h3>${sec.title}${sec.k==='mine'?` <span class="lgsub">${esc(pname(S.me))}만 봄</span>`:''}</h3><div class="lgact"><button class="lgchip lgsm" data-newmemo="list|${sec.k}">+ 체크 리스트</button><button class="lgchip lgsm" data-newmemo="text|${sec.k}">+ 글</button></div></div>`;
+    h+=`<div class="lgsec"><h3>${sec.title} <span class="lgsub">${esc(sec.sub)}</span></h3><button class="lglink" data-newmemo="${sec.k}">+ 추가</button></div>`;
     const list=sec.list.slice().sort((a,b)=>(a.order||a.ts||0)-(b.order||b.ts||0));
-    if(!list.length){h+=`<div class="lgcard"><div class="lgempty">${sec.k==='shared'?'같이 보는 메모가 없어요. 살 것 목록, 가고 싶은 곳 같은 걸 올려두면 둘 다 체크할 수 있어요.':'나만 보는 메모가 없어요. 개인 쇼핑 리스트나 일기처럼 써요.'}</div></div>`;return}
+    if(!list.length){h+=`<div class="lgcard"><div class="lgempty">${sec.k==='shared'?'살 것 목록이나 가고 싶은 곳처럼 같이 체크할 걸 올려두세요.':'개인 쇼핑 리스트나 일기처럼 나만 볼 걸 써요.'}</div></div>`;return}
     list.forEach(m=>{h+=memoHtml(m)});
   });
   return h;
 }
 function memoHtml(m){
   const priv=!isShared(m);
-  let h=`<div class="lgmemo" data-memo="${esc(m.id)}"><div class="lgmh"><button class="lgtt" data-memoedit="${esc(m.id)}">${m.title?esc(m.title):`<span class="lgph">${m.type==='text'?'글':'체크 리스트'}</span>`}</button><span class="lgtag ${priv?'lgpriv':''}">${priv?'개인':'공용'}</span><button class="lgmore" data-memoedit="${esc(m.id)}" aria-label="메모 설정">${svgMore}</button></div>`;
+  let h=`<div class="lgmemo" data-memo="${esc(m.id)}"><div class="lgmh"><button class="lgtt" data-memoedit="${esc(m.id)}">${priv?`<span class="lglock">${svgLock}</span>`:''}${m.title?esc(m.title):`<span class="lgph">${m.type==='text'?'제목 없는 글':'제목 없는 리스트'}</span>`}</button><button class="lgmore" data-memoedit="${esc(m.id)}" aria-label="메모 설정">${svgMore}</button></div>`;
   if(m.type==='text'){
     h+=`<textarea class="lgbody" data-body="${esc(m.id)}" placeholder="여기에 그냥 써요. 줄바꿈 그대로 보여요." rows="3">${esc(m.body||'')}</textarea><div class="lgsaverow"><span class="lgsave" data-mark="${esc(m.id)}"></span><button type="button" class="lgaddbtn" data-savebody="${esc(m.id)}">저장</button></div>`;
   }else{
-    const items=(m.items||[]).slice().sort((a,b)=>(a.done?1:0)-(b.done?1:0));
+    const items=(m.items||[]).slice().sort((a,b)=>(a.done?1:0)-(b.done?1:0)); const done=items.filter(i=>i.done).length;
     items.forEach(it=>{h+=`<div class="lgli ${it.done?'lgdone':''}"><button class="lgbox" data-li="${esc(m.id)}|${esc(it.id)}" aria-label="완료">${svgCheck}</button><button class="lgtx" data-liedit="${esc(m.id)}|${esc(it.id)}">${esc(it.text)}</button><button class="lgx" data-lidel="${esc(m.id)}|${esc(it.id)}" aria-label="삭제">${svgX}</button></div>`});
     h+=`<form class="lgaddli" data-addform="${esc(m.id)}"><span class="lgplus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span><input type="text" data-addli="${esc(m.id)}" placeholder="항목 추가" autocomplete="off" maxlength="200"><button type="submit" class="lgaddbtn">입력</button></form>`;
+    if(items.length)h+=`<div class="lgsave" style="text-align:right">${done}/${items.length} 완료</div>`;
   }
   return h+`</div>`;
 }
-
 /* ---------- 바인딩 ---------- */
 function bind(){
-  qa('[data-act]',view).forEach(b=>b.onclick=()=>{const a=b.dataset.act; if(a==='retry'){S.screen='loading';render();boot()} else if(a==='settings')openSettings(); else if(a==='setup-add')setupAddRow();});
+  qa('[data-act]',view).forEach(b=>b.onclick=()=>{const a=b.dataset.act; if(a==='retry'){S.screen='loading';render();boot()} else if(a==='settings')openSettings(); else if(a==='setup-add')setupAddRow(); else if(a==='all-shared'){S.tab='exp';S.scope='shared';S.dayFilter='all';render()}});
   qa('[data-tab]',view).forEach(b=>b.onclick=()=>{S.tab=b.dataset.tab;ls.set('tl_tab',S.tab);render()});
   qa('[data-scope]',view).forEach(b=>b.onclick=()=>{S.scope=b.dataset.scope;render()});
   qa('[data-day]',view).forEach(b=>b.onclick=()=>{S.dayFilter=b.dataset.day;render()});
   qa('[data-exp]',view).forEach(b=>b.onclick=()=>openExpense(S.expenses.find(e=>e.id===b.dataset.exp)));
   qa('[data-tr]',view).forEach(b=>b.onclick=()=>openTransfer(S.transfers.find(t=>t.id===b.dataset.tr)));
   qa('[data-settle]',view).forEach(b=>b.onclick=()=>{const [f,t,a,c]=b.dataset.settle.split('|');openTransfer({from:+f,to:+t,amount:+a,cur:c})});
-  qa('[data-newmemo]',view).forEach(b=>b.onclick=()=>{const [type,scope]=b.dataset.newmemo.split('|');newMemo(type,scope==='mine'?S.me:null)});
+  qa('[data-newmemo]',view).forEach(b=>b.onclick=()=>chooseMemo(b.dataset.newmemo==='mine'?S.me:null));
   qa('[data-memoedit]',view).forEach(b=>b.onclick=()=>openMemo(S.memos.find(m=>m.id===b.dataset.memoedit)));
   qa('[data-li]',view).forEach(b=>b.onclick=()=>{const [mid,iid]=b.dataset.li.split('|');toggleItem(mid,iid)});
   qa('[data-lidel]',view).forEach(b=>b.onclick=()=>{const [mid,iid]=b.dataset.lidel.split('|');delItem(mid,iid)});
@@ -328,6 +335,12 @@ async function newMemo(type,owner){
   const id=uid(); const order=Date.now();
   const ok=await write([{op:'set',col:'memos',id,data:{type,owner,title:'',items:[],body:'',ts:order,order}}]);
   if(ok){ if(type==='list'){S.focusAdd=id;render()} else {const ta=q(`[data-body="${id}"]`); if(ta)ta.focus()} }
+}
+function chooseMemo(owner){
+  openSheet(`<h2>${owner===null?'공용 메모 추가':'내 메모 추가'}<button type="button" data-close>닫기</button></h2><div class="lgopts">
+    <button type="button" data-mk="list"><span class="lgic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/></svg></span><div><b>체크 리스트</b><span>항목을 하나씩 넣고 체크해요. 살 것, 할 일.</span></div></button>
+    <button type="button" data-mk="text"><span class="lgic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5h14M5 10h14M5 15h9"/></svg></span><div><b>글</b><span>그냥 써요. 줄바꿈 그대로 남아요. 메모, 일기.</span></div></button></div>`);
+  qa('[data-mk]',q('.lgsheet')).forEach(b=>b.onclick=()=>{closeSheet();newMemo(b.dataset.mk,owner)});
 }
 function memoItems(m){return (m.items||[]).map(x=>({...x}))}
 async function addItem(mid,text){ const m=S.memos.find(x=>x.id===mid); if(!m)return; const items=[...memoItems(m),{id:uid(),text,done:false,ts:Date.now()}]; S.focusAdd=mid; await write([{op:'update',col:'memos',id:mid,data:{items}}]); }
