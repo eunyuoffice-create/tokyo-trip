@@ -280,8 +280,10 @@ function memoHtml(m){
   }else{
     const items=(m.items||[]).slice().sort((a,b)=>(a.done?1:0)-(b.done?1:0)); const done=items.filter(i=>i.done).length;
     items.forEach(it=>{const who=(!priv&&it.who!==null&&it.who!==undefined&&it.who!==''&&S.people[+it.who])?+it.who:null;
-      h+=`<div class="lgli ${it.done?'lgdone':''}"><button class="lgbox" data-li="${esc(m.id)}|${esc(it.id)}" aria-label="완료">${svgCheck}</button><button class="lgtx" data-liedit="${esc(m.id)}|${esc(it.id)}"><span>${esc(it.text)}</span>${who!==null?`<span class="lgwho ${who===S.me?'lgwho-me':''}">${esc(pname(who))}</span>`:''}</button><button class="lgx" data-lidel="${esc(m.id)}|${esc(it.id)}" aria-label="삭제">${svgX}</button></div>`});
-    h+=`<form class="lgaddli" data-addform="${esc(m.id)}"><span class="lgplus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span><input type="text" data-addli="${esc(m.id)}" placeholder="항목 추가" autocomplete="off" maxlength="200"><button type="submit" class="lgaddbtn">입력</button></form>`;
+      const whoTag=priv?'':`<button class="lgwho ${who===null?'lgwho-none':who===S.me?'lgwho-me':''}" data-liwho="${esc(m.id)}|${esc(it.id)}" aria-label="담당 바꾸기">${who===null?'담당':esc(pname(who))}</button>`;
+      h+=`<div class="lgli ${it.done?'lgdone':''}"><button class="lgbox" data-li="${esc(m.id)}|${esc(it.id)}" aria-label="완료">${svgCheck}</button><button class="lgtx" data-liedit="${esc(m.id)}|${esc(it.id)}"><span>${esc(it.text)}</span></button>${whoTag}<button class="lgx" data-lidel="${esc(m.id)}|${esc(it.id)}" aria-label="삭제">${svgX}</button></div>`});
+    const pre=S.addWho&&S.addWho[m.id]; const preIdx=(pre===undefined||pre===null)?null:+pre;
+    h+=`<form class="lgaddli" data-addform="${esc(m.id)}"><span class="lgplus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span><input type="text" data-addli="${esc(m.id)}" placeholder="항목 추가" autocomplete="off" maxlength="200">${priv?'':`<button type="button" class="lgwho ${preIdx===null?'lgwho-none':preIdx===S.me?'lgwho-me':''}" data-addwho="${esc(m.id)}" aria-label="새 항목 담당">${preIdx===null?'담당':esc(pname(preIdx))}</button>`}<button type="submit" class="lgaddbtn">입력</button></form>`;
     if(items.length)h+=`<div class="lgsave" style="text-align:right">${done}/${items.length} 완료</div>`;
   }
   return h+`</div>`;
@@ -301,6 +303,8 @@ function bind(){
   qa('[data-li]',view).forEach(b=>b.onclick=()=>{const [mid,iid]=b.dataset.li.split('|');toggleItem(mid,iid)});
   qa('[data-lidel]',view).forEach(b=>b.onclick=()=>{const [mid,iid]=b.dataset.lidel.split('|');delItem(mid,iid)});
   qa('[data-liedit]',view).forEach(b=>b.onclick=()=>{const [mid,iid]=b.dataset.liedit.split('|');openItem(mid,iid)});
+  qa('[data-liwho]',view).forEach(b=>b.onclick=()=>{const [mid,iid]=b.dataset.liwho.split('|');cycleWho(mid,iid)});
+  qa('[data-addwho]',view).forEach(b=>b.onclick=()=>{S.addWho=S.addWho||{};const cur=S.addWho[b.dataset.addwho];const next=nextWho(cur===undefined?null:cur);S.addWho[b.dataset.addwho]=next;const inp=q(`[data-addli="${b.dataset.addwho}"]`);const val=inp?inp.value:'';render();const inp2=q(`[data-addli="${b.dataset.addwho}"]`);if(inp2){inp2.value=val}});
   qa('[data-addform]',view).forEach(f=>f.onsubmit=ev=>{ev.preventDefault();const inp=f.querySelector('input');const t=inp.value.trim();if(!t)return;inp.value='';addItem(f.dataset.addform,t)});
   qa('[data-savebody]',view).forEach(b=>b.onclick=async()=>{const id=b.dataset.savebody;const ta=q(`[data-body="${id}"]`);if(ta)queueBody(id,ta.value);await flushBody(id);toast('저장했어요')});
   qa('textarea.lgbody',view).forEach(ta=>{autosize(ta); ta.oninput=()=>{autosize(ta);queueBody(ta.dataset.body,ta.value)}; ta.onblur=()=>{flushBody(ta.dataset.body); if(S.pending)setTimeout(()=>{if(!isEditing())render()},50)}; });
@@ -347,7 +351,9 @@ function chooseMemo(owner){
   qa('[data-mk]',q('.lgsheet')).forEach(b=>b.onclick=()=>{closeSheet();newMemo(b.dataset.mk,owner)});
 }
 function memoItems(m){return (m.items||[]).map(x=>({...x}))}
-async function addItem(mid,text){ const m=S.memos.find(x=>x.id===mid); if(!m)return; const items=[...memoItems(m),{id:uid(),text,done:false,ts:Date.now()}]; S.focusAdd=mid; await write([{op:'update',col:'memos',id:mid,data:{items}}]); }
+const nextWho=cur=>{const n=S.people.length; if(cur===null||cur===undefined)return 0; return cur+1>=n?null:cur+1};
+async function cycleWho(mid,iid){ const m=S.memos.find(x=>x.id===mid); if(!m)return; const items=memoItems(m).map(it=>{if(it.id!==iid)return it; const cur=(it.who===null||it.who===undefined||it.who==='')?null:+it.who; return {...it,who:nextWho(cur)}}); await write([{op:'update',col:'memos',id:mid,data:{items}}]); }
+async function addItem(mid,text){ const m=S.memos.find(x=>x.id===mid); if(!m)return; const pre=S.addWho&&S.addWho[mid]; const who=isShared(m)&&pre!==undefined&&pre!==null?+pre:null; const items=[...memoItems(m),{id:uid(),text,done:false,who,ts:Date.now()}]; S.focusAdd=mid; await write([{op:'update',col:'memos',id:mid,data:{items}}]); }
 async function toggleItem(mid,iid){ const m=S.memos.find(x=>x.id===mid); if(!m)return; const items=memoItems(m).map(it=>it.id===iid?{...it,done:!it.done,doneBy:!it.done?S.me:null}:it); await write([{op:'update',col:'memos',id:mid,data:{items}}]); }
 async function delItem(mid,iid){ const m=S.memos.find(x=>x.id===mid); if(!m)return; const items=memoItems(m).filter(it=>it.id!==iid); await write([{op:'update',col:'memos',id:mid,data:{items}}]); }
 function openItem(mid,iid){
