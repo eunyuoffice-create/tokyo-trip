@@ -8,3 +8,4 @@
 - 정산 노트(공용 지출·정산·멤버별 개인 지출·공용/개인 메모)는 하단 "정산" 탭(`#p-ledger` 안 `#ledger-root`)에 `ledger.js` + `ledger.css`로 붙는다. `ledger.html`은 같은 모듈을 단독으로 띄우는 껍데기.
 - 정산 노트 서버: `api/ledger.js`(Vercel 서버 함수) + Neon Postgres(`ledger_docs` 테이블, 저장 계층 `api/_lib/store.js`). 멤버별 숫자 비밀번호 → HMAC 토큰. 개인 항목(owner=멤버 번호)은 서버가 본인에게만 내려준다. 배포는 Vercel이 main 푸시마다 자동(https://tokyo-trip-seven.vercel.app). GitHub Pages 쪽엔 API가 없어 정산 노트가 안 뜬다.
 - 로컬 미리보기: `node dev/server.js` → http://localhost:8770 (DB 대신 `dev/.data.json`, 커밋 금지. `DATABASE_URL=… node dev/server.js` 면 실제 Neon). 깃 페이지 등 다른 호스트에서 열린 페이지는 `ledger.js`의 `API_HOST`(Vercel)로 교차 요청하고 서버가 github.io/vercel.app/localhost 출처를 CORS 허용한다.
+- 사이트 입장 비밀번호: `middleware.js`(Vercel Edge). 환경변수 `SITE_PASSWORD`가 있으면 `/api/*` 제외 모든 경로에서 비밀번호를 묻고 쿠키 `trip_gate`(1년)로 통과시킨다. 비어 있으면 열림. GitHub Pages는 문을 달 수 없으므로 잠그려면 Pages를 꺼야 한다.
