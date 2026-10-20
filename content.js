@@ -55,15 +55,17 @@ async function seedIfNeeded(){
 /* 정적 추가 목록(FOOD_EXTRA)을 DB에 없는 id 만 골라 추가 — 멱등 */
 async function importExtras(){
   const S=T(); if(!loggedIn()||!C.loaded||!C.food||C.importing)return;
-  const all=S.FOOD_EXTRA||[]; const extra=all.filter(x=>!C.food.some(f=>f.id===x.id));
+  const all=S.FOOD_EXTRA||[]; const extra=all.filter(x=>!x.drop&&!C.food.some(f=>f.id===x.id));
+  const drops=all.filter(x=>x.drop&&C.food.some(f=>f.id===x.id));
   // 이미 들어간 항목 중 정적 목록의 버전(xv)이 올라간 것: 조사해서 채운 칸만 갱신 (사용자가 고친 이름·지역은 건드리지 않음)
   const upd=all.filter(x=>x.xv&&C.food.some(f=>f.id===x.id&&(f.xv||0)<x.xv));
-  if(!extra.length&&!upd.length)return;
+  if(!extra.length&&!upd.length&&!drops.length)return;
   C.importing=true;
   try{ let order=(C.food.length?Math.max(...C.food.map(f=>f.order||0)):0);
     const docs=extra.map(x=>{const {id,...d}=x; order+=1000; return {id,data:{...d,order}}});
     for(let i=0;i<docs.length;i+=25) await L().api({action:'write',ops:docs.slice(i,i+25).map(x=>({op:'set',col:'food',id:x.id,data:x.data}))});
-    const ups=upd.map(x=>{const d={xv:x.xv}; ['h','closed','pr','note','q','link','k','loc'].forEach(k=>{if(x[k]!==undefined)d[k]=x[k]}); if(x.a&&!C.food.find(f=>f.id===x.id).userArea)d.a=x.a; return {op:'update',col:'food',id:x.id,data:d}});
+    if(drops.length) await L().api({action:'write',ops:drops.map(x=>({op:'delete',col:'food',id:x.id}))});
+    const ups=upd.filter(x=>!x.drop).map(x=>{const d={xv:x.xv}; ['h','closed','pr','note','q','link','k','loc','n'].forEach(k=>{if(x[k]!==undefined)d[k]=x[k]}); if(x.a&&!C.food.find(f=>f.id===x.id).userArea)d.a=x.a; return {op:'update',col:'food',id:x.id,data:d}});
     for(let i=0;i<ups.length;i+=25) await L().api({action:'write',ops:ups.slice(i,i+25)});
     await fetchContent(); toast(docs.length?`맛집 ${docs.length}곳을 추가했어요`:`맛집 ${ups.length}곳 정보를 갱신했어요`);
   }catch(e){ toast('맛집 추가 실패: '+(e.message||e)); }
