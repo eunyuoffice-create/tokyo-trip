@@ -173,7 +173,7 @@ function viewLogin(){
     <div class="lgf"><label>나는</label><div class="lgchips" id="loginWho">${S.people.map((p,i)=>`<button type="button" class="lgchip" data-i="${i}" aria-pressed="${i===idx}">${esc(p.name)}</button>`).join('')}</div></div>
     <div class="lgf"><label>비밀번호</label><input type="password" inputmode="numeric" class="lgpin" id="loginPin" maxlength="8" autocomplete="current-password"></div>
     <div class="lgactions"><button type="submit" class="lgbtn lgprimary">들어가기</button></div>
-    <div class="lghint">비밀번호를 잊었으면 다른 멤버가 설정에서 다시 정해줄 수 있어요.</div>
+    <div class="lghint">비밀번호를 잊었으면 <button type="button" class="lglink" data-act="forgot">새로 정하기</button> (사이트 입장 비밀번호로 확인해요)</div>
   </form></div>`;
 }
 function viewMain(){
@@ -288,7 +288,7 @@ function memoHtml(m){
 }
 /* ---------- 바인딩 ---------- */
 function bind(c){
-  qa('[data-act]',c).forEach(b=>b.onclick=()=>{const a=b.dataset.act; if(a==='retry'){S.screen='loading';render();boot()} else if(a==='settings')openSettings(); else if(a==='setup-add')setupAddRow(); else if(a==='add-shared')openExpense(null,{priv:false}); else if(a==='add-mine')openExpense(null,{priv:true}); else if(a==='go-ledger'){const t=[...document.querySelectorAll('[role="tab"][data-tab="ledger"]')].find(x=>!x.closest('.lg')); if(t)t.click(); else location.href='ledger.html';}});
+  qa('[data-act]',c).forEach(b=>b.onclick=()=>{const a=b.dataset.act; if(a==='retry'){S.screen='loading';render();boot()} else if(a==='settings')openSettings(); else if(a==='setup-add')setupAddRow(); else if(a==='add-shared')openExpense(null,{priv:false}); else if(a==='add-mine')openExpense(null,{priv:true}); else if(a==='forgot')openForgot(); else if(a==='go-ledger'){const t=[...document.querySelectorAll('[role="tab"][data-tab="ledger"]')].find(x=>!x.closest('.lg')); if(t)t.click(); else location.href='ledger.html';}});
   qa('[data-scope]',c).forEach(b=>b.onclick=()=>{S.scope=b.dataset.scope;render()});
   qa('[data-exp]',c).forEach(b=>b.onclick=()=>openExpense(S.expenses.find(e=>e.id===b.dataset.exp)));
   qa('[data-tr]',c).forEach(b=>b.onclick=()=>openRecord(S.transfers.find(t=>t.id===b.dataset.tr)));
@@ -323,7 +323,7 @@ function bind(c){
       if(!pin){toast('비밀번호를 넣어주세요');return}
       const btn=lf.querySelector('button[type=submit]'); btn.disabled=true;
       try{const j=await api({action:'login',me,pin}); S.token=j.token; ls.set('tl_token',j.token); ls.set('tl_me',String(j.me)); S.screen='loading'; render(); await load();}
-      catch(e){btn.disabled=false; toast(e.code==='pin'?'비밀번호가 맞지 않아요':(e.message||'실패했어요')); q('#loginPin',c).value=''; q('#loginPin',c).focus();}
+      catch(e){btn.disabled=false; toast(e.code==='pin'?`${pname(me)} 비밀번호가 맞지 않아요`:(e.message||'실패했어요')); q('#loginPin',c).value=''; q('#loginPin',c).focus();}
     };
   }
 }
@@ -453,6 +453,23 @@ function openSettle(f){
     if(fullNow){ targets.forEach(e=>ops.push({op:'update',col:'expenses',id:e.id,data:{settled:true,settledBy:me,settleId:sid}})); openTr.forEach(t=>ops.push({op:'update',col:'transfers',id:t.id,data:{closed:sid}})); }
     ops.push({op:'set',col:'transfers',id:sid,data:{from:f.from,to:f.to,amount:a,cur:f.cur,memo:g('#stMemo').value.trim(),ts:Date.now(),kind:fullNow?'settle':'partial',n:fullNow?targets.length:0}});
     closeSheet(); await write(ops,fullNow?'정산 완료! 잔액 0':'일부 정산을 기록했어요'); };
+}
+function openForgot(){
+  const idx=S.loginIdx!==null?S.loginIdx:(+ls.get('tl_me')||0);
+  openSheet(`<h2>비밀번호 새로 정하기<button type="button" data-close>닫기</button></h2><form id="fgForm">
+    <p class="lghint" style="margin:0 0 12px">사이트에 들어올 때 쓴 입장 비밀번호로 본인 확인을 하고, 멤버 비밀번호를 새로 정해요.</p>
+    <div class="lgf"><label>누구 비밀번호를 바꿀까</label><div class="lgchips" id="fgWho">${S.people.map((p,i)=>`<button type="button" class="lgchip" data-i="${i}" aria-pressed="${i===idx}">${esc(p.name)}</button>`).join('')}</div></div>
+    <div class="lgf"><label>사이트 입장 비밀번호</label><input type="password" id="fgSite" autocomplete="off"></div>
+    <div class="lgf"><label>새 멤버 비밀번호 (숫자 4~8자리)</label><input type="text" inputmode="numeric" class="lgpin" id="fgPin" maxlength="8" autocomplete="off"></div>
+    <div class="lgactions"><button type="submit" class="lgbtn lgprimary">바꾸고 들어가기</button></div></form>`);
+  const sh=q('.lgsheet',ov); const g=s=>q(s,sh); let who=idx;
+  qa('#fgWho .lgchip',sh).forEach(b=>b.onclick=()=>{who=+b.dataset.i;qa('#fgWho .lgchip',sh).forEach(x=>x.setAttribute('aria-pressed',x===b))});
+  g('#fgForm').onsubmit=async ev=>{ev.preventDefault(); const pin=g('#fgPin').value.trim(); if(!/^\d{4,8}$/.test(pin)){toast('숫자 4~8자리로 정해주세요');return}
+    const btn=g('#fgForm button[type=submit]'); btn.disabled=true;
+    try{const j=await api({action:'resetPin',sitePw:g('#fgSite').value,me:who,pin}); closeSheet(); S.token=j.token; ls.set('tl_token',j.token); ls.set('tl_me',String(j.me)); S.screen='loading'; render(); await load(); toast('비밀번호를 바꿨어요')}
+    catch(e){btn.disabled=false; toast(e.code==='site_pw'?'사이트 입장 비밀번호가 맞지 않아요':e.code==='no_site_pw'?'사이트 입장 비밀번호가 설정돼 있지 않아요':(e.message||'실패했어요'))}
+  };
+  setTimeout(()=>g('#fgSite').focus(),250);
 }
 function openRecord(t){
   if(!t)return;

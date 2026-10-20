@@ -6,8 +6,9 @@
 //  login  {me, pin}             → { token, me }
 //  list   (token)               → { me, people, rate, expenses, transfers, memos }  (개인 항목은 본인 것만)
 //  write  (token) {ops:[{op:'set'|'update'|'delete', col, id, data}]}
+//  resetPin {sitePw, me, pin} → 사이트 입장 비밀번호로 확인 후 멤버 비밀번호 재설정 + 토큰
 //  settings (token) {names?, rate?, addMember?:{name,pin}, setPin?:{me?:idx, pin}}
-import { createHmac, createHash, randomBytes } from 'node:crypto';
+import { createHmac, createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { store, dbEnvNames, hasDbUrl } from './_lib/store.js';
 
 const COLS = new Set(['expenses', 'transfers', 'memos']);
@@ -120,6 +121,19 @@ export default async function handler(req, res) {
       const p = trip.people[me];
       if (!p || hashPin(trip.secret, body.pin) !== p.pinHash) return res.status(200).json({ ok: false, error: 'pin' });
       return res.status(200).json({ ok: true, token: makeToken(trip.secret, me), me, ...publicTrip(trip) });
+    }
+
+    // 멤버 비밀번호를 잊었을 때: 사이트 입장 비밀번호(SITE_PASSWORD)로 본인 확인 후 새로 정하고 바로 로그인
+    if (action === 'resetPin') {
+      const sitePw = process.env.SITE_PASSWORD || '';
+      if (!sitePw) return res.status(200).json({ ok: false, error: 'no_site_pw' });
+      const a = createHash('sha256').update(String(body.sitePw || '')).digest(), b = createHash('sha256').update(sitePw).digest();
+      if (!timingSafeEqual(a, b)) return res.status(200).json({ ok: false, error: 'site_pw' });
+      const me = +body.me; const pin = String(body.pin || '');
+      if (!trip.people[me] || !/^\d{4,8}$/.test(pin)) return res.status(400).json({ ok: false, error: '4~8자리 숫자' });
+      const next = { ...trip, people: trip.people.map((p, i) => i === me ? { ...p, pinHash: hashPin(trip.secret, pin) } : p) };
+      await db.put('settings', 'trip', next);
+      return res.status(200).json({ ok: true, token: makeToken(trip.secret, me), me, ...publicTrip(next) });
     }
 
     const me = readToken(trip.secret, body.token);
