@@ -1015,6 +1015,13 @@ function render(){
 }
 window.TripSite={state,render,setContent:c=>{DB=c||{};render()},DAYS,FOOD,PLACES,FOOD_AREAS,FOOD_TYPES,PLACE_GROUPS,PLACE_CHIPS,esc,nl,mapUrl,save};
 document.querySelectorAll('.tabs [role=tab]').forEach(b=>b.onclick=()=>{ state.tab=b.dataset.tab; save(); render(); window.scrollTo({top:0}); });
+/* 일정 탭: 좌우로 쓸면 전날/다음날로 (예보·날짜 칩도 같이 바뀜). 예보 줄·가로 스크롤 영역 위에서는 제외 */
+(function(){
+ const panel=document.getElementById('p-plan'); let sx=0,sy=0,st=0,ok=false;
+ panel.addEventListener('touchstart',e=>{ const t=e.touches[0]; ok=!e.target.closest('.wx,.toolrow,.route a,.btn,button,input,textarea'); sx=t.clientX; sy=t.clientY; st=Date.now(); },{passive:true});
+ panel.addEventListener('touchend',e=>{ if(!ok||document.body.classList.contains('lgnoselect'))return; const t=e.changedTouches[0]; const dx=t.clientX-sx, dy=t.clientY-sy; if(Date.now()-st>700||Math.abs(dx)<70||Math.abs(dy)>50||Math.abs(dx)<Math.abs(dy)*1.5)return;
+  const i=DAYS.findIndex(d=>d.date===state.day); const j=dx<0?i+1:i-1; if(j<0||j>=DAYS.length)return; state.day=DAYS[j].date; save(); render(); window.scrollTo({top:0}); },{passive:true});
+})();
 document.getElementById('q-food').addEventListener('input',renderFood);
 document.getElementById('q-place').addEventListener('input',renderPlace);
 
