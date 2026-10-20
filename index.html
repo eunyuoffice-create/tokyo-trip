@@ -328,7 +328,10 @@ main{padding-block:16px calc(var(--tab-h) + env(safe-area-inset-bottom,0px) + 24
   .seg button{font-size:15px;padding:10px 8px}
   /* 일정 */
   .tl{gap:12px}
-  .ev{grid-template-columns:96px 1fr;padding:18px 20px 18px 16px;border-radius:16px}
+  .ev{grid-template-columns:96px 1fr;padding:18px 20px 18px 30px;border-radius:16px}
+  .tl{padding-left:4px} .tl::before{left:12px}
+  .ev::before{margin-left:13px;top:24px}
+  .ev > .cedit{top:12px;right:12px} .ev > .cmove{top:48px;right:12px}
   .ev .t{font-size:16px}
   .ev .t small{font-size:12px}
   .ev .place{font-size:14px}

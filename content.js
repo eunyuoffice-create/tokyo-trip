@@ -142,7 +142,7 @@ function startDrag(pointerId,startY,el,listEl,sel,col){
 /* ---------- 화면 꾸미기: 렌더 뒤마다 (편집 버튼 · 추가 바 · 정렬) ---------- */
 C.decorate=function(){
   const S=T(); if(!S)return; const tab=S.state.tab;
-  ['p-plan','p-food','p-place'].forEach(pid=>{const p=document.getElementById(pid); if(!p)return; p.querySelectorAll('.lgcbar, .cedit, .chint').forEach(x=>x.remove()); p.classList.remove('lg-haspad');});
+  ['p-plan','p-food','p-place'].forEach(pid=>{const p=document.getElementById(pid); if(!p)return; p.querySelectorAll('.lgcbar, .cedit, .chint, .cmove').forEach(x=>x.remove()); p.classList.remove('lg-haspad');});
   if(!['plan','food','place'].includes(tab))return;
   const col=colOf(tab); const editable=loggedIn()&&C.loaded&&!!listOf(col);
   document.body.classList.toggle('body-edit',editable);
@@ -153,9 +153,12 @@ C.decorate=function(){
   const bar=document.createElement('div'); bar.className='lg lgcbar'; bar.innerHTML=`<div class="lgbar"><div class="lgadd2 lgadd1"><button class="lgaddexp" data-cadd="${tab}">${svgPlus}${label}</button></div></div>`; panel.appendChild(bar);
   bar.querySelector('[data-cadd]').onclick=()=>openEditor(tab,null);
   const mkBtn=id=>{const b=document.createElement('button'); b.className='cedit'; b.type='button'; b.innerHTML=svgPen; b.setAttribute('aria-label','수정'); b.onclick=e=>{e.stopPropagation();openEditor(tab,id)}; return b;};
-  const hint=document.createElement('div'); hint.className='chint'; hint.textContent='✎ 로 수정 · 카드를 길게 눌러 끌면 순서가 바뀌어요';
-  if(tab==='plan'){ panel.querySelectorAll('.ev[data-eid]').forEach(el=>{ if(!el.querySelector('.cedit'))el.appendChild(mkBtn(el.dataset.eid)); }); const tl=panel.querySelector('.tl'); if(tl&&tl.children.length>1)tl.before(hint); makeSortable(tl,'.ev[data-eid]','plan'); }
-  else { const first=panel.querySelector('.cards'); if(first)first.before(hint); panel.querySelectorAll('.card[data-eid]').forEach(el=>{ if(!el.querySelector('.cedit')){const acts=el.querySelector('.acts')||el; acts.appendChild(mkBtn(el.dataset.eid));} }); panel.querySelectorAll('.cards').forEach(l=>makeSortable(l,'.card[data-eid]',col)); }
+  // ▲▼: 같은 목록 안에서 한 칸씩 이동 (끌기가 안 되는 기기용)
+  const mkArrows=(listEl,sel,id)=>{const w=document.createElement('span'); w.className='cmove'; w.innerHTML=`<button type="button" data-mv="-1" aria-label="위로">▲</button><button type="button" data-mv="1" aria-label="아래로">▼</button>`;
+    w.querySelectorAll('button').forEach(b=>b.onclick=e=>{e.stopPropagation(); const items=[...listEl.querySelectorAll(':scope > '+sel)]; const ids=items.map(x=>x.dataset.eid); const i=ids.indexOf(id); const j=i+(+b.dataset.mv); if(i<0||j<0||j>=ids.length)return; [ids[i],ids[j]]=[ids[j],ids[i]]; reorder(col,ids);}); return w;};
+  const hint=document.createElement('div'); hint.className='chint'; hint.textContent='✎ 수정 · ▲▼ 순서 · 길게 눌러 끌어도 돼요';
+  if(tab==='plan'){ const tl=panel.querySelector('.tl'); panel.querySelectorAll('.ev[data-eid]').forEach(el=>{ if(!el.querySelector('.cedit')){el.appendChild(mkBtn(el.dataset.eid)); if(tl&&tl.children.length>1)el.appendChild(mkArrows(tl,'.ev[data-eid]',el.dataset.eid));} }); if(tl&&tl.children.length>1)tl.before(hint); makeSortable(tl,'.ev[data-eid]','plan'); }
+  else { const first=panel.querySelector('.cards'); if(first)first.before(hint); panel.querySelectorAll('.card[data-eid]').forEach(el=>{ if(!el.querySelector('.cedit')){const acts=el.querySelector('.acts')||el; acts.appendChild(mkBtn(el.dataset.eid)); const l=el.closest('.cards'); if(l&&l.querySelectorAll(':scope > .card[data-eid]').length>1)acts.appendChild(mkArrows(l,'.card[data-eid]',el.dataset.eid));} }); panel.querySelectorAll('.cards').forEach(l=>makeSortable(l,'.card[data-eid]',col)); }
 };
 C.onAuth=function(){ const a=loggedIn(); if(a===C._auth)return; C._auth=a; if(a&&C.loaded&&!C.meta.plan)seedIfNeeded(); else if(T())T().render(); };
 
