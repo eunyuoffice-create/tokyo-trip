@@ -102,7 +102,10 @@
 .lg textarea.lgbody{width:100%;min-height:72px;border:0;background:none;resize:none;padding:2px 0;font-size:14.5px;line-height:1.6;overflow:hidden;white-space:pre-wrap;overflow-wrap:anywhere;display:block;border-radius:0}
 .lg textarea.lgbody:focus{outline:none}
 .lg textarea.lgbody::placeholder{color:var(--muted)}
-.lg .lgsave{font-size:11px;color:var(--muted);text-align:right;margin-top:2px;min-height:14px}
+.lg .lgsaverow{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:4px}
+.lg .lgsave{font-size:11px;color:var(--muted);min-height:14px}
+.lg .lgaddbtn{height:30px;padding:0 12px;border-radius:8px;background:var(--chip);font-size:12.5px;font-weight:600;color:var(--fg);flex-shrink:0}
+.lg .lgaddbtn:active{background:var(--line)}
 
 /* 로그인·설정 화면 */
 .lg .lgauth{background:var(--surface);border-radius:14px;box-shadow:var(--shadow);padding:18px 16px}
