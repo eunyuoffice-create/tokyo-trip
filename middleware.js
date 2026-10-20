@@ -1,6 +1,7 @@
 // 사이트 입장 비밀번호 (Vercel Edge Middleware)
 // Vercel 환경변수 SITE_PASSWORD 가 있으면 첫 접속 때 비밀번호를 묻고, 맞으면 쿠키(1년)를 남겨 다시 묻지 않는다.
 // 비어 있으면 아무 것도 막지 않는다. /api/* 는 자체 토큰 인증이라 제외.
+import { next } from '@vercel/edge';
 export const config = { matcher: ['/((?!api/).*)'] };
 
 const COOKIE = 'trip_gate';
@@ -37,7 +38,7 @@ const html = (body, status, extra) => new Response(body, { status, headers: { 'c
 
 export default async function middleware(req) {
   const pw = process.env.SITE_PASSWORD;
-  if (!pw) return;                                   // 비밀번호 미설정 → 통과
+  if (!pw) return next({ headers: { 'x-gate': 'open' } });   // 비밀번호 미설정 → 통과 (진단용 헤더)
   const url = new URL(req.url);
   const want = await token(pw);
 
@@ -51,7 +52,7 @@ export default async function middleware(req) {
     }
     return html(page(next, true), 401);
   }
-  if (cookieOf(req) === want) return;                // 통과
+  if (cookieOf(req) === want) return next({ headers: { 'x-gate': 'ok' } });   // 통과
   if (req.method !== 'GET' && req.method !== 'HEAD') return new Response('locked', { status: 401 });
   return html(page(url.pathname + url.search, false), 401);
 }
