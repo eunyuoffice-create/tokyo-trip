@@ -47,11 +47,22 @@ async function seedIfNeeded(){
       C.meta={...C.meta,[col]:true};
       await L().api({action:'write',ops:[{op:'set',col:'meta',id:'seeded',data:{...C.meta}}]});
     }
-    await fetchContent(); toast('일정·맛집·갈 곳을 서버로 옮겼어요. 이제 수정할 수 있어요');
+    await fetchContent(); toast('일정·맛집·갈 곳을 서버로 옮겼어요. 이제 수정할 수 있어요'); importExtras();
   }catch(e){ toast('서버로 옮기지 못했어요: '+(e.message||e)); }
   finally{ C.seeding=false; }
 }
 
+/* 정적 추가 목록(FOOD_EXTRA)을 DB에 없는 id 만 골라 추가 — 멱등 */
+async function importExtras(){
+  const S=T(); if(!loggedIn()||!C.loaded||!C.food||C.importing)return; const extra=(S.FOOD_EXTRA||[]).filter(x=>!C.food.some(f=>f.id===x.id)); if(!extra.length)return;
+  C.importing=true;
+  try{ let order=(C.food.length?Math.max(...C.food.map(f=>f.order||0)):0);
+    const docs=extra.map(x=>{const {id,...d}=x; order+=1000; return {id,data:{...d,order}}});
+    for(let i=0;i<docs.length;i+=25) await L().api({action:'write',ops:docs.slice(i,i+25).map(x=>({op:'set',col:'food',id:x.id,data:x.data}))});
+    await fetchContent(); toast(`맛집 ${docs.length}곳을 추가했어요`);
+  }catch(e){ toast('맛집 추가 실패: '+(e.message||e)); }
+  finally{ C.importing=false; }
+}
 /* ---------- 쓰기 ---------- */
 async function save(col,id,data,msg){
   const list=(listOf(col)||[]).slice(); const i=list.findIndex(x=>x.id===id);
@@ -118,6 +129,7 @@ C.decorate=function(){
   const col=colOf(tab); const editable=loggedIn()&&C.loaded&&!!listOf(col);
   document.body.classList.toggle('body-edit',editable);
   if(!editable){ if(loggedIn()&&C.loaded)seedIfNeeded(); return; }
+  importExtras();
   const panel=document.getElementById('p-'+tab); panel.classList.add('lg-haspad');
   const label=tab==='plan'?'일정 추가':tab==='food'?'맛집 추가':'장소 추가';
   const bar=document.createElement('div'); bar.className='lg lgcbar'; bar.innerHTML=`<div class="lgbar"><div class="lgadd2 lgadd1"><button class="lgaddexp" data-cadd="${tab}">${svgPlus}${label}</button></div></div>`; panel.appendChild(bar);
@@ -204,6 +216,7 @@ function openEditor(tab,id){
       ${F.text('eH','영업시간',it?.h,'예: 11:00~22:00 · 무휴')}
       ${F.chips('eS','별점',['1','2','3','4','5'],it?.s?String(it.s):'','')}
       ${F.area('eNote','메모 (위치·팁)',it?.note,'예: 東口 도보 3분. 현금만',3)}
+      ${F.text('eTag','라벨 (카드 이름 옆 작은 표시)',it?.tag,'예: 트위터 추천')}
       ${F.text('eQ','구글맵 검색어',it?.q,'예: 牛かつ いろは 池袋')}
       ${F.links('eLinks','링크 버튼',(it?.links||[]).concat(it?.link&&!(it?.links||[]).length?[{l:'링크',u:it.link}]:[]))}`;
   }else{
@@ -215,6 +228,7 @@ function openEditor(tab,id){
       ${F.text('eH','영업시간',it?.h,'예: 10:00~19:00 · 무휴')}
       ${F.text('eRes','예약',it?.res,'예: 예약 완료 / 선착 예매 필수')}
       ${F.area('eLoc','설명 (위치·팁)',it?.loc,'',4)}
+      ${F.text('eTag','라벨 (카드 이름 옆 작은 표시)',it?.tag,'예: 트위터 추천')}
       ${F.text('eQ','구글맵 검색어',it?.q,'예: ちいかわパーク サンシャインシティ')}
       ${F.links('eLinks','링크 버튼',(it?.links||[]).concat(it?.link&&!(it?.links||[]).length?[{l:'링크',u:it.link}]:[]))}
       ${F.toggle('eU','영업 확인 필요 표시',!!it?.u)}`;
@@ -228,9 +242,9 @@ function openEditor(tab,id){
     if(tab==='plan'){ if(!v('#eTitle')){toast('제목을 넣어주세요');return} const day=v('#eDay');
       data={day,t:v('#eT'),ts:v('#eTs'),p:v('#eP'),title:v('#eTitle'),pills:v('#ePills')?v('#ePills').split(',').map(x=>x.trim()).filter(Boolean):[],big:g('#eBig').checked,links:readLinks(sh,'eLinks'),d:readD(sh),r:readR(sh),order:(it&&it.day===day)?it.order:nextOrder()}; }
     else if(tab==='food'){ if(!v('#eN')){toast('가게 이름을 넣어주세요');return}
-      data={a:v('#eA')||S.FOOD_AREAS[0],n:v('#eN'),k:v('#eK'),h:v('#eH'),pr:v('#ePr'),note:v('#eNote'),q:v('#eQ'),links:readLinks(sh,'eLinks'),order:it?it.order:nextOrder()}; if(v('#eTy'))data.t=v('#eTy'); if(v('#eS'))data.s=+v('#eS'); }
+      data={a:v('#eA')||S.FOOD_AREAS[0],n:v('#eN'),k:v('#eK'),h:v('#eH'),pr:v('#ePr'),note:v('#eNote'),tag:v('#eTag'),q:v('#eQ'),links:readLinks(sh,'eLinks'),order:it?it.order:nextOrder()}; if(v('#eTy'))data.t=v('#eTy'); if(v('#eS'))data.s=+v('#eS'); }
     else { if(!v('#eN')){toast('이름을 넣어주세요');return}
-      data={g:v('#eG')||S.PLACE_GROUPS[0],area:v('#eArea')||v('#eG'),n:v('#eN'),k:v('#eK'),h:v('#eH'),res:v('#eRes'),loc:v('#eLoc'),q:v('#eQ'),links:readLinks(sh,'eLinks'),order:it?it.order:nextOrder()}; if(g('#eU').checked)data.u=true; }
+      data={g:v('#eG')||S.PLACE_GROUPS[0],area:v('#eArea')||v('#eG'),n:v('#eN'),k:v('#eK'),h:v('#eH'),res:v('#eRes'),loc:v('#eLoc'),tag:v('#eTag'),q:v('#eQ'),links:readLinks(sh,'eLinks'),order:it?it.order:nextOrder()}; if(g('#eU').checked)data.u=true; }
     Object.keys(data).forEach(k=>{ if(data[k]===''||data[k]===null||data[k]===undefined||data[k]===false||(Array.isArray(data[k])&&!data[k].length))delete data[k]; });
     Lg.closeSheet(); await save(col,id||uid(),data,isNew?'추가했어요':'수정했어요');
   };
