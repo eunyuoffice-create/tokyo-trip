@@ -494,3 +494,9 @@ body.body-edit .ev,body.body-edit .card{-webkit-user-select:none;user-select:non
 .card .acts .cmove{margin-left:4px}
 .lg .lgmv{display:inline-flex;gap:3px;margin-right:2px;flex-shrink:0}
 .lg .lgmv button{width:26px;height:26px}
+
+/* 일정 시간 칸 = 끌기 손잡이 */
+body.body-edit .ev > .t.cgrab{touch-action:none;cursor:grab;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;border-radius:10px;margin:-6px -4px -6px -8px;padding:6px 4px 6px 8px;position:relative}
+body.body-edit .ev > .t.cgrab::after{content:"⋮⋮";position:absolute;left:50%;transform:translateX(-50%);bottom:-2px;font-size:10px;letter-spacing:-1px;color:var(--line);line-height:1}
+body.body-edit .ev > .t.cgrab:active{background:var(--chip);cursor:grabbing}
+.ev,.card,.lg .lgmemoacc summary{touch-action:manipulation}
