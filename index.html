@@ -76,6 +76,7 @@ main{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px
 .det p{margin:0;white-space:pre-line;overflow-wrap:anywhere}
 .det .k{font-weight:600;font-size:12px;color:var(--muted);margin-top:4px}
 .det a{color:var(--accent);text-decoration:none;font-weight:500;overflow-wrap:anywhere}
+.autolink{color:#2F5FB3;text-decoration:underline;text-underline-offset:2px;overflow-wrap:anywhere;font-weight:500}
 .pill{font-size:11px;font-weight:600;padding:1px 7px;border-radius:999px;background:var(--chip);color:var(--fg)}
 .pill.warn{background:var(--warn-soft);color:var(--warn)}
 .pill.ok{background:var(--ok-soft);color:var(--ok)}
@@ -546,7 +547,9 @@ if(!['전체',...PLACE_CHIPS].includes(state.pgroup)) state.pgroup='전체';
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const nl=t=>esc(t).replace(/(?<=[가-힣\)\]])\. (?=\S)/g,'.\n').replace(/ — /g,'\n');
+/* 글자 안의 http(s) 주소는 자동으로 새 창 링크 (escape 뒤에 적용) */
+const linkify=t=>t.replace(/(https?:\/\/[^\s<>"']+?)([.,)!?]*)(?=\s|$|<)/g,(m,u,tail)=>`<a href="${u}" target="_blank" rel="noopener" class="autolink">${u.replace(/^https?:\/\//,'').slice(0,56)}${u.length>64?'…':''}</a>${tail}`);
+const nl=t=>linkify(esc(t).replace(/(?<=[가-힣\)\]])\. (?=\S)/g,'.\n').replace(/ — /g,'\n'));
 const mapUrl=q=>'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q);
 const todayStr=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
 
