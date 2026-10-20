@@ -44,7 +44,8 @@ async function neonStore() {
 
 async function fakeStore() {
   const fs = await import('node:fs');
-  const file = process.env.LEDGER_FAKE_FILE || new URL('../../dev/.data.json', import.meta.url).pathname;
+  const { fileURLToPath } = await import('node:url');
+  const file = process.env.LEDGER_FAKE_FILE || fileURLToPath(new URL('../../dev/.data.json', import.meta.url)); // 경로에 한글이 있어도 동작
   let mem = {};
   try { mem = JSON.parse(fs.readFileSync(file, 'utf8')); } catch (_) { mem = {}; }
   const save = () => { try { fs.writeFileSync(file, JSON.stringify(mem, null, 1)); } catch (_) {} };

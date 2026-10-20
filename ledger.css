@@ -186,7 +186,8 @@
 .lg .lgbtn.lgdanger{background:none;color:var(--accent);flex:0 0 auto}
 .lg .lgbtn:disabled{opacity:.5;cursor:default}
 
-/* 고정 요소 (FAB·시트·토스트) — 정산 탭이 숨으면 같이 숨는다 */
+/* 고정 요소 (시트·토스트) — body 끝에 따로 붙어서 어느 탭에서도 뜬다 */
+.lg.lgov{margin:0;height:0;font-size:15px;line-height:1.5}
 .lg .lgscrim{position:fixed;inset:0;background:var(--scrim);z-index:40;opacity:0;pointer-events:none;transition:opacity .18s}
 .lg .lgscrim.lgopen{opacity:1;pointer-events:auto}
 .lg .lgsheet{position:fixed;left:0;right:0;bottom:0;z-index:41;background:var(--surface);border-radius:20px 20px 0 0;max-height:92dvh;overflow:auto;transform:translateY(105%);transition:transform .22s cubic-bezier(.2,.8,.2,1);padding:8px max(16px,env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
@@ -201,3 +202,35 @@
 .lg .lgopts button{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;background:var(--bg);text-align:left;width:100%}
 .lg .lgopts button b{display:block;font-size:14.5px} .lg .lgopts button span{font-size:12.5px;color:var(--muted)}
 .lg .lgopts button .lgic{width:36px;height:36px;border-radius:10px;background:var(--chip);display:grid;place-items:center;flex-shrink:0;color:var(--muted)} .lg .lgopts button .lgic svg{width:18px;height:18px}
+
+/* 한 화면 정산 (v8) */
+.lg .lghero2{padding:4px 2px 10px}
+.lg .lgflow2{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 0}
+.lg .lgflow2 .lghero-v{min-width:0;font-size:17px;font-weight:600}
+.lg .lgflow2 .lghero-v b.lgnum{font-size:26px;font-weight:700}
+.lg .lgflow2 .lghero-v.lgsmall{font-size:14px;font-weight:500} .lg .lgflow2 .lghero-v.lgsmall b.lgnum{font-size:16px}
+.lg .lgmuted-t{color:var(--muted)}
+.lg .lgsettlebtn{height:40px;padding:0 16px;border-radius:999px;background:var(--fg);color:var(--bg);font-weight:700;font-size:14px;flex-shrink:0}
+.lg .lgsettlebtn.lgghost2{background:var(--chip);color:var(--muted)}
+.lg .lgsummary summary{color:var(--fg)} .lg .lgsummary summary .lgsub{font-weight:500;margin-left:auto;margin-right:8px}
+.lg .lgkv{display:grid;grid-template-columns:1fr auto;gap:6px 12px;font-size:13.5px;padding:6px 0;align-items:baseline}
+.lg .lgkv>span:nth-child(odd){color:var(--muted)} .lg .lgkv .lgnum{text-align:right}
+.lg .lgadd2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:6px 0 12px}
+.lg .lgadd2 .lgaddexp{margin:0}
+.lg .lgaddexp.lgaddmine{background:var(--surface);color:var(--fg);box-shadow:var(--shadow)}
+.lg .lgrow .si>span{min-width:0}
+.lg .lgbig2{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:8px}
+.lg .lgbig2 button{height:50px;border-radius:12px;background:var(--chip);font-weight:700;font-size:16px}
+.lg .lgbig2 button small{font-size:11px;font-weight:600;opacity:.7;margin-left:2px}
+.lg .lgbig2 button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
+.lg .lgmore{border-top:1px solid var(--line);margin:2px 0 4px}
+.lg .lgmore summary{list-style:none;cursor:pointer;padding:12px 0;font-size:13.5px;font-weight:600;color:var(--muted);display:flex;align-items:center;gap:8px}
+.lg .lgmore summary::-webkit-details-marker{display:none}
+.lg .lgmore summary .lgsub{flex:1;text-align:right;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.lg .lgmore summary::after{content:"";width:7px;height:7px;border-right:1.5px solid var(--muted);border-bottom:1.5px solid var(--muted);transform:rotate(45deg);flex-shrink:0;margin:0 4px 3px 0;transition:transform .15s}
+.lg .lgmore[open] summary::after{transform:rotate(-135deg);margin-bottom:-3px}
+.lg .lgmore[open] summary{margin-bottom:6px}
+.lg .lgsettlehead{display:flex;align-items:center;gap:8px;font-size:16px;font-weight:600;margin:2px 0 14px}
+.lg .lgsettlehead .lgarr{color:var(--muted)} .lg .lgsettlehead b{margin-left:auto;font-size:22px}
+.lg .lgempty.lgtightempty{padding:12px 6px;text-align:left;font-size:13px}
+.lg .lgsheet .lgf input#fTitle{height:48px;font-size:15.5px}
