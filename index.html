@@ -69,6 +69,8 @@ main{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px
 .ev .route .rf{font-weight:600;color:var(--fg)}
 .ev .route .rh{white-space:pre-line}
 .ev .route a{color:var(--accent);font-weight:600;text-decoration:none;align-self:flex-start;margin-top:2px}
+.ev .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.btn.link{border-color:transparent;background:#E3ECFB;color:#2F5FB3}
 .ev .more{margin-top:6px;font-size:13px;color:var(--muted);text-align:left;display:inline-flex;align-items:center;gap:4px}
 .ev .more::before{content:"▸";font-size:11px}
 .ev .more[aria-expanded="true"]::before{content:"▾"}
@@ -597,6 +599,7 @@ function detHtml(d){
   return '';
  }).join('');
 }
+const linksHtml=ls=>(Array.isArray(ls)&&ls.length)?ls.filter(x=>x&&x.u).map(x=>`<a class="btn link" href="${esc(x.u)}" target="_blank" rel="noopener">${esc(x.l||x.u.replace(/^https?:\/\//,'').slice(0,30))} ↗</a>`).join(''):'';
 const dirUrl=(fq,tq,mode)=>'https://www.google.com/maps/dir/?api=1&origin='+encodeURIComponent(fq)+'&destination='+encodeURIComponent(tq)+'&travelmode='+(mode||'transit');
 function routeHtml(r){
  if(!r) return '';
@@ -615,6 +618,7 @@ function renderPlan(){
     <div class="place">${it.p?`<span>${esc(it.p)}</span>`:''}${(it.pills||[]).map(p=>`<span class="pill ${/예약|필수|도착/.test(p)?'warn':'acc'}">${esc(p)}</span>`).join('')}</div>
     <div class="title">${esc(it.title)}</div>
     ${routeHtml(it.r)}
+    ${linksHtml(it.links)?`<div class="acts">${linksHtml(it.links)}</div>`:''}
     ${it.d&&it.d.length?`<button class="more" aria-expanded="${open}">자세히</button><div class="det" ${open?'':'hidden'}>${detHtml(it.d)}</div>`:''}
    </div>`;
   const btn=el.querySelector('.more');
@@ -638,7 +642,7 @@ function cardHtml(item,id){
   <button class="chk" aria-label="다녀옴 표시" aria-pressed="${done}">✓</button>
   <div class="meta">${meta.join('')}</div>
   ${note?`<div class="note">${nl(note)}</div>`:''}
-  <div class="acts"><a class="btn map" href="${mapUrl(item.q||item.n+' 東京')}" target="_blank" rel="noopener">지도 열기 ↗</a>${item.link?`<a class="btn" href="${esc(item.link)}" target="_blank" rel="noopener">링크 ↗</a>`:''}</div>
+  <div class="acts"><a class="btn map" href="${mapUrl(item.q||item.n+' 東京')}" target="_blank" rel="noopener">지도 열기 ↗</a>${item.link?`<a class="btn link" href="${esc(item.link)}" target="_blank" rel="noopener">링크 ↗</a>`:''}${linksHtml(item.links)}</div>
  </article>`;
 }
 function bindCards(root){

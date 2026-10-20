@@ -153,8 +153,15 @@ const F={
   text:(id,label,val,ph='',extra='')=>`<div class="lgf"><label>${label}</label><input type="text" id="${id}" value="${esc(val||'')}" placeholder="${esc(ph)}" ${extra}></div>`,
   area:(id,label,val,ph='',rows=4)=>`<div class="lgf"><label>${label}</label><textarea id="${id}" rows="${rows}" placeholder="${esc(ph)}">${esc(val||'')}</textarea></div>`,
   chips:(id,label,opts,val,free)=>`<div class="lgf"><label>${label}</label><div class="lgchips" data-chips="${id}">${opts.map(o=>`<button type="button" class="lgchip lgsm" data-v="${esc(o)}" aria-pressed="${o===val}">${esc(o)}</button>`).join('')}</div>${free?`<input type="text" id="${id}" value="${esc(val||'')}" placeholder="${esc(free)}" style="margin-top:8px">`:`<input type="hidden" id="${id}" value="${esc(val||'')}">`}</div>`,
+  links:(id,label,arr)=>`<div class="lgf" data-links="${id}"><label>${label}</label><div class="clinks">${(arr||[]).map(x=>linkRow(x.l,x.u)).join('')}</div><button type="button" class="lglink" data-addlink="${id}">+ 링크 추가</button><div class="lghint">이름을 비우면 주소가 그대로 보여요. "구글맵 경로 보기"처럼 버튼으로 나와요.</div></div>`,
   toggle:(id,label,on)=>`<div class="lgf"><div class="lgtoggle"><span>${label}</span><input type="checkbox" id="${id}" ${on?'checked':''}></div></div>`,
 };
+const linkRow=(l,u)=>`<div class="clink"><input type="text" placeholder="이름 (예: 예약 페이지)" value="${esc(l||'')}" maxlength="40"><input type="text" inputmode="url" autocapitalize="off" placeholder="https://…" value="${esc(u||'')}"><button type="button" class="lgx" data-dellink aria-label="삭제">×</button></div>`;
+function wireLinks(sh){
+  sh.querySelectorAll('[data-addlink]').forEach(b=>b.onclick=()=>{const box=b.parentElement.querySelector('.clinks'); box.insertAdjacentHTML('beforeend',linkRow('','')); wireLinks(sh); const last=box.lastElementChild.querySelector('input'); if(last)last.focus();});
+  sh.querySelectorAll('[data-dellink]').forEach(b=>b.onclick=()=>b.closest('.clink').remove());
+}
+const readLinks=(sh,id)=>[...sh.querySelectorAll(`[data-links="${id}"] .clink`)].map(r=>{const [a,b]=r.querySelectorAll('input'); let u=(b.value||'').trim(); if(u&&!/^https?:\/\//i.test(u))u='https://'+u; return {l:(a.value||'').trim(),u}}).filter(x=>x.u);
 function wireChips(sh){
   sh.querySelectorAll('[data-chips]').forEach(box=>{ const inp=sh.querySelector('#'+box.dataset.chips);
     box.querySelectorAll('.lgchip').forEach(b=>b.onclick=()=>{ const on=b.getAttribute('aria-pressed')==='true'; box.querySelectorAll('.lgchip').forEach(x=>x.setAttribute('aria-pressed','false')); if(!on){b.setAttribute('aria-pressed','true'); inp.value=b.dataset.v;} else inp.value=''; });
@@ -173,6 +180,7 @@ function openEditor(tab,id){
       ${F.text('eP','장소',it?.p,'예: 아카사카')}
       ${F.text('ePills','태그 (쉼표로 구분)',(it?.pills||[]).join(', '),'예: 예약 완료, 필수')}
       ${F.toggle('eBig','강조 (큰 제목)',!!it?.big)}
+      ${F.links('eLinks','링크 버튼',it?.links)}
       ${F.area('eD','자세히 내용',dToText(it?.d),'한 줄에 하나씩.\n## 소제목\n[링크 이름](https://…)\n  (두 칸 들여쓰면 윗줄에 이어 붙어요)',6)}
       <details class="lgmore"><summary><span>이동 경로 (고급)</span></summary>${F.area('eR','한 줄에 경로 하나: 출발 > 도착 | 설명 | 출발 검색어 | 도착 검색어 | transit/walking/driving',rToText(it?.r),'이케부쿠로역 > 스튜디오 투어 도쿄 | 세이부선 약 20분 | 池袋駅 | ワーナー ブラザース スタジオツアー東京 | transit',4)}</details>`;
   }else if(tab==='food'){
@@ -185,7 +193,7 @@ function openEditor(tab,id){
       ${F.chips('eS','별점',['1','2','3','4','5'],it?.s?String(it.s):'','')}
       ${F.area('eNote','메모 (위치·팁)',it?.note,'예: 東口 도보 3분. 현금만',3)}
       ${F.text('eQ','구글맵 검색어',it?.q,'예: 牛かつ いろは 池袋')}
-      ${F.text('eLink','링크',it?.link,'https://…','inputmode="url"')}`;
+      ${F.links('eLinks','링크 버튼',(it?.links||[]).concat(it?.link&&!(it?.links||[]).length?[{l:'링크',u:it.link}]:[]))}`;
   }else{
     title=isNew?'장소 추가':'장소 수정';
     body=`${F.text('eN','이름',it?.n,'예: 치이카와 파크')}
@@ -196,22 +204,22 @@ function openEditor(tab,id){
       ${F.text('eRes','예약',it?.res,'예: 예약 완료 / 선착 예매 필수')}
       ${F.area('eLoc','설명 (위치·팁)',it?.loc,'',4)}
       ${F.text('eQ','구글맵 검색어',it?.q,'예: ちいかわパーク サンシャインシティ')}
-      ${F.text('eLink','링크',it?.link,'https://…','inputmode="url"')}
+      ${F.links('eLinks','링크 버튼',(it?.links||[]).concat(it?.link&&!(it?.links||[]).length?[{l:'링크',u:it.link}]:[]))}
       ${F.toggle('eU','영업 확인 필요 표시',!!it?.u)}`;
   }
   Lg.openSheet(`<h2>${title}<button type="button" data-close>닫기</button></h2><form id="cForm" autocomplete="off">${body}
     <div class="lgactions">${isNew?'':'<button type="button" class="lgbtn lgdanger" id="cDel">삭제</button>'}<button type="submit" class="lgbtn lgprimary">${isNew?'저장':'수정 저장'}</button></div></form>`);
   const sh=document.querySelector('.lgov .lgsheet'); const g=s=>sh.querySelector(s); const v=s=>(g(s)?.value||'').trim();
-  wireChips(sh);
+  wireChips(sh); wireLinks(sh);
   g('#cForm').onsubmit=async ev=>{ ev.preventDefault();
     let data; const nextOrder=()=>{ const l=listOf(col)||[]; const pool=tab==='plan'?l.filter(x=>x.day===v('#eDay')):l; return (pool.length?Math.max(...pool.map(x=>x.order||0)):0)+1000; };
     if(tab==='plan'){ if(!v('#eTitle')){toast('제목을 넣어주세요');return} const day=v('#eDay');
-      data={day,t:v('#eT'),ts:v('#eTs'),p:v('#eP'),title:v('#eTitle'),pills:v('#ePills')?v('#ePills').split(',').map(x=>x.trim()).filter(Boolean):[],big:g('#eBig').checked,d:textToD(v('#eD')),r:textToR(v('#eR')),order:(it&&it.day===day)?it.order:nextOrder()}; }
+      data={day,t:v('#eT'),ts:v('#eTs'),p:v('#eP'),title:v('#eTitle'),pills:v('#ePills')?v('#ePills').split(',').map(x=>x.trim()).filter(Boolean):[],big:g('#eBig').checked,links:readLinks(sh,'eLinks'),d:textToD(v('#eD')),r:textToR(v('#eR')),order:(it&&it.day===day)?it.order:nextOrder()}; }
     else if(tab==='food'){ if(!v('#eN')){toast('가게 이름을 넣어주세요');return}
-      data={a:v('#eA')||S.FOOD_AREAS[0],n:v('#eN'),k:v('#eK'),h:v('#eH'),pr:v('#ePr'),note:v('#eNote'),q:v('#eQ'),link:v('#eLink'),order:it?it.order:nextOrder()}; if(v('#eTy'))data.t=v('#eTy'); if(v('#eS'))data.s=+v('#eS'); }
+      data={a:v('#eA')||S.FOOD_AREAS[0],n:v('#eN'),k:v('#eK'),h:v('#eH'),pr:v('#ePr'),note:v('#eNote'),q:v('#eQ'),links:readLinks(sh,'eLinks'),order:it?it.order:nextOrder()}; if(v('#eTy'))data.t=v('#eTy'); if(v('#eS'))data.s=+v('#eS'); }
     else { if(!v('#eN')){toast('이름을 넣어주세요');return}
-      data={g:v('#eG')||S.PLACE_GROUPS[0],area:v('#eArea')||v('#eG'),n:v('#eN'),k:v('#eK'),h:v('#eH'),res:v('#eRes'),loc:v('#eLoc'),q:v('#eQ'),link:v('#eLink'),order:it?it.order:nextOrder()}; if(g('#eU').checked)data.u=true; }
-    Object.keys(data).forEach(k=>{ if(data[k]===''||data[k]===null||data[k]===undefined||data[k]===false)delete data[k]; });
+      data={g:v('#eG')||S.PLACE_GROUPS[0],area:v('#eArea')||v('#eG'),n:v('#eN'),k:v('#eK'),h:v('#eH'),res:v('#eRes'),loc:v('#eLoc'),q:v('#eQ'),links:readLinks(sh,'eLinks'),order:it?it.order:nextOrder()}; if(g('#eU').checked)data.u=true; }
+    Object.keys(data).forEach(k=>{ if(data[k]===''||data[k]===null||data[k]===undefined||data[k]===false||(Array.isArray(data[k])&&!data[k].length))delete data[k]; });
     Lg.closeSheet(); await save(col,id||uid(),data,isNew?'추가했어요':'수정했어요');
   };
   Lg.arm(g('#cDel'),async()=>{ Lg.closeSheet(); await remove(col,id); });
