@@ -28,8 +28,19 @@ function readToken(secret, t) {
 const ownerOf = d => (d && d.owner !== null && d.owner !== undefined && d.owner !== '') ? +d.owner : null;
 const publicTrip = trip => ({ people: (trip.people || []).map(p => ({ name: p.name || '' })), rate: +trip.rate || 9.2 });
 
+// 교차 출처 허용: 깃허브 페이지(eunyuoffice-create.github.io)와 로컬에서 같은 서버를 쓴다. 인증은 토큰(본문)이라 쿠키 없음.
+const ORIGINS = [/^https:\/\/[a-z0-9-]+\.github\.io$/, /^https:\/\/[a-z0-9-]+\.vercel\.app$/, /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/];
+function cors(req, res) {
+  const o = req.headers && req.headers.origin;
+  if (o && ORIGINS.some(r => r.test(o))) { res.setHeader('Access-Control-Allow-Origin', o); res.setHeader('Vary', 'Origin'); }
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Max-Age', '86400');
+}
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
+  cors(req, res);
+  if (req.method === 'OPTIONS') return res.status(204).end();
   try {
     const body = req.method === 'POST' ? parseBody(req.body) : (req.query || {});
     const action = body.action || 'status';

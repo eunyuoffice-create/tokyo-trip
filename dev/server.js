@@ -1,5 +1,6 @@
 // 로컬 미리보기: node dev/server.js [포트]  → http://localhost:8770  (DB 대신 dev/.data.json 에 저장)
-process.env.LEDGER_FAKE = '1';
+// DATABASE_URL 이 있으면 실제 Neon 서버를, 없으면 dev/.data.json 가짜 저장소를 쓴다
+if (!process.env.DATABASE_URL) process.env.LEDGER_FAKE = '1';
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -12,7 +13,7 @@ http.createServer(async (req, res) => {
   const u = new URL(req.url, 'http://x');
   if (u.pathname === '/api/ledger') {
     let raw = ''; for await (const c of req) raw += c;
-    const vreq = { method: req.method, body: raw, query: Object.fromEntries(u.searchParams) };
+    const vreq = { method: req.method, body: raw, query: Object.fromEntries(u.searchParams), headers: req.headers };
     const vres = { status(c) { res.statusCode = c; return vres; }, setHeader: (k, v) => res.setHeader(k, v), json(o) { res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(o)); }, end: () => res.end() };
     return handler(vreq, vres);
   }

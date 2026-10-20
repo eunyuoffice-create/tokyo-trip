@@ -3,7 +3,10 @@
    사용: <div id="ledger-root"></div> + <script src="ledger.js" defer> 이면 자동 mount. */
 (function(){
 'use strict';
-const API='/api/ledger', POLL_MS=12000;
+/* API 주소: Vercel(같은 도메인)·로컬 미리보기는 상대 경로, 깃 페이지 등 다른 호스트에서 열리면 Vercel 서버로 교차 요청 */
+const API_HOST='https://tokyo-trip-seven.vercel.app';
+const API=(/\.vercel\.app$/.test(location.hostname)||/^(localhost|127\.0\.0\.1)$/.test(location.hostname))?'/api/ledger':API_HOST+'/api/ledger';
+const POLL_MS=12000;
 const DAYS=[
   {d:'2026-10-24',n:1,w:'토',s:'10/24'},{d:'2026-10-25',n:2,w:'일',s:'10/25'},{d:'2026-10-26',n:3,w:'월',s:'10/26'},
   {d:'2026-10-27',n:4,w:'화',s:'10/27'},{d:'2026-10-28',n:5,w:'수',s:'10/28'}];
