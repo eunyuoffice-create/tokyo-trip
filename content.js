@@ -131,9 +131,20 @@ C.decorate=function(){
 C.onAuth=function(){ const a=loggedIn(); if(a===C._auth)return; C._auth=a; if(a&&C.loaded&&!C.meta.plan)seedIfNeeded(); else if(T())T().render(); };
 
 /* ---------- 행 편집기: 자세히 내용(d) · 이동 경로(r) — 한 항목에 입력칸 하나씩, 추가/삭제 버튼 ---------- */
-const kindOf=x=>typeof x==='string'?'s':x.k?'k':x.l?'l':'s';
-const dRow=(x)=>{const kind=kindOf(x); const text=kind==='s'?x:kind==='k'?x.k:x.l; const url=kind==='l'?(x.u||''):'';
-  return `<div class="crow" data-kind="${kind}"><div class="ckind">${[['s','문장'],['k','소제목'],['l','링크']].map(([k,l])=>`<button type="button" data-k="${k}" aria-pressed="${k===kind}">${l}</button>`).join('')}<button type="button" class="lgx" data-delrow aria-label="삭제">×</button></div><textarea class="ctext" rows="2" placeholder="${kind==='k'?'소제목':kind==='l'?'링크 이름':'내용'}">${esc(text||'')}</textarea><input type="text" class="curl" inputmode="url" autocapitalize="off" placeholder="https://…" value="${esc(url)}" ${kind==='l'?'':'hidden'}></div>`};
+/* 자세히 내용: 블록(소제목 + 내용 + 링크 여러 개) 단위로 편집. 저장은 기존 d 배열( {k} / 문자열 / {l,u} )로 펼친다 */
+function dBlocks(d){
+  const out=[]; let cur=null; const open=()=>{cur={k:'',text:[],links:[]}; out.push(cur)};
+  (d||[]).forEach(x=>{ if(typeof x==='string'){ if(!cur)open(); cur.text.push(x); } else if(x&&x.k){ open(); cur.k=x.k; } else if(x&&x.l){ if(!cur)open(); cur.links.push({l:x.l,u:x.u||''}); } });
+  return out;
+}
+const dRow=(blk={k:'',text:[],links:[]})=>`<div class="crow cblock"><div class="ckind"><span class="lgsub">내용</span><button type="button" class="lgx" data-delrow aria-label="삭제">×</button></div>
+  <input type="text" class="bk" placeholder="소제목 (선택)" value="${esc(blk.k||'')}" maxlength="60">
+  <textarea class="bt" rows="2" placeholder="내용 (문단은 빈 줄로 구분)">${esc((blk.text||[]).join('\n\n'))}</textarea>
+  <div class="blinks">${(blk.links||[]).map(x=>linkRow(x.l,x.u)).join('')}</div><button type="button" class="lglink lgsmlink" data-addblink>+ 링크 추가</button></div>`;
+const readD=sh=>{const out=[]; sh.querySelectorAll('[data-rows="eD"] .crow').forEach(r=>{ const k=(r.querySelector('.bk').value||'').trim(); const t=(r.querySelector('.bt').value||'');
+  const paras=t.split(/\n\s*\n/).map(x=>x.trim()).filter(Boolean);
+  const links=[...r.querySelectorAll('.blinks .clink')].map(row=>{const [a,b]=row.querySelectorAll('input'); let u=(b.value||'').trim(); if(!u)return null; if(!/^https?:\/\//i.test(u))u='https://'+u; return {l:(a.value||'').trim()||u.replace(/^https?:\/\//,''),u}}).filter(Boolean);
+  if(!k&&!paras.length&&!links.length)return; if(k)out.push({k:k}); paras.forEach(x=>out.push(x)); links.forEach(x=>out.push(x)); }); return out;};
 const rRow=(x={})=>`<div class="crow croute"><div class="ckind"><span class="lgsub">이동 경로</span><button type="button" class="lgx" data-delrow aria-label="삭제">×</button></div>
   <div class="lgrow2"><input type="text" class="rf" placeholder="출발 (예: 이케부쿠로역)" value="${esc(x.f||'')}"><input type="text" class="rt" placeholder="도착 (예: 스튜디오 투어 도쿄)" value="${esc(x.t||'')}"></div>
   <textarea class="rhow" rows="2" placeholder="설명 (예: 세이부선 약 20분 + 도보 2분)">${esc(x.how||'')}</textarea>
@@ -141,13 +152,13 @@ const rRow=(x={})=>`<div class="crow croute"><div class="ckind"><span class="lgs
   <div class="lgrow2"><input type="text" class="rfq" placeholder="출발 구글맵 검색어 (비우면 출발과 같음)" value="${esc(x.fq||'')}"><input type="text" class="rtq" placeholder="도착 구글맵 검색어" value="${esc(x.tq||'')}"></div>
   <div class="lgchips rmode">${[['transit','🚃 전철·버스'],['walking','🚶 도보'],['driving','🚕 택시']].map(([m,l])=>`<button type="button" class="lgchip lgsm" data-m="${m}" aria-pressed="${(x.mode||'transit')===m}">${l}</button>`).join('')}</div></div>`;
 function wireRows(sh){
-  sh.querySelectorAll('[data-addrow]').forEach(b=>b.onclick=()=>{const box=sh.querySelector(`[data-rows="${b.dataset.addrow}"] .crows`); box.insertAdjacentHTML('beforeend',b.dataset.addrow==='eD'?dRow(''):rRow()); wireRows(sh); const f=box.lastElementChild.querySelector('textarea,input'); if(f)f.focus();});
+  sh.querySelectorAll('[data-addrow]').forEach(b=>b.onclick=()=>{const box=sh.querySelector(`[data-rows="${b.dataset.addrow}"] .crows`); box.insertAdjacentHTML('beforeend',b.dataset.addrow==='eD'?dRow():rRow()); wireRows(sh); const f=box.lastElementChild.querySelector('input,textarea'); if(f)f.focus();});
   sh.querySelectorAll('[data-delrow]').forEach(b=>b.onclick=()=>b.closest('.crow').remove());
-  sh.querySelectorAll('.crow [data-k]').forEach(b=>b.onclick=()=>{const row=b.closest('.crow'); row.dataset.kind=b.dataset.k; row.querySelectorAll('[data-k]').forEach(x=>x.setAttribute('aria-pressed',String(x===b))); row.querySelector('.curl').hidden=b.dataset.k!=='l'; row.querySelector('.ctext').placeholder=b.dataset.k==='k'?'소제목':b.dataset.k==='l'?'링크 이름':'내용';});
+  sh.querySelectorAll('[data-addblink]').forEach(b=>b.onclick=()=>{const box=b.parentElement.querySelector('.blinks'); box.insertAdjacentHTML('beforeend',linkRow('','')); wireRows(sh); const f=box.lastElementChild.querySelector('input'); if(f)f.focus();});
+  sh.querySelectorAll('[data-dellink]').forEach(b=>b.onclick=()=>b.closest('.clink').remove());
   sh.querySelectorAll('.rmode .lgchip').forEach(b=>b.onclick=()=>{b.parentElement.querySelectorAll('.lgchip').forEach(x=>x.setAttribute('aria-pressed',String(x===b)))});
   sh.querySelectorAll('.crow textarea').forEach(ta=>{const grow=()=>{ta.style.height='auto';ta.style.height=Math.max(44,ta.scrollHeight+2)+'px'}; ta.oninput=grow; grow();});
 }
-const readD=sh=>[...sh.querySelectorAll('[data-rows="eD"] .crow')].map(r=>{const kind=r.dataset.kind; const t=(r.querySelector('.ctext').value||'').trim(); if(!t)return null; if(kind==='k')return {k:t}; if(kind==='l'){let u=(r.querySelector('.curl').value||'').trim(); if(!u)return t; if(!/^https?:\/\//i.test(u))u='https://'+u; return {l:t,u}} return t;}).filter(Boolean);
 const readR=sh=>{const out=[...sh.querySelectorAll('[data-rows="eR"] .crow')].map(r=>{const g=c=>(r.querySelector(c)?.value||'').trim(); const f=g('.rf'),t=g('.rt'); if(!f&&!t&&!g('.rhow'))return null; const mode=r.querySelector('.rmode [aria-pressed="true"]')?.dataset.m||'transit'; let url=g('.rurl'); if(url&&!/^https?:\/\//i.test(url))url='https://'+url; const o={f,t,how:g('.rhow'),fq:g('.rfq')||f,tq:g('.rtq')||t,mode}; if(g('.rprice'))o.price=g('.rprice'); if(url)o.url=url; return o;}).filter(Boolean); return out.length?(out.length===1?out[0]:out):null};
 /* ---------- 편집 시트 ---------- */
 const F={
@@ -183,7 +194,7 @@ function openEditor(tab,id){
       ${F.text('ePills','태그 (쉼표로 구분)',(it?.pills||[]).join(', '),'예: 예약 완료, 필수')}
       ${F.toggle('eBig','강조 (큰 제목)',!!it?.big)}
       ${F.links('eLinks','링크 버튼',it?.links)}
-      ${F.rows('eD','자세히 내용 (펼쳐서 보는 부분)',(it?.d||[]).map(dRow).join(''),'내용 추가')}
+      ${F.rows('eD','자세히 내용 (펼쳐서 보는 부분)',dBlocks(it?.d).map(dRow).join(''),'내용 추가')}
       ${F.rows('eR','이동 경로 (구글맵 경로 보기 버튼이 붙어요)',(it?.r?(Array.isArray(it.r)?it.r:[it.r]):[]).map(rRow).join(''),'이동 경로 추가')}`;
   }else if(tab==='food'){
     title=isNew?'맛집 추가':'맛집 수정';
