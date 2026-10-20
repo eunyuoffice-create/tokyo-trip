@@ -168,7 +168,7 @@ function viewLocked(){
 function setupFormHtml(){
   return `<h2>정산 노트 시작<button type="button" data-close>닫기</button></h2><p class="lghint" style="margin:0 0 12px">같이 쓰는 멤버와 각자 숫자 비밀번호를 정해요. 개인 지출·개인 메모는 그 비밀번호로 들어온 사람만 봐요. 처음 한 번만 하면 돼요.</p>
   <form id="setupForm">
-    <div class="lgf"><label>멤버 (이름 · 숫자 비밀번호 4~8자리)</label><div class="lgmrows" id="setupRows">
+    <div class="lgf"><label>멤버 (이름 · 숫자 비밀번호 4~8자리) <span class="lgreq" aria-label="필수">*</span></label><div class="lgmrows" id="setupRows">
       <div class="mr"><input type="text" placeholder="이름 1" maxlength="12" data-n="0" value="은유"><input type="text" inputmode="numeric" class="lgpin" placeholder="비밀번호" maxlength="8" data-p="0"></div>
       <div class="mr"><input type="text" placeholder="이름 2" maxlength="12" data-n="1" value="카뮈"><input type="text" inputmode="numeric" class="lgpin" placeholder="비밀번호" maxlength="8" data-p="1"></div>
     </div><div style="margin-top:8px"><button type="button" class="lglink" data-act="setup-add">+ 멤버 추가</button></div></div>
@@ -183,7 +183,7 @@ function loginFormHtml(){
   return `<h2>로그인<button type="button" data-close>닫기</button></h2><p class="lghint" style="margin:0 0 12px">누구인지 고르고 비밀번호를 넣어주세요. 이 폰에 기억돼요.</p>
   <form id="loginForm">
     <div class="lgf"><label>나는</label><div class="lgchips" id="loginWho">${S.people.map((p,i)=>`<button type="button" class="lgchip" data-i="${i}" aria-pressed="${i===idx}">${esc(p.name)}</button>`).join('')}</div></div>
-    <div class="lgf"><label>비밀번호</label><input type="password" inputmode="numeric" class="lgpin" id="loginPin" maxlength="8" autocomplete="current-password"></div>
+    <div class="lgf"><label>비밀번호 <span class="lgreq" aria-label="필수">*</span></label><input type="password" inputmode="numeric" class="lgpin" id="loginPin" maxlength="8" autocomplete="current-password"></div>
     <div class="lgactions"><button type="submit" class="lgbtn lgprimary">들어가기</button></div>
     <div class="lghint">비밀번호를 잊었으면 <button type="button" class="lglink" data-act="forgot">새로 정하기</button> (사이트 입장 비밀번호로 확인해요)</div>
   </form>`;
@@ -450,7 +450,7 @@ function openExpense(e,opts={}){
   const moreOpen=!isNew&&(!!d.custom||(!d.priv&&d.parts.length!==n)||!!d.memo||d.settled);
   const dayShort=k=>{const x=dayOf(k);return k===today?'오늘':(x.d==='pre'?'출발 전':`D${x.n}`)};
   openSheet(`<h2><span id="fHead">${isNew?(d.priv?'내 지출':'공용 지출'):'지출 수정'}</span><button type="button" data-close>닫기</button></h2><form id="expForm">
-    <div class="lgf"><div class="lgamount"><input type="text" inputmode="decimal" id="fAmt" placeholder="0" value="${d.amount?esc(d.amount):''}" aria-label="금액"><div class="lgseg" id="fCur"><button type="button" data-c="JPY" aria-pressed="${d.cur==='JPY'}">¥</button><button type="button" data-c="KRW" aria-pressed="${d.cur==='KRW'}">₩</button></div></div></div>
+    <div class="lgf"><label>금액 <span class="lgreq" aria-label="필수">*</span></label><div class="lgamount"><input type="text" inputmode="decimal" id="fAmt" placeholder="0" value="${d.amount?esc(d.amount):''}" aria-label="금액"><div class="lgseg" id="fCur"><button type="button" data-c="JPY" aria-pressed="${d.cur==='JPY'}">¥</button><button type="button" data-c="KRW" aria-pressed="${d.cur==='KRW'}">₩</button></div></div></div>
     <div class="lgf"><input type="text" id="fTitle" placeholder="무엇에 썼어요? 예: 모츠나베, 리무진 버스" value="${esc(d.title)}" maxlength="80" aria-label="내용"></div>
     <div class="lgf" id="fPayerBox" ${d.priv?'hidden':''}><label>누가 냈어요?</label><div class="lgbig2" id="fPayer">${S.people.map((p,i)=>`<button type="button" data-i="${i}" aria-pressed="${d.payer===i}">${esc(pname(i))}${i===S.me?' <small>나</small>':''}</button>`).join('')}</div><div class="lghint" id="fPartsHint"></div></div>
     <details class="lgmore" id="fMore" ${moreOpen?'open':''}><summary><span>자세히</span><span class="lgsub" id="fMoreSum"></span></summary>
@@ -503,7 +503,7 @@ function openSettle(f){
   const single=flows(f.cur).length===1;
   openSheet(`<h2>${recv?'받았어':f.from===me?'보냈어':'정산 기록'}<button type="button" data-close>닫기</button></h2><form id="stForm">
     <div class="lgsettlehead"><span class="fp">${esc(pname(f.from))}</span><span class="lgarr">→</span><span class="fp">${esc(pname(f.to))}</span><b class="lgnum">${fmt(full,f.cur)}</b></div>
-    <div class="lgf"><label>실제 주고받은 금액</label><div class="lgamount"><input type="text" inputmode="decimal" id="stAmt" value="${full}"><div class="lgseg"><button type="button" aria-pressed="true" tabindex="-1">${sym}</button></div></div><div class="lghint" id="stHint"></div></div>
+    <div class="lgf"><label>실제 주고받은 금액 <span class="lgreq" aria-label="필수">*</span></label><div class="lgamount"><input type="text" inputmode="decimal" id="stAmt" value="${full}"><div class="lgseg"><button type="button" aria-pressed="true" tabindex="-1">${sym}</button></div></div><div class="lghint" id="stHint"></div></div>
     <div class="lgf"><label>메모</label><input type="text" id="stMemo" placeholder="현금, 토스, 카카오페이 등" maxlength="80"></div>
     <div class="lgactions"><button type="submit" class="lgbtn lgprimary">정산 완료</button></div></form>`);
   const sh=q('.lgsheet',ov); const g=s=>q(s,sh);
@@ -521,8 +521,8 @@ function openForgot(){
   openSheet(`<h2>비밀번호 새로 정하기<button type="button" data-close>닫기</button></h2><form id="fgForm">
     <p class="lghint" style="margin:0 0 12px">사이트에 들어올 때 쓴 입장 비밀번호로 본인 확인을 하고, 멤버 비밀번호를 새로 정해요.</p>
     <div class="lgf"><label>누구 비밀번호를 바꿀까</label><div class="lgchips" id="fgWho">${S.people.map((p,i)=>`<button type="button" class="lgchip" data-i="${i}" aria-pressed="${i===idx}">${esc(p.name)}</button>`).join('')}</div></div>
-    <div class="lgf"><label>사이트 입장 비밀번호</label><input type="password" id="fgSite" autocomplete="off"></div>
-    <div class="lgf"><label>새 멤버 비밀번호 (숫자 4~8자리)</label><input type="text" inputmode="numeric" class="lgpin" id="fgPin" maxlength="8" autocomplete="off"></div>
+    <div class="lgf"><label>사이트 입장 비밀번호 <span class="lgreq" aria-label="필수">*</span></label><input type="password" id="fgSite" autocomplete="off"></div>
+    <div class="lgf"><label>새 멤버 비밀번호 (숫자 4~8자리) <span class="lgreq" aria-label="필수">*</span></label><input type="text" inputmode="numeric" class="lgpin" id="fgPin" maxlength="8" autocomplete="off"></div>
     <div class="lgactions"><button type="submit" class="lgbtn lgprimary">바꾸고 들어가기</button></div></form>`);
   const sh=q('.lgsheet',ov); const g=s=>q(s,sh); let who=idx;
   qa('#fgWho .lgchip',sh).forEach(b=>b.onclick=()=>{who=+b.dataset.i;qa('#fgWho .lgchip',sh).forEach(x=>x.setAttribute('aria-pressed',x===b))});

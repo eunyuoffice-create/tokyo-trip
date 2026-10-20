@@ -189,7 +189,7 @@ function openEditor(tab,id){
     title=isNew?'일정 추가':'일정 수정';
     body=`<div class="lgf"><label>날짜</label><div class="lgchips" data-chips="eDay">${S.DAYS.map(d=>`<button type="button" class="lgchip lgsm" data-v="${d.date}" aria-pressed="${d.date===day}">D${d.n} ${d.date.slice(5).replace('-','/')} ${d.w}</button>`).join('')}</div><input type="hidden" id="eDay" value="${day}"></div>
       <div class="lgrow2">${F.text('eT','시간',it?.t,'예: 10:30 / 점심 / 밤')}${F.text('eTs','보조 시간',it?.ts,'예: ~11:50')}</div>
-      ${F.text('eTitle','제목',it?.title,'예: 해리포터 카페')}
+      ${F.text('eTitle','제목 <span class="lgreq" aria-label="필수">*</span>',it?.title,'예: 해리포터 카페')}
       ${F.text('eP','장소',it?.p,'예: 아카사카')}
       ${F.text('ePills','태그 (쉼표로 구분)',(it?.pills||[]).join(', '),'예: 예약 완료, 필수')}
       ${F.toggle('eBig','강조 (큰 제목)',!!it?.big)}
@@ -198,7 +198,7 @@ function openEditor(tab,id){
       ${F.rows('eR','이동 경로 (구글맵 경로 보기 버튼이 붙어요)',(it?.r?(Array.isArray(it.r)?it.r:[it.r]):[]).map(rRow).join(''),'이동 경로 추가')}`;
   }else if(tab==='food'){
     title=isNew?'맛집 추가':'맛집 수정';
-    body=`${F.text('eN','가게 이름',it?.n,'예: 규카츠 이로하')}
+    body=`${F.text('eN','가게 이름 <span class="lgreq" aria-label="필수">*</span>',it?.n,'예: 규카츠 이로하')}
       ${F.chips('eA','지역',S.FOOD_AREAS,it?.a||S.FOOD_AREAS[0],'')}
       ${F.chips('eTy','분류 (비우면 종류로 자동 판단)',['음식','카페'],it?.t||'','')}
       <div class="lgrow2">${F.text('eK','종류',it?.k,'예: 라멘, 타르트')}${F.text('ePr','가격대',it?.pr,'예: 1,000~2,000엔')}</div>
@@ -209,7 +209,7 @@ function openEditor(tab,id){
       ${F.links('eLinks','링크 버튼',(it?.links||[]).concat(it?.link&&!(it?.links||[]).length?[{l:'링크',u:it.link}]:[]))}`;
   }else{
     title=isNew?'장소 추가':'장소 수정';
-    body=`${F.text('eN','이름',it?.n,'예: 치이카와 파크')}
+    body=`${F.text('eN','이름 <span class="lgreq" aria-label="필수">*</span>',it?.n,'예: 치이카와 파크')}
       ${F.chips('eG','그룹',S.PLACE_GROUPS,it?.g||S.PLACE_GROUPS[0],'')}
       ${F.chips('eArea','지역',S.PLACE_CHIPS.filter(x=>!S.PLACE_GROUPS.includes(x)||x==='이케부쿠로'||x==='하라주쿠'),it?.area||'','직접 입력')}
       ${F.text('eK','종류·한 줄 설명',it?.k,'예: 전시 + 쇼핑')}
