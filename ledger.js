@@ -295,7 +295,7 @@ function detailsHtml(){
   const mj=myTotals('JPY'), mk=myTotals('KRW');
   const settledN=sh.filter(e=>e.settled).length;
   const pair=(j,k)=>`${j?fmt(j,'JPY'):''}${j&&k?' + ':''}${k?fmt(k,'KRW'):''}`||'₩0';
-  let h=`<details class="lgdetails lgsummary"><summary><span>공용 ${pair(tj,tk)}</span><span class="lgsub">1인 약 ${fmt(total/n,'KRW')} · 자세히</span></summary><div class="lgdetails-b">`;
+  let h=`<details class="lgdetails lgsummary"><summary><span class="lgsumt"><span class="lgnum">공용 ${pair(tj,tk)}</span><span class="lgsub">1인 약 ${fmt(total/n,'KRW')}</span></span></summary><div class="lgdetails-b">`;
   h+=`<div class="lgkv"><span>공용 지출 합계</span><span class="lgnum">${pair(tj,tk)} <span class="lgsub">≈ ${fmt(total,'KRW')}</span></span><span>1인 몫 (${n}명)</span><span class="lgnum">≈ ${fmt(total/n,'KRW')}</span><span>내 개인 지출</span><span class="lgnum">${pair(mj.priv,mk.priv)}</span><span>내가 쓴 전체 (공용 몫 + 개인)</span><span class="lgnum">≈ ${fmt((mj.share+mj.priv)*S.rate+mk.share+mk.priv,'KRW')}</span></div>`;
   ['JPY','KRW'].forEach(cur=>{ if(!sh.some(e=>e.cur===cur))return; const b=balances(cur);
     h+=`<div class="lgsubh">${cur==='JPY'?'엔':'원'} · 멤버별</div><div class="lgbal">`;

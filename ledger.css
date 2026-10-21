@@ -685,4 +685,15 @@ body.body-edit .ev,body.body-edit .card{-webkit-user-select:none;user-select:non
 .lg .lgitlist.lgediting .lgit .lgitdel{display:grid}
 .lg .lgit.lgitoff input{color:var(--muted);text-decoration:line-through}
 .lg .lgitlist.lgediting .lgit.lgitoff input{text-decoration:none;opacity:.6}
+/* 요약 접기: 모바일에서 두 줄(합계 / 1인), 표는 값이 라벨을 밀어내지 않게 */
+.lg .lgsummary summary{gap:10px}
+.lg .lgsummary .lgsumt{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.lg .lgsummary .lgsumt .lgnum{white-space:normal;overflow-wrap:anywhere}
+.lg .lgsummary summary .lgsumt .lgsub{margin:0;font-weight:500}
+.lg .lgkv{grid-template-columns:minmax(0,1fr) auto}
+.lg .lgkv>span{min-width:0}
+.lg .lgkv .lgnum{white-space:nowrap}
+.lg .lgkv .lgnum .lgsub{display:block;font-size:11.5px}
+.lg .lgbal{grid-template-columns:minmax(0,1fr) auto}
+.lg .lgbal .bv{font-family:var(--mono);text-align:right;white-space:nowrap}
 
