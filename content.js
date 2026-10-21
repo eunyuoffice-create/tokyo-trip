@@ -144,6 +144,7 @@ C.decorate=function(){
   const S=T(); if(!S)return; const tab=S.state.tab;
   ['p-plan','p-food','p-place'].forEach(pid=>{const p=document.getElementById(pid); if(!p)return; p.querySelectorAll('.lgcbar, .cedit, .chint').forEach(x=>x.remove()); p.classList.remove('lg-haspad');});
   if(!['plan','food','place'].includes(tab))return;
+  if(tab==='plan'&&L()&&L().fillImages){ const p=document.getElementById('p-plan'); L().fillImages(p); p.querySelectorAll('.evimgs .lgthumb').forEach(t=>t.onclick=e=>{e.stopPropagation(); const im=t.querySelector('img'); if(im&&im.src&&window.openLightbox)openLightbox(im.src,'')}); }
   const col=colOf(tab); const editable=loggedIn()&&C.loaded&&!!listOf(col);
   document.body.classList.toggle('body-edit',editable);
   if(!editable){ if(loggedIn()&&C.loaded)seedIfNeeded(); return; }
@@ -222,6 +223,7 @@ function openEditor(tab,id){
       ${F.text('eP','장소',it?.p,'예: 아카사카')}
       ${F.text('ePills','태그 (쉼표로 구분)',(it?.pills||[]).join(', '),'예: 예약 완료, 필수')}
       ${F.toggle('eBig','강조 (큰 제목)',!!it?.big)}
+      <div class="lgf"><label>사진</label><div class="lgimgs lgimgs-edit" id="eImgs"></div><button type="button" class="lglink" id="eAddImg">+ 사진 추가</button></div>
       ${F.links('eLinks','링크 버튼',it?.links)}
       ${F.rows('eD','자세히 내용 (펼쳐서 보는 부분)',dBlocks(it?.d).map(dRow).join(''),'내용 추가')}
       ${F.rows('eR','이동 경로 (구글맵 경로 보기 버튼이 붙어요)',(it?.r?(Array.isArray(it.r)?it.r:[it.r]):[]).map(rRow).join(''),'이동 경로 추가')}`;
@@ -255,10 +257,13 @@ function openEditor(tab,id){
     <div class="lgactions">${isNew?'':'<button type="button" class="lgbtn lgdanger" id="cDel">삭제</button>'}<button type="submit" class="lgbtn lgprimary">${isNew?'저장':'수정 저장'}</button></div></form>`);
   const sh=document.querySelector('.lgov .lgsheet'); const g=s=>sh.querySelector(s); const v=s=>(g(s)?.value||'').trim();
   wireChips(sh); wireLinks(sh); wireRows(sh);
+  const imgs=(it&&Array.isArray(it.images))?it.images.slice():[]; const imgBox=sh.querySelector('#eImgs');
+  const paintImgs=()=>{ if(!imgBox)return; imgBox.innerHTML=imgs.map(id=>`<span class="lgthumb" data-rm="${esc(id)}">${Lg.imgTag(id)}<b>×</b></span>`).join(''); Lg.fillImages(imgBox); imgBox.querySelectorAll('[data-rm]').forEach(t=>t.onclick=()=>{const i=imgs.indexOf(t.dataset.rm); if(i>=0)imgs.splice(i,1); paintImgs();}); };
+  paintImgs(); const addImg=sh.querySelector('#eAddImg'); if(addImg)addImg.onclick=async()=>{ const ids=await Lg.pickImages(); if(ids.length){ imgs.push(...ids); paintImgs(); } };
   g('#cForm').onsubmit=async ev=>{ ev.preventDefault();
     let data; const nextOrder=()=>{ const l=listOf(col)||[]; const pool=tab==='plan'?l.filter(x=>x.day===v('#eDay')):l; return (pool.length?Math.max(...pool.map(x=>x.order||0)):0)+1000; };
     if(tab==='plan'){ if(!v('#eTitle')){toast('제목을 넣어주세요');return} const day=v('#eDay');
-      data={day,t:v('#eT'),ts:v('#eTs'),p:v('#eP'),title:v('#eTitle'),pills:v('#ePills')?v('#ePills').split(',').map(x=>x.trim()).filter(Boolean):[],big:g('#eBig').checked,links:readLinks(sh,'eLinks'),d:readD(sh),r:readR(sh),order:(it&&it.day===day)?it.order:nextOrder()}; }
+      data={day,t:v('#eT'),ts:v('#eTs'),p:v('#eP'),title:v('#eTitle'),pills:v('#ePills')?v('#ePills').split(',').map(x=>x.trim()).filter(Boolean):[],big:g('#eBig').checked,images:imgs,links:readLinks(sh,'eLinks'),d:readD(sh),r:readR(sh),order:(it&&it.day===day)?it.order:nextOrder()}; }
     else if(tab==='food'){ if(!v('#eN')){toast('가게 이름을 넣어주세요');return}
       data={a:v('#eA')||S.FOOD_AREAS[0],n:v('#eN'),k:v('#eK'),h:v('#eH'),pr:v('#ePr'),note:v('#eNote'),closed:v('#eClosed'),tag:v('#eTag'),q:v('#eQ'),links:readLinks(sh,'eLinks'),order:it?it.order:nextOrder()}; if(v('#eTy'))data.t=v('#eTy'); if(v('#eS'))data.s=+v('#eS'); }
     else { if(!v('#eN')){toast('이름을 넣어주세요');return}

@@ -487,3 +487,29 @@ body.body-edit .ev,body.body-edit .card{-webkit-user-select:none;user-select:non
 
 
 .ev,.card,.lg .lgmemoacc summary{touch-action:manipulation}
+
+/* 글 본문 서식 */
+.lg .lgmemobody .lgh2{font-weight:700;font-size:13.5px;color:var(--muted);letter-spacing:.02em;margin:10px 0 4px}
+.lg .lgmemobody .lgh2:first-child{margin-top:0}
+.lg .lgmemobody .lgp{margin:0 0 4px}
+.lg .lgmemobody .lgbr{height:6px}
+.lg .lgmemobody .lgul{margin:2px 0 6px;padding-left:18px} .lg .lgmemobody .lgul li{margin:2px 0}
+/* 사진 */
+.lg .lgimgs{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.lg .lgthumb{position:relative;display:inline-block;width:92px;height:92px;border-radius:10px;overflow:hidden;background:var(--chip);cursor:zoom-in;flex-shrink:0}
+.lg .lgthumb img,.lgthumb img{width:100%;height:100%;object-fit:cover;display:block}
+.lg .lgimg-missing{opacity:.3}
+.lg .lgli .lgthumb{width:48px;height:48px;border-radius:8px;margin-right:2px}
+.lg .lgimgs-edit .lgthumb b{position:absolute;top:2px;right:2px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;font-weight:700;display:grid;place-items:center;font-size:14px;cursor:pointer}
+.lg .lgimgs-edit{margin-bottom:6px}
+.evimgs{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.evimgs .lgthumb{width:84px;height:84px;border-radius:10px;overflow:hidden;background:var(--chip);display:inline-block;cursor:zoom-in}
+/* 내 메모 / 공용 메모 섹션 아코디언 */
+.lg details.lgsecacc{margin:14px 0 4px}
+.lg details.lgsecacc > summary{list-style:none;cursor:pointer;display:flex;align-items:baseline;justify-content:space-between;padding:4px 2px;border-bottom:1px solid var(--line);margin-bottom:6px}
+.lg details.lgsecacc > summary::-webkit-details-marker{display:none}
+.lg details.lgsecacc > summary h3{font-size:14px;font-weight:700;margin:0}
+.lg details.lgsecacc > summary h3 .lgsub{font-weight:500;font-size:12px;color:var(--muted);margin-left:4px}
+.lg details.lgsecacc > summary .lgnum{font-size:12.5px;color:var(--muted)}
+.lg details.lgsecacc > summary .lgnum::after{content:"▾";margin-left:6px;color:var(--muted)}
+.lg details.lgsecacc:not([open]) > summary .lgnum::after{content:"▸"}

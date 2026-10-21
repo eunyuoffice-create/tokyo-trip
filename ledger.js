@@ -15,7 +15,7 @@ const CATS=['식비','교통','덕질','쇼핑','입장','숙소','기타'];
 const CUR={JPY:{sym:'¥'},KRW:{sym:'₩'}};
 
 const S={screen:'loading',token:'',me:null,people:[],rate:8.4,rateInfo:{mode:'auto',auto:null},expenses:[],transfers:[],memos:[],
-  scope:'mine',err:'',saving:0,pending:false,loginIdx:null,loaded:false,openMemos:new Set()};
+  scope:'mine',err:'',saving:0,pending:false,loginIdx:null,loaded:false,openMemos:new Set(),meta:{},secOpen:(()=>{try{return JSON.parse(localStorage.getItem('tl_sec')||'{"mine":true,"shared":true}')}catch(e){return {mine:true,shared:true}}})()};
 const ls={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}},del:k=>{try{localStorage.removeItem(k)}catch(e){}}};
 let root,view,memoRoot,memoView,userEl,ov,toastT,pollT;
 const roots=()=>[root,memoRoot].filter(Boolean);
@@ -60,13 +60,14 @@ function applyList(j){
   S.me=j.me; S.people=j.people||[]; S.rate=+j.rate||S.rate; S.rateInfo=j.rateInfo||S.rateInfo;
   S.expenses=Object.entries(j.expenses||{}).map(([id,e])=>({id,...e,amount:+e.amount||0,payer:+e.payer||0,parts:Array.isArray(e.parts)?e.parts.map(Number):[]}));
   S.transfers=Object.entries(j.transfers||{}).map(([id,t])=>({id,...t,amount:+t.amount||0,from:+t.from||0,to:+t.to||0}));
-  S.memos=Object.entries(j.memos||{}).map(([id,m])=>({id,...m,items:Array.isArray(m.items)?m.items:[]}));
+  S.memos=Object.entries(j.memos||{}).map(([id,m])=>({id,...m,items:Array.isArray(m.items)?m.items:[],images:Array.isArray(m.images)?m.images:[]}));
+  S.meta=j.meta||{};
   S.loaded=true;
 }
 let loading=false;
 async function load(){
   if(!S.token||loading)return; loading=true;
-  try{ const j=await api({action:'list'}); applyList(j); S.screen='main'; S.err=''; render(); }
+  try{ const j=await api({action:'list'}); applyList(j); S.screen='main'; S.err=''; render(); seedNotes(); }
   catch(e){
     if(e.code==='auth'){logout(false);await boot();}
     else if(e.code==='not_setup'){logout(false);await boot();}
@@ -140,6 +141,39 @@ function myTotals(cur){
 const rateLabel=()=>{const ri=S.rateInfo||{};return `1엔 = ${S.rate}원`+(ri.mode==='manual'?' (직접 입력)':(ri.auto?` (${esc(ri.auto.date||'')} ${esc(ri.auto.src||'')} 자동)`:' (기본값)'))};
 const balLine=(b,cur)=>Math.abs(b)<0.5?`<b>정산 끝</b>`:(b>0?`받을 돈 <b class="lgnum" style="color:var(--ok)">${fmt(b,cur)}</b>`:`줄 돈 <b class="lgnum" style="color:var(--accent)">${fmt(-b,cur)}</b>`);
 
+/* ---------- 글 본문: ## 소제목, - 목록, 빈 줄 문단, [이름](url) 링크, 주소 자동 링크 ---------- */
+const mdLinks=t=>{let out='',last=0; const re=/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g; let m; while((m=re.exec(t))){ out+=linkify(t.slice(last,m.index))+`<a href="${esc(m[2])}" target="_blank" rel="noopener" class="lglinkx">${esc(m[1])} ↗</a>`; last=m.index+m[0].length; } return out+linkify(t.slice(last)); };
+function bodyHtml(t){ let h='',ul=false; const close=()=>{if(ul){h+='</ul>';ul=false}};
+  String(t||'').split('\n').forEach(l=>{ const s=l.trim(); let m;
+    if(!s){close(); h+='<div class="lgbr"></div>'; return}
+    if((m=s.match(/^##\s*(.+)/))){close(); h+=`<div class="lgh2">${mdLinks(m[1])}</div>`; return}
+    if((m=s.match(/^[-•]\s+(.+)/))){ if(!ul){h+='<ul class="lgul">';ul=true} h+=`<li>${mdLinks(m[1])}</li>`; return}
+    close(); h+=`<div class="lgp">${mdLinks(s)}</div>`; });
+  close(); return h; }
+/* ---------- 사진: images 컬렉션에 data URL 로 저장, 화면에서는 id 로 참조해 필요할 때 받아온다 ---------- */
+const imgCache={};
+async function imgSrc(id){ if(imgCache[id])return imgCache[id]; try{ const j=await api({action:'image',id}); imgCache[id]=j.data; return j.data; }catch(e){ return ''; } }
+const imgTag=(ref,cls='lgimg')=>/^(img\/|https?:|data:)/.test(ref)?`<img class="${cls}" src="${esc(ref)}" alt="" loading="lazy">`:`<img class="${cls}" data-imgid="${esc(ref)}" alt="">`;
+function fillImages(root){ (root||document).querySelectorAll('img[data-imgid]:not([src])').forEach(async im=>{ const src=await imgSrc(im.dataset.imgid); if(src)im.src=src; else im.classList.add('lgimg-missing'); }); }
+function openImg(src){ if(window.openLightbox)openLightbox(src,''); else window.open(src,'_blank'); }
+function resizeImage(file,max=1280){ return new Promise((res,rej)=>{ const url=URL.createObjectURL(file); const im=new Image(); im.onload=()=>{ let {width:w,height:h}=im; const r=Math.min(1,max/Math.max(w,h)); w=Math.round(w*r); h=Math.round(h*r); const c=document.createElement('canvas'); c.width=w; c.height=h; c.getContext('2d').drawImage(im,0,0,w,h); let q=0.82, d=c.toDataURL('image/jpeg',q); while(d.length>420000&&q>0.4){ q-=0.12; d=c.toDataURL('image/jpeg',q); } URL.revokeObjectURL(url); res({data:d,w,h}); }; im.onerror=()=>rej(new Error('이미지를 열 수 없어요')); im.src=url; }); }
+function pickImages(){ return new Promise(res=>{ const inp=document.createElement('input'); inp.type='file'; inp.accept='image/*'; inp.multiple=true; inp.style.display='none'; document.body.appendChild(inp);
+  inp.onchange=async()=>{ const files=[...inp.files].slice(0,10); inp.remove(); if(!files.length){res([]);return} toast(`사진 ${files.length}장 올리는 중…`); const ids=[];
+    for(const f of files){ try{ const {data,w,h}=await resizeImage(f); const id='im-'+uid(); await api({action:'write',ops:[{op:'set',col:'images',id,data:{data,w,h}}]}); imgCache[id]=data; ids.push(id); }catch(e){ toast('사진 하나를 못 올렸어요: '+(e.message||e)); } }
+    res(ids); };
+  inp.click(); }); }
+/* ---------- 예전 하드코딩 메모 카드 → 공용 메모로 한 번 옮기기 ---------- */
+let seedingNotes=false;
+async function seedNotes(){
+  if(seedingNotes||!window.NOTE_SEED||S.screen!=='main')return; if(S.meta.notes&&S.meta.notes.seeded)return;
+  seedingNotes=true;
+  try{ const n=NOTE_SEED.length; const ops=NOTE_SEED.map((x,i)=>({op:'set',col:'memos',id:x.id,data:{type:x.type,owner:null,title:x.title,body:x.body||'',items:x.items||[],images:[],ts:Date.now(),order:(n-i)*1000}}));
+    for(let i=0;i<ops.length;i+=10) await api({action:'write',ops:ops.slice(i,i+10)});
+    await api({action:'write',ops:[{op:'set',col:'meta',id:'notes',data:{seeded:true}}]});
+    await load(); toast('메모 탭의 안내 카드들을 공용 메모로 옮겼어요');
+  }catch(e){ toast('메모 옮기기 실패: '+(e.message||e)); }
+  finally{ seedingNotes=false; }
+}
 /* ---------- 렌더 ---------- */
 /* 입력칸은 전부 시트(ov) 안에 있어서 목록을 다시 그려도 입력이 끊기지 않는다 */
 function isEditing(){ return !!S.dragging; }
@@ -154,7 +188,7 @@ function render(){
   view.innerHTML=h; bind(view);
   if(userEl){ userEl.innerHTML=userHtml(); bind(userEl); }
   if(window.Content&&Content.onAuth)Content.onAuth();
-  if(memoView){ memoView.innerHTML=S.screen==='main'?viewMemo():viewMemoLocked(); bind(memoView); }
+  if(memoView){ memoView.innerHTML=S.screen==='main'?viewMemo():viewMemoLocked(); bind(memoView); fillImages(memoView); if(window.TripSite&&TripSite.renderChips&&TripSite.state.tab==='memo')TripSite.renderChips(); }
 }
 function userHtml(){
   if(S.screen==='main') return `<span class="lguser lguser-name">${svgUser}<span>${esc(pname(S.me))}</span></span><button class="lguser lguser-gear" data-act="settings" aria-label="설정">${svgGear}</button><button class="lguser lguser-gear lguser-out" data-act="logout" aria-label="로그아웃" title="로그아웃">${svgOut}</button>`;
@@ -289,11 +323,11 @@ const svgList='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke
 const svgText='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17v3z"/><path d="M13.5 6.5l3 3"/><path d="M4 4h7"/></svg>';
 function viewMemo(){
   let h='';
-  const secs=[{title:'내 메모',sub:`${pname(S.me)}만 봄`,list:S.memos.filter(m=>ownerOf(m)===S.me)},{title:'공용 메모',sub:'둘 다 보고 체크',list:S.memos.filter(isShared)}];
+  const secs=[{k:'mine',title:'내 메모',sub:`${pname(S.me)}만 봄`,list:S.memos.filter(m=>ownerOf(m)===S.me)},{k:'shared',title:'공용 메모',sub:'둘 다 보고 체크',list:S.memos.filter(isShared)}];
   secs.forEach(sec=>{
     if(!sec.list.length)return;
     const list=sec.list.slice().sort((a,b)=>(memoDone(a)?1:0)-(memoDone(b)?1:0)||(b.order||b.ts||0)-(a.order||a.ts||0));
-    h+=`<div class="lgsec"><h3>${sec.title} <span class="lgsub">${esc(sec.sub)}</span></h3><span class="lgnum">${list.length}개${list.length>1?' <span class="lgsub">· 길게 눌러 순서 바꾸기</span>':''}</span></div><div class="lgmemolist">${list.map(memoRow).join('')}</div>`;
+    h+=`<details class="lgsecacc" data-sec="${sec.k}" ${S.secOpen[sec.k]!==false?'open':''}><summary><h3>${sec.title} <span class="lgsub">${esc(sec.sub)}</span></h3><span class="lgnum">${list.length}개${list.length>1?' <span class="lgsub">· 길게 눌러 순서 바꾸기</span>':''}</span></summary><div class="lgmemolist">${list.map(memoRow).join('')}</div></details>`;
   });
   if(!S.memos.length) h+=`<div class="lghint" style="text-align:center;margin:6px 0 10px">아래 [내 메모] [공용 메모]로 체크 리스트나 글을 써요.</div>`;
   h+=`<div class="lgbar"><div class="lgadd2"><button class="lgaddexp lgaddmine" data-newmemo="mine">${svgPlus}내 메모</button><button class="lgaddexp lgaddmine" data-newmemo="shared">${svgPlus}공용 메모</button></div></div>`;
@@ -307,16 +341,18 @@ function memoRow(m){
   const open=S.openMemos.has(m.id); const mdone=memoDone(m);
   let inner;
   if(list){
-    const li=it=>`<div class="lgli ${it.done?'lgdone':''}"><button type="button" class="lgbox" data-tgl-m="${esc(m.id)}|${esc(it.id)}" aria-label="완료">${svgCheck}</button><span class="lgtx">${linkify(it.text)}</span></div>`;
+    const li=it=>`<div class="lgli ${it.done?'lgdone':''}"><button type="button" class="lgbox" data-tgl-m="${esc(m.id)}|${esc(it.id)}" aria-label="완료">${svgCheck}</button>${it.img?`<span class="lgthumb" data-img="${esc(it.img)}">${imgTag(it.img,'lgimg lgimg-sm')}</span>`:''}<span class="lgtx">${mdLinks(it.text)}</span></div>`;
     if(!items.length) inner=`<div class="lghint" style="margin:0 0 6px">아직 항목이 없어요.</div>`;
     else if(priv) inner=items.map(li).join('');
     else{
       // 공용 체크리스트: 담당자별로 묶어서 (나 → 다른 멤버 → 담당 없음)
       const groups=[]; const order=[S.me,...S.people.map((p,i)=>i).filter(i=>i!==S.me),null];
       order.forEach(w=>{const sub=items.filter(it=>whoOf(it)===w); if(sub.length)groups.push({w,sub})});
-      inner=groups.map(g=>`<div class="lgwgrp"><div class="lgwgrp-h"><span class="lgwho ${g.w===null?'lgwho-none':g.w===S.me?'lgwho-me':''}">${g.w===null?'담당 없음':esc(pname(g.w))}</span><span class="lgsub">${g.sub.filter(i=>i.done).length}/${g.sub.length}</span></div>${g.sub.map(li).join('')}</div>`).join('');
+      if(groups.length===1&&groups[0].w===null) inner=groups[0].sub.map(li).join('');
+      else inner=groups.map(g=>`<div class="lgwgrp"><div class="lgwgrp-h"><span class="lgwho ${g.w===null?'lgwho-none':g.w===S.me?'lgwho-me':''}">${g.w===null?'담당 없음':esc(pname(g.w))}</span><span class="lgsub">${g.sub.filter(i=>i.done).length}/${g.sub.length}</span></div>${g.sub.map(li).join('')}</div>`).join('');
     }
-  }else inner=body.trim()?`<div class="lgmemobody">${linkify(body)}</div>`:`<div class="lghint" style="margin:0 0 6px">내용이 없어요.</div>`;
+  }else inner=body.trim()?`<div class="lgmemobody">${bodyHtml(body)}</div>`:`<div class="lghint" style="margin:0 0 6px">내용이 없어요.</div>`;
+  if(m.images&&m.images.length) inner+=`<div class="lgimgs">${m.images.map(id=>`<span class="lgthumb" data-img="${esc(id)}">${imgTag(id)}</span>`).join('')}</div>`;
   return `<details class="lgdetails lgmemoacc ${mdone?'lgmdone':''}" data-accm="${esc(m.id)}" ${open?'open':''}><summary><button type="button" class="lgbox lgbox-m" data-mdone="${esc(m.id)}" aria-pressed="${mdone}" aria-label="${list?'전체 체크':'확인 완료'}">${svgCheck}</button><span class="lgmic ${list?'lgmic-list':'lgmic-text'}" title="${list?'체크 리스트':'글'}">${list?svgList:svgText}</span><span class="lgmtitle">${priv?`<span class="lglock">${svgLock}</span>`:''}<span class="lgtrunc">${esc(title)}</span></span>${list&&items.length?`<span class="lgmprog ${done===items.length?'lgokt':''}">${done}/${items.length}</span>`:''}<span class="lgchevbtn" aria-hidden="true"></span></summary><div class="lgdetails-b lgmemoin">${inner}<div class="lgmemofoot"><span class="lgsub">${list?`${done}/${items.length} 완료`:''}</span><button type="button" class="lgaddbtn" data-memoedit="${esc(m.id)}">수정</button></div></div></details>`;
 }
 const memoDone=m=>{const items=m.items||[]; return (m.type!=='text'&&items.length)?items.every(i=>i.done):!!m.done};
@@ -325,17 +361,18 @@ const whoOf=it=>(it.who===null||it.who===undefined||it.who===''||!S.people[+it.w
 const nextWho=cur=>{const n=S.people.length; if(cur===null||cur===undefined)return 0; return cur+1>=n?null:cur+1};
 function openMemoEditor(m,opts={}){
   const isNew=!m; const me=S.me;
-  const d={id:m?.id,type:m?(m.type==='text'?'text':'list'):(opts.type||'list'),title:m?.title||'',owner:m?ownerOf(m):(opts.owner===undefined?null:opts.owner),body:m?.body||'',items:memoItems(m),addWho:null};
+  const d={id:m?.id,type:m?(m.type==='text'?'text':'list'):(opts.type||'list'),title:m?.title||'',owner:m?ownerOf(m):(opts.owner===undefined?null:opts.owner),body:m?.body||'',items:memoItems(m),images:(m&&Array.isArray(m.images))?m.images.slice():[],addWho:null};
   const shared=()=>d.owner===null;
   const whoBtn=(who,attr)=>`<button type="button" class="lgwho ${who===null?'lgwho-none':who===me?'lgwho-me':''}" ${attr}>${who===null?'담당':esc(pname(who))}</button>`;
   const itemsHtml=()=>d.items.length?d.items.map(it=>{const who=whoOf(it); return `<div class="lgli ${it.done?'lgdone':''}"><button type="button" class="lgbox" data-tgl="${esc(it.id)}" aria-label="완료">${svgCheck}</button><input type="text" class="lgtxin" data-txt="${esc(it.id)}" value="${esc(it.text)}" maxlength="200">${shared()?whoBtn(who,`data-who="${esc(it.id)}"`):''}<button type="button" class="lgx" data-del="${esc(it.id)}" aria-label="삭제">${svgX}</button></div>`}).join(''):`<div class="lghint" style="margin:2px 0 8px">아직 항목이 없어요. 아래에 쓰고 "입력"을 눌러요.</div>`;
   openSheet(`<h2><span id="mHead">${isNew?(shared()?'공용 메모 쓰기':'내 메모 쓰기'):(shared()?'공용 메모':'내 메모')}</span><button type="button" data-close>닫기</button></h2><form id="memoForm" autocomplete="off">
     ${isNew?`<div class="lgf"><div class="lgchips" id="mType"><button type="button" class="lgchip" data-t="list" aria-pressed="${d.type==='list'}">${svgList} 체크 리스트</button><button type="button" class="lgchip" data-t="text" aria-pressed="${d.type==='text'}">${svgText} 글</button></div></div>`:''}
     <div class="lgf"><input type="text" id="mTitle" placeholder="제목" value="${esc(d.title)}" maxlength="40"></div>
-    <div class="lgf" id="mBodyBox" ${d.type==='text'?'':'hidden'}><textarea id="mBody" rows="7" placeholder="여기에 그냥 써요. 줄바꿈 그대로 남아요.">${esc(d.body)}</textarea></div>
+    <div class="lgf" id="mBodyBox" ${d.type==='text'?'':'hidden'}><textarea id="mBody" rows="7" placeholder="여기에 그냥 써요. 줄바꿈 그대로 남아요.">${esc(d.body)}</textarea><div class="lghint">"## 소제목", "- 항목", "[이름](주소)" 를 쓰면 제목·목록·링크로 보여요.</div></div>
     <div class="lgf" id="mListBox" ${d.type==='list'?'':'hidden'}><div id="mItems">${itemsHtml()}</div>
       <div class="lgaddli"><span class="lgplus">${svgPlus}</span><input type="text" id="mAdd" placeholder="항목 추가" maxlength="200"><span id="mAddWho">${shared()?whoBtn(null,'id="mAddWhoBtn"'):''}</span><button type="button" class="lgaddbtn" id="mAddBtn">입력</button></div>
       <div class="lghint" id="mItemsHint">${isNew?'':'체크·추가·삭제는 바로 저장돼요. 글자를 고치면 칸을 벗어날 때 저장돼요.'}</div></div>
+    <div class="lgf"><label>사진</label><div class="lgimgs lgimgs-edit" id="mImgs"></div><button type="button" class="lglink" id="mAddImg">+ 사진 추가</button></div>
     <div class="lgf"><label>누가 보나</label><div class="lgchips" id="mOwner"><button type="button" class="lgchip" data-o="mine" aria-pressed="${!shared()}">개인 · 나만</button><button type="button" class="lgchip" data-o="shared" aria-pressed="${shared()}">공용 · 모두</button></div></div>
     <div class="lgactions">${isNew?'':'<button type="button" class="lgbtn lgdanger" id="mDel">삭제</button>'}<button type="submit" class="lgbtn lgprimary">${isNew?'저장':'저장하고 닫기'}</button></div></form>`);
   const sh=q('.lgsheet',ov); const g=sel=>q(sel,sh);
@@ -352,10 +389,12 @@ function openMemoEditor(m,opts={}){
   g('#mAddBtn').onclick=addItem; g('#mAdd').onkeydown=ev=>{if(ev.key==='Enter'){ev.preventDefault();addItem()}};
   qa('#mType .lgchip',sh).forEach(b=>b.onclick=()=>{d.type=b.dataset.t;qa('#mType .lgchip',sh).forEach(x=>x.setAttribute('aria-pressed',x===b));g('#mBodyBox').hidden=d.type!=='text';g('#mListBox').hidden=d.type!=='list';});
   qa('#mOwner .lgchip',sh).forEach(b=>b.onclick=()=>{d.owner=b.dataset.o==='shared'?null:me;qa('#mOwner .lgchip',sh).forEach(x=>x.setAttribute('aria-pressed',x===b));if(isNew)g('#mHead').textContent=shared()?'공용 메모 쓰기':'내 메모 쓰기';paintItems();});
+  const paintImgs=()=>{ g('#mImgs').innerHTML=d.images.map(id=>`<span class="lgthumb" data-rm="${esc(id)}">${imgTag(id)}<b>×</b></span>`).join(''); fillImages(g('#mImgs')); qa('#mImgs [data-rm]',sh).forEach(t=>t.onclick=()=>{d.images=d.images.filter(x=>x!==t.dataset.rm); paintImgs();}); };
+  paintImgs(); g('#mAddImg').onclick=async()=>{ const ids=await pickImages(); if(ids.length){ d.images=[...d.images,...ids]; paintImgs(); toast(`사진 ${ids.length}장 추가`);} };
   wireItems();
   g('#memoForm').onsubmit=async ev=>{ev.preventDefault();
     const pending=g('#mAdd').value.trim(); if(pending&&d.type==='list')addItem();
-    const data={type:d.type,owner:d.owner,title:g('#mTitle').value.trim(),body:d.type==='text'?g('#mBody').value:'',items:d.type==='list'?d.items:[]};
+    const data={type:d.type,owner:d.owner,title:g('#mTitle').value.trim(),body:d.type==='text'?g('#mBody').value:'',items:d.type==='list'?d.items:[],images:d.images};
     if(isNew&&!data.title&&!data.body.trim()&&!data.items.length){toast('내용을 써주세요');return}
     closeSheet();
     if(isNew){const now=Date.now(); await write([{op:'set',col:'memos',id:uid(),data:{...data,ts:now,order:now}}],'저장했어요')}
@@ -427,6 +466,8 @@ function bind(c){
   qa('[data-mdone]',c).forEach(b=>{b.onclick=ev=>{ev.preventDefault();ev.stopPropagation();const m=S.memos.find(x=>x.id===b.dataset.mdone);if(!m)return;const items=memoItems(m);const nowDone=memoDone(m);
     if(m.type!=='text'&&items.length){const next=items.map(it=>({...it,done:!nowDone,doneBy:!nowDone?S.me:null}));write([{op:'update',col:'memos',id:m.id,data:{items:next,done:!nowDone}}],!nowDone?'전부 체크했어요':'전부 해제했어요')}
     else write([{op:'update',col:'memos',id:m.id,data:{done:!nowDone}}],!nowDone?'확인 완료':'다시 올렸어요')}});
+  qa('details.lgsecacc',c).forEach(d=>d.ontoggle=()=>{S.secOpen[d.dataset.sec]=d.open; ls.set('tl_sec',JSON.stringify(S.secOpen))});
+  qa('.lgthumb',c).forEach(t=>t.onclick=ev=>{ev.stopPropagation(); const im=t.querySelector('img'); if(im&&im.src)openImg(im.src)});
   qa('details[data-accm] > summary',c).forEach(sm=>{sm.onpointerdown=ev=>pressToDrag(ev,sm); sm.oncontextmenu=ev=>ev.preventDefault(); sm.onclick=ev=>{if(sm.dataset.suppress){ev.preventDefault();ev.stopPropagation()}}});
   qa('[data-accm]',c).forEach(d=>d.ontoggle=()=>{if(d.open)S.openMemos.add(d.dataset.accm);else S.openMemos.delete(d.dataset.accm)});
   qa('[data-tgl-m]',c).forEach(b=>b.onclick=()=>{const [mid,iid]=b.dataset.tglM.split('|');const m=S.memos.find(x=>x.id===mid);if(!m)return;const items=memoItems(m).map(it=>it.id===iid?{...it,done:!it.done,doneBy:!it.done?S.me:null}:it);write([{op:'update',col:'memos',id:mid,data:{items}}])});
@@ -601,7 +642,8 @@ function mount(el,memoEl){
   clearInterval(pollT); pollT=setInterval(()=>{if(document.visibilityState==='visible'&&S.screen==='main'&&!S.saving&&visible())load()},POLL_MS);
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&S.screen==='main')load()});
 }
-window.Ledger={mount,state:S,reload:load,openExpense,openSettle,openLogin,API,api,openSheet,closeSheet,toast,arm};
+function scrollToMemo(id){ const d=q(`details[data-accm="${id}"]`); if(!d)return; const sec=d.closest('details.lgsecacc'); if(sec&&!sec.open){sec.open=true;} d.open=true; S.openMemos.add(id); setTimeout(()=>d.scrollIntoView({behavior:'smooth',block:'start'}),50); }
+window.Ledger={mount,state:S,reload:load,openExpense,openSettle,openLogin,API,api,openSheet,closeSheet,toast,arm,pickImages,imgSrc,fillImages,imgTag,scrollToMemo,bodyHtml};
 const auto=document.getElementById('ledger-root');
 if(auto){ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>mount(auto)); else mount(auto); }
 })();
