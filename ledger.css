@@ -750,3 +750,10 @@ body.body-edit .ev,body.body-edit .card{-webkit-user-select:none;user-select:non
 .lg form.lgviewmode .lgmore > summary{pointer-events:none}
 .lg form.lgviewmode .lgmore > summary::after{display:none}
 .lg form.lgviewmode .lgvhide{display:none}
+/* 제목 밑 설명(메모): 품목 글씨 크기 정도로 작게 */
+.lg .lgtitlef{display:flex;flex-direction:column;gap:4px}
+.lg .lgf input.lgdesc[type=text]{height:32px;font-size:13.5px;padding:0 12px;border-radius:9px;color:var(--fg)}
+.lg .lgf input.lgdesc::placeholder{color:var(--muted)}
+.lg form.lgviewmode .lgf input.lgdesc[type=text]{padding-left:0;height:auto;line-height:1.4;color:var(--muted)}
+@media (min-width:900px){ .lg .lgf input.lgdesc[type=text]{height:36px;font-size:14.5px} }
+

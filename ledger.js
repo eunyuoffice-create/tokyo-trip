@@ -771,11 +771,11 @@ function openExpense(e,opts={}){
   const newImgs=new Set(opts.newImg?[opts.newImg]:[]); let saved=false;   // 이 폼에서 새로 올린 영수증 사진: 저장 안 하고 닫으면 지움
   let itEdit=false;   // 영수증 품목: 보기(기본) ↔ 수정
   let viewing=!isNew&&!opts.edit;   // 기존 지출은 보기로 열고, "수정"을 누르면 같은 화면에서 입력 가능
-  const moreOpen=!isNew&&(!!d.custom||(!d.priv&&d.parts.length!==n)||!!d.memo||d.settled||(Array.isArray(e?.links)&&e.links.length>0));
+  const moreOpen=!isNew&&(!!d.custom||(!d.priv&&d.parts.length!==n)||d.settled||(Array.isArray(e?.links)&&e.links.length>0));
   const dayShort=k=>{const x=dayOf(k);return k===today?'오늘':(x.d==='pre'?'출발 전':`D${x.n}`)};
   openSheet(`<h2><span id="fHead">${isNew?(d.priv?'내 지출':'공용 지출'):'지출'}</span><span class="lgh2btns">${isNew?'':'<button type="button" class="lgh2edit" id="fEditBtn">수정</button>'}<button type="button" data-close>닫기</button></span></h2><form id="expForm" class="${viewing?'lgviewmode':''}">
     <div class="lgf"><label>금액 <span class="lgreq" aria-label="필수">*</span></label><div class="lgamount"><input type="text" inputmode="decimal" id="fAmt" placeholder="0" value="${d.amount?esc(d.amount):''}" aria-label="금액"><div class="lgseg" id="fCur"><button type="button" data-c="JPY" aria-pressed="${d.cur==='JPY'}">¥</button><button type="button" data-c="KRW" aria-pressed="${d.cur==='KRW'}">₩</button></div></div></div>
-    <div class="lgf"><input type="text" id="fTitle" placeholder="무엇에 썼어요? 예: 모츠나베, 리무진 버스" value="${esc(d.title)}" maxlength="80" aria-label="내용"></div>
+    <div class="lgf lgtitlef"><input type="text" id="fTitle" placeholder="무엇에 썼어요? 예: 모츠나베, 리무진 버스" value="${esc(d.title)}" maxlength="80" aria-label="내용"><input type="text" id="fMemo" class="lgdesc" placeholder="설명 (선택) · 누구 거 샀는지, 메모 등" value="${esc(d.memo)}" maxlength="120" aria-label="설명"></div>
     <div id="fRc"></div>
     <div class="lgf" id="fPayerBox" ${d.priv?'hidden':''}><label>누가 냈어요?</label><div class="lgbig2" id="fPayer">${S.people.map((p,i)=>`<button type="button" data-i="${i}" aria-pressed="${d.payer===i}">${esc(pname(i))}${i===S.me?' <small>나</small>':''}</button>`).join('')}</div><div class="lghint" id="fPartsHint"></div></div>
     <details class="lgmore" id="fMore" ${moreOpen||viewing?'open':''}><summary><span>자세히</span><span class="lgsub" id="fMoreSum"></span></summary>
@@ -787,13 +787,12 @@ function openExpense(e,opts={}){
         <div class="lgf"><div class="lgtoggle"><span>금액 직접 나누기</span><input type="checkbox" id="fCustom" ${d.custom?'checked':''}></div><div id="fCustomBox" ${d.custom?'':'hidden'}><div class="lgpamts" id="fCustomAmts"></div><div class="lghint" id="fCustomHint"></div></div></div>
         ${isNew?'':`<div class="lgf"><div class="lgtoggle"><span>이 건은 정산 완료 <span class="lgsub">잔액에서 뺌</span></span><input type="checkbox" id="fSettled" ${d.settled?'checked':''}></div></div>`}
       </div>
-      <div class="lgf"><label>메모</label><input type="text" id="fMemo" placeholder="영수증, 누구 거 샀는지 등" value="${esc(d.memo)}" maxlength="120"></div>
     <div class="lgf"><label>링크 <span class="lgsub">예약 페이지, 영수증 사진 주소 등</span></label><div class="lgclinks" id="fLinks">${(Array.isArray(e?.links)?e.links:[]).map(x=>expLinkRow(x.l,x.u)).join('')}</div><button type="button" class="lglink" id="fAddLink">+ 링크 추가</button></div>
     </details>
     <div class="lgactions">${isNew?'':'<button type="button" class="lgbtn lgprimary lgviewonly" id="fEditBig">수정하기</button><button type="button" class="lgbtn lgdanger lgeditonly" id="fDel">삭제</button>'}<button type="submit" class="lgbtn lgprimary lgeditonly" id="fSave">${isNew?'저장':'수정 저장'}</button></div></form>`);
   const sh=q('.lgsheet',ov); const g=s=>q(s,sh);
   const amt=()=>parseNum(g('#fAmt').value);
-  const sum=()=>{const bits=[dayShort(d.day),d.cat]; if(!d.priv){ if(d.parts.length!==n)bits.push(d.parts.map(pname).join('·')+' 몫'); if(g('#fCustom').checked)bits.push('직접 나눔'); } {const sel=d.items.filter(x=>x.sel).length; if(d.items.length)bits.push(sel===d.items.length?`품목 ${sel}`:`품목 ${sel}/${d.items.length}`);} if(d.memo)bits.push('메모'); const nl=g('#fLinks')?g('#fLinks').querySelectorAll('.lgclink').length:0; if(nl)bits.push(`링크 ${nl}`); g('#fMoreSum').textContent=bits.join(' · ')};
+  const sum=()=>{const bits=[dayShort(d.day),d.cat]; if(!d.priv){ if(d.parts.length!==n)bits.push(d.parts.map(pname).join('·')+' 몫'); if(g('#fCustom').checked)bits.push('직접 나눔'); } {const sel=d.items.filter(x=>x.sel).length; if(d.items.length)bits.push(sel===d.items.length?`품목 ${sel}`:`품목 ${sel}/${d.items.length}`);}  const nl=g('#fLinks')?g('#fLinks').querySelectorAll('.lgclink').length:0; if(nl)bits.push(`링크 ${nl}`); g('#fMoreSum').textContent=bits.join(' · ')};
   const partsHint=()=>{const a=amt(),k=d.parts.length; const el=g('#fPartsHint'); if(d.priv){el.textContent='';return} el.textContent=k===0?'나눌 사람을 "자세히"에서 골라주세요':k===1?(d.parts[0]===d.payer?`${pname(d.payer)} 혼자 몫 — 나눔 없음`:`${pname(d.parts[0])} 몫 전액 → ${pname(d.payer)}에게 ${fmt(a,d.cur)}`):(a>0?`${k}명이 1인 ${fmt(a/k,d.cur)}씩`:`${k}명이 똑같이 나눠요`)};
   const customHint=()=>{if(!g('#fCustom').checked)return;const s=d.parts.reduce((t,i)=>t+(d.custom&&+d.custom[i]||0),0);const rest=amt()-s;const el=g('#fCustomHint');el.className='lghint'+(Math.abs(rest)>0.5?' bad':'');el.textContent=Math.abs(rest)>0.5?`합계 ${fmt(s,d.cur)} · 남는 ${fmt(rest,d.cur)}은 ${pname(d.parts[0]??d.payer)}에게 붙어요`:'합계가 딱 맞아요'};
   const customBox=()=>{const box=g('#fCustomAmts'); box.innerHTML=d.parts.map(i=>`<label>${esc(pname(i))}<input type="text" inputmode="decimal" data-ci="${i}" value="${d.custom&&d.custom[i]?esc(d.custom[i]):''}" placeholder="0"></label>`).join(''); box.querySelectorAll('input').forEach(inp=>inp.oninput=()=>{d.custom=d.custom||{};d.custom[inp.dataset.ci]=parseNum(inp.value);customHint()}); customHint()};
@@ -904,7 +903,7 @@ function openExpense(e,opts={}){
     f.querySelectorAll('input[type=text],input[type=number],textarea').forEach(i=>{ if(i.closest('#fItems'))return; i.readOnly=v; i.tabIndex=v?-1:0; });
     f.querySelectorAll('input[type=checkbox]').forEach(i=>{ if(i.closest('#fItems'))return; i.disabled=v; });
     // 보기에서는 비어 있는 칸(메모·링크·꺼진 토글)은 숨김
-    const memoF=g('#fMemo')&&g('#fMemo').closest('.lgf'); if(memoF)memoF.classList.toggle('lgvhide',v&&!g('#fMemo').value.trim());
+    const memoI=g('#fMemo'); if(memoI)memoI.classList.toggle('lgvhide',v&&!memoI.value.trim());
     const linkF=g('#fLinks')&&g('#fLinks').closest('.lgf'); if(linkF)linkF.classList.toggle('lgvhide',v&&!g('#fLinks').querySelector('.lgclink'));
     f.querySelectorAll('.lgtoggle').forEach(t=>{ const i=t.querySelector('input[type=checkbox]'); const box=t.closest('.lgf'); if(box)box.classList.toggle('lgvhide',v&&i&&!i.checked); });
     if(!isNew){ g('#fHead').textContent=v?'지출':'지출 수정'; const eb=g('#fEditBtn'); if(eb)eb.hidden=!v; }
