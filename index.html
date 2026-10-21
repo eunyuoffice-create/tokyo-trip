@@ -79,6 +79,11 @@ main{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px
 .wx-at:empty{display:none}
 @media (min-width:900px){.wx{flex:1 1 auto;margin-inline:0;padding-inline:0}.wx-day{height:36px;font-size:13.5px;padding:0 12px}.wx-note{font-size:12.5px}}
 .btn.tool{background:var(--surface);border-color:var(--line);font-weight:600;padding:5px 10px;font-size:11.5px;color:var(--muted)}
+/* 상단 도구 버튼: 한 줄 고정, 넘치면 가로 스크롤 */
+.tools{display:flex;gap:4px;flex:1 1 100%;min-width:0;overflow-x:auto;scrollbar-width:none;margin-inline:-16px;padding-inline:16px}
+.tools::-webkit-scrollbar{display:none}
+.tools .btn.tool{flex:none;white-space:nowrap;padding:4px 7px;font-size:11px;letter-spacing:-.02em}
+@media (min-width:900px){.tools{flex:0 0 auto;margin-inline:0;padding-inline:0}.tools .btn.tool{padding:5px 10px;font-size:12px}}
 #infobox{position:fixed;inset:0;z-index:60}
 #infobox[hidden]{display:none}
 #infobox .ib-scrim{position:absolute;inset:0;background:rgba(23,28,40,.45)}
@@ -971,7 +976,8 @@ function routeHtml(r){
 function renderPlan(){
  const box=document.getElementById('p-plan');
  const days=getDays(); const day=days.find(d=>d.date===state.day)||days[0];
- box.innerHTML=`<div class="toolrow"><button type="button" class="btn tool" id="outfit-btn">기온별 옷차림</button><button type="button" class="btn tool" id="restrict-btn">기내 반입 제한물품</button><button type="button" class="btn tool" id="kcustoms-btn">한국 반입 주의</button><button type="button" class="btn tool" id="esim-btn">eSIM 설치</button><div class="wx-at" id="wx-at"></div><div class="wx" id="wx-strip"></div></div><div class="sec-h"><h2>${day.n}일차 · ${day.date.slice(5).replace('-','월 ')}일 ${day.w}요일</h2><span class="cnt">${day.items.length}개</span></div><div class="tl"></div>`;
+ box.innerHTML=`<div class="toolrow"><div class="tools" id="tools"><button type="button" class="btn tool" id="outfit-btn">기온별 옷차림</button><button type="button" class="btn tool" id="restrict-btn">기내 반입 제한물품</button><button type="button" class="btn tool" id="kcustoms-btn">한국 반입 주의</button><button type="button" class="btn tool" id="esim-btn">eSIM 설치</button></div><div class="wx-at" id="wx-at"></div><div class="wx" id="wx-strip"></div></div><div class="sec-h"><h2>${day.n}일차 · ${day.date.slice(5).replace('-','월 ')}일 ${day.w}요일</h2><span class="cnt">${day.items.length}개</span></div><div class="tl"></div>`;
+ wireChipScroll(box.querySelector('#tools'));
  box.querySelector('#outfit-btn').onclick=()=>openLightbox('img/outfit.png','기온별 옷차림');
  box.querySelector('#restrict-btn').onclick=()=>openInfo('기내 반입 제한물품',RESTRICTED_HTML);
  box.querySelector('#kcustoms-btn').onclick=()=>{openInfo('일본에서 사 올 때 주의 (한국 반입)',kcHtml()); bindKc(document.getElementById('infobox'));};
