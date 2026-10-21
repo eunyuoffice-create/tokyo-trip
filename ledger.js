@@ -774,8 +774,9 @@ function openExpense(e,opts={}){
   const moreOpen=!isNew&&(!!d.custom||(!d.priv&&d.parts.length!==n)||d.settled||(Array.isArray(e?.links)&&e.links.length>0));
   const dayShort=k=>{const x=dayOf(k);return k===today?'오늘':(x.d==='pre'?'출발 전':`D${x.n}`)};
   openSheet(`<h2><span id="fHead">${isNew?(d.priv?'내 지출':'공용 지출'):'지출'}</span><span class="lgh2btns">${isNew?'':'<button type="button" class="lgh2edit" id="fEditBtn">수정</button>'}<button type="button" data-close>닫기</button></span></h2><form id="expForm" class="${viewing?'lgviewmode':''}">
-    <div class="lgf"><label>금액 <span class="lgreq" aria-label="필수">*</span></label><div class="lgamount"><input type="text" inputmode="decimal" id="fAmt" placeholder="0" value="${d.amount?esc(d.amount):''}" aria-label="금액"><div class="lgseg" id="fCur"><button type="button" data-c="JPY" aria-pressed="${d.cur==='JPY'}">¥</button><button type="button" data-c="KRW" aria-pressed="${d.cur==='KRW'}">₩</button></div></div></div>
+    <div class="lgf"><label>금액 <span class="lgreq" aria-label="필수">*</span></label><div class="lgamtview" id="fAmtView"></div><div class="lgamount"><input type="text" inputmode="decimal" id="fAmt" placeholder="0" value="${d.amount?esc(d.amount):''}" aria-label="금액"><div class="lgseg" id="fCur"><button type="button" data-c="JPY" aria-pressed="${d.cur==='JPY'}">¥</button><button type="button" data-c="KRW" aria-pressed="${d.cur==='KRW'}">₩</button></div></div></div>
     <div class="lgf lgtitlef"><input type="text" id="fTitle" placeholder="무엇에 썼어요? 예: 모츠나베, 리무진 버스" value="${esc(d.title)}" maxlength="80" aria-label="내용"><input type="text" id="fMemo" class="lgdesc" placeholder="설명 (선택) · 누구 거 샀는지, 메모 등" value="${esc(d.memo)}" maxlength="120" aria-label="설명"></div>
+    <div class="lgvsum" id="fVSum"></div>
     <div id="fRc"></div>
     <div class="lgf" id="fPayerBox" ${d.priv?'hidden':''}><label>누가 냈어요?</label><div class="lgbig2" id="fPayer">${S.people.map((p,i)=>`<button type="button" data-i="${i}" aria-pressed="${d.payer===i}">${esc(pname(i))}${i===S.me?' <small>나</small>':''}</button>`).join('')}</div><div class="lghint" id="fPartsHint"></div></div>
     <details class="lgmore" id="fMore" ${moreOpen||viewing?'open':''}><summary><span>자세히</span><span class="lgsub" id="fMoreSum"></span></summary>
@@ -906,6 +907,17 @@ function openExpense(e,opts={}){
     const memoI=g('#fMemo'); if(memoI)memoI.classList.toggle('lgvhide',v&&!memoI.value.trim());
     const linkF=g('#fLinks')&&g('#fLinks').closest('.lgf'); if(linkF)linkF.classList.toggle('lgvhide',v&&!g('#fLinks').querySelector('.lgclink'));
     f.querySelectorAll('.lgtoggle').forEach(t=>{ const i=t.querySelector('input[type=checkbox]'); const box=t.closest('.lgf'); if(box)box.classList.toggle('lgvhide',v&&i&&!i.checked); });
+    if(v){ const av=g('#fAmtView'); if(av)av.textContent=fmt(amt(),d.cur);
+      // 보기 요약: 한 줄에 하나씩 (낸 사람 · 나눔 · 날짜 · 카테고리 · 정산 · 링크)
+      const a=amt(), rows=[];
+      if(d.priv) rows.push(['구분','개인 지출 · 나만 봄']);
+      else{ rows.push(['낸 사람',pname(d.payer)+(d.payer===S.me?' (나)':'')]);
+        const cu=g('#fCustom')&&g('#fCustom').checked&&d.custom;
+        rows.push(['나눔',cu?d.parts.map(i=>`${pname(i)} ${fmt(+d.custom[i]||0,d.cur)}`).join(' · '):(d.parts.length===n?`${n}명 똑같이 · 1인 ${fmt(a/(d.parts.length||1),d.cur)}`:`${d.parts.map(pname).join('·')} 몫 · 1인 ${fmt(a/(d.parts.length||1),d.cur)}`)]);
+        if(d.settled) rows.push(['정산','이 건은 정산 완료']); }
+      rows.push(['날짜',dayLabel(d.day)]); rows.push(['카테고리',d.cat]);
+      const ln=readExpLinks(sh).filter(x=>x.u);
+      g('#fVSum').innerHTML=`<dl class="lgkv2">${rows.map(([k,v2])=>`<dt>${esc(k)}</dt><dd>${esc(v2)}</dd>`).join('')}${ln.length?`<dt>링크</dt><dd>${ln.map(x=>`<a href="${esc(x.u)}" target="_blank" rel="noopener" class="lglinkx">${esc(x.l||x.u.replace(/^https?:\/\//,'').slice(0,30))} ↗</a>`).join(' ')}</dd>`:''}</dl>`; }
     if(!isNew){ g('#fHead').textContent=v?'지출':'지출 수정'; const eb=g('#fEditBtn'); if(eb)eb.hidden=!v; }
     if(!v){ const m=g('#fMore'); if(m&&!moreOpen)m.open=false; } };
   if(!isNew){ const go=()=>{ setView(false); setTimeout(()=>g('#fAmt').focus(),50); }; g('#fEditBtn').onclick=go; g('#fEditBig').onclick=go; setView(viewing); }
