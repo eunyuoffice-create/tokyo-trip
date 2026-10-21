@@ -580,6 +580,10 @@ body.body-edit .ev,body.body-edit .card{-webkit-user-select:none;user-select:non
 
 .lg .lgem{font-weight:700}
 .lg .lgred{color:var(--accent);font-weight:600}
+/* 체크 항목 설명 안의 **굵게** 는 제목(b 블록)과 달리 줄 안에 그대로 둔다 (라벨: 어디서 · 다른 곳 · 메모) */
+.lg .lginfo-b .cl label span b.lgem{display:inline;margin:0;color:var(--fg)}
+.lg .lginfo-b .cl label span .lgred{display:inline}
+.lg .lginfo-b .cl input:checked + span b.lgem,.lg .lginfo-b .cl input:checked + .lgthumb + span b.lgem{color:var(--muted)}
 /* 정보 글쓰기 폼: 단락 요소 압축 */
 .lg .lgblk{padding:6px 8px 8px;gap:4px;border-radius:10px}
 .lg .lgblk .ckind{min-height:22px} .lg .lgblk .ckind .lgsub{font-size:11px} .lg .lgblk .ckind .lgx{width:22px;height:22px;font-size:15px}
