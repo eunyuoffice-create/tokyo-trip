@@ -275,6 +275,13 @@ main{padding-block:16px calc(var(--tab-h) + env(safe-area-inset-bottom,0px) + 24
 .ev::before{content:"";position:absolute;left:-1px;top:19px;width:12px;height:12px;border-radius:50%;background:var(--surface);border:3px solid var(--accent);box-sizing:border-box;transform:translateX(-50%);margin-left:11px}
 .ev .t{font-size:15px;font-weight:700;color:var(--fg);letter-spacing:-.01em;padding-top:1px}
 .ev .t small{font-size:11px;color:var(--muted);margin-top:2px}
+/* 모바일: 시간은 카드 맨 위 한 줄(10:30 ~11:50), 본문은 전체 폭. PC는 왼쪽 시간 칸 그대로 */
+@media (max-width:699px){
+ .ev{grid-template-columns:1fr;gap:4px}
+ .ev .t{display:flex;align-items:baseline;gap:6px;padding-top:0;line-height:1.2}
+ .ev .t small{display:inline;margin-top:0;font-size:12px}
+ .ev::before{top:15px}
+}
 .ev .place{font-size:12.5px;gap:6px}
 .ev .title{font-size:16.5px;font-weight:700;margin-top:2px;line-height:1.35;letter-spacing:-.01em}
 .ev.big .title{font-size:17.5px}
