@@ -770,14 +770,15 @@ function openExpense(e,opts={}){
   if(d.autoSum===undefined||d.autoSum===null) d.autoSum=!d.items.length||Math.round(autoCalc(d.items,d.rcTotal))===Math.round(+d.amount||0);   // 예전 지출: 금액이 품목 합계와 같으면 자동 합산으로 간주
   const newImgs=new Set(opts.newImg?[opts.newImg]:[]); let saved=false;   // 이 폼에서 새로 올린 영수증 사진: 저장 안 하고 닫으면 지움
   let itEdit=false;   // 영수증 품목: 보기(기본) ↔ 수정
+  let viewing=!isNew&&!opts.edit;   // 기존 지출은 보기로 열고, "수정"을 누르면 같은 화면에서 입력 가능
   const moreOpen=!isNew&&(!!d.custom||(!d.priv&&d.parts.length!==n)||!!d.memo||d.settled||(Array.isArray(e?.links)&&e.links.length>0));
   const dayShort=k=>{const x=dayOf(k);return k===today?'오늘':(x.d==='pre'?'출발 전':`D${x.n}`)};
-  openSheet(`<h2><span id="fHead">${isNew?(d.priv?'내 지출':'공용 지출'):'지출 수정'}</span><button type="button" data-close>닫기</button></h2><form id="expForm">
+  openSheet(`<h2><span id="fHead">${isNew?(d.priv?'내 지출':'공용 지출'):'지출'}</span><span class="lgh2btns">${isNew?'':'<button type="button" class="lgh2edit" id="fEditBtn">수정</button>'}<button type="button" data-close>닫기</button></span></h2><form id="expForm" class="${viewing?'lgviewmode':''}">
     <div class="lgf"><label>금액 <span class="lgreq" aria-label="필수">*</span></label><div class="lgamount"><input type="text" inputmode="decimal" id="fAmt" placeholder="0" value="${d.amount?esc(d.amount):''}" aria-label="금액"><div class="lgseg" id="fCur"><button type="button" data-c="JPY" aria-pressed="${d.cur==='JPY'}">¥</button><button type="button" data-c="KRW" aria-pressed="${d.cur==='KRW'}">₩</button></div></div></div>
     <div class="lgf"><input type="text" id="fTitle" placeholder="무엇에 썼어요? 예: 모츠나베, 리무진 버스" value="${esc(d.title)}" maxlength="80" aria-label="내용"></div>
     <div id="fRc"></div>
     <div class="lgf" id="fPayerBox" ${d.priv?'hidden':''}><label>누가 냈어요?</label><div class="lgbig2" id="fPayer">${S.people.map((p,i)=>`<button type="button" data-i="${i}" aria-pressed="${d.payer===i}">${esc(pname(i))}${i===S.me?' <small>나</small>':''}</button>`).join('')}</div><div class="lghint" id="fPartsHint"></div></div>
-    <details class="lgmore" id="fMore" ${moreOpen?'open':''}><summary><span>자세히</span><span class="lgsub" id="fMoreSum"></span></summary>
+    <details class="lgmore" id="fMore" ${moreOpen||viewing?'open':''}><summary><span>자세히</span><span class="lgsub" id="fMoreSum"></span></summary>
       <div class="lgf"><label>구분</label><div class="lgchips" id="fScope"><button type="button" class="lgchip" data-s="mine" aria-pressed="${d.priv}">개인 · 나만 봄</button><button type="button" class="lgchip" data-s="shared" aria-pressed="${!d.priv}">공용 · 같이 나눔</button></div></div>
       <div class="lgf"><label>날짜</label><div class="lgchips" id="fDay">${ALLDAYS.map(x=>`<button type="button" class="lgchip lgsm" data-d="${x.d}" aria-pressed="${d.day===x.d}">${x.d==='pre'?'출발 전':`D${x.n} ${x.s} ${x.w}`}</button>`).join('')}</div></div>
       <div class="lgf"><label>카테고리</label><div class="lgchips" id="fCat">${CATS.map(c=>`<button type="button" class="lgchip lgsm" data-c="${c}" aria-pressed="${d.cat===c}">${c}</button>`).join('')}</div></div>
@@ -789,7 +790,7 @@ function openExpense(e,opts={}){
       <div class="lgf"><label>메모</label><input type="text" id="fMemo" placeholder="영수증, 누구 거 샀는지 등" value="${esc(d.memo)}" maxlength="120"></div>
     <div class="lgf"><label>링크 <span class="lgsub">예약 페이지, 영수증 사진 주소 등</span></label><div class="lgclinks" id="fLinks">${(Array.isArray(e?.links)?e.links:[]).map(x=>expLinkRow(x.l,x.u)).join('')}</div><button type="button" class="lglink" id="fAddLink">+ 링크 추가</button></div>
     </details>
-    <div class="lgactions">${isNew?'':'<button type="button" class="lgbtn lgdanger" id="fDel">삭제</button>'}<button type="submit" class="lgbtn lgprimary" id="fSave">${isNew?'저장':'수정 저장'}</button></div></form>`);
+    <div class="lgactions">${isNew?'':'<button type="button" class="lgbtn lgprimary lgviewonly" id="fEditBig">수정하기</button><button type="button" class="lgbtn lgdanger lgeditonly" id="fDel">삭제</button>'}<button type="submit" class="lgbtn lgprimary lgeditonly" id="fSave">${isNew?'저장':'수정 저장'}</button></div></form>`);
   const sh=q('.lgsheet',ov); const g=s=>q(s,sh);
   const amt=()=>parseNum(g('#fAmt').value);
   const sum=()=>{const bits=[dayShort(d.day),d.cat]; if(!d.priv){ if(d.parts.length!==n)bits.push(d.parts.map(pname).join('·')+' 몫'); if(g('#fCustom').checked)bits.push('직접 나눔'); } {const sel=d.items.filter(x=>x.sel).length; if(d.items.length)bits.push(sel===d.items.length?`품목 ${sel}`:`품목 ${sel}/${d.items.length}`);} if(d.memo)bits.push('메모'); const nl=g('#fLinks')?g('#fLinks').querySelectorAll('.lgclink').length:0; if(nl)bits.push(`링크 ${nl}`); g('#fMoreSum').textContent=bits.join(' · ')};
@@ -898,6 +899,17 @@ function openExpense(e,opts={}){
     await write([{op:'set',col:'expenses',id:d.id||uid(),data:body}],isNew?'저장했어요':'수정했어요');
   };
   arm(g('#fDel'),async()=>{saved=true;closeSheet(); newImgs.forEach(dropImage); if(e&&e.receipt)dropImage(e.receipt); await write([{op:'delete',col:'expenses',id:d.id}],'삭제했어요')});
+  /* 보기 ↔ 수정: 같은 화면, 보기일 땐 입력칸 잠금·고르지 않은 선택지 숨김·사진/추가 버튼 숨김 */
+  const setView=v=>{ viewing=v; const f=g('#expForm'); f.classList.toggle('lgviewmode',v);
+    f.querySelectorAll('input[type=text],input[type=number],textarea').forEach(i=>{ if(i.closest('#fItems'))return; i.readOnly=v; i.tabIndex=v?-1:0; });
+    f.querySelectorAll('input[type=checkbox]').forEach(i=>{ if(i.closest('#fItems'))return; i.disabled=v; });
+    // 보기에서는 비어 있는 칸(메모·링크·꺼진 토글)은 숨김
+    const memoF=g('#fMemo')&&g('#fMemo').closest('.lgf'); if(memoF)memoF.classList.toggle('lgvhide',v&&!g('#fMemo').value.trim());
+    const linkF=g('#fLinks')&&g('#fLinks').closest('.lgf'); if(linkF)linkF.classList.toggle('lgvhide',v&&!g('#fLinks').querySelector('.lgclink'));
+    f.querySelectorAll('.lgtoggle').forEach(t=>{ const i=t.querySelector('input[type=checkbox]'); const box=t.closest('.lgf'); if(box)box.classList.toggle('lgvhide',v&&i&&!i.checked); });
+    if(!isNew){ g('#fHead').textContent=v?'지출':'지출 수정'; const eb=g('#fEditBtn'); if(eb)eb.hidden=!v; }
+    if(!v){ const m=g('#fMore'); if(m&&!moreOpen)m.open=false; } };
+  if(!isNew){ const go=()=>{ setView(false); setTimeout(()=>g('#fAmt').focus(),50); }; g('#fEditBtn').onclick=go; g('#fEditBig').onclick=go; setView(viewing); }
   setTimeout(()=>{if(isNew)g('#fAmt').focus()},250);
 }
 /* 정산 완료: 잔액만큼 주고받았으면 그 통화의 공용 지출을 전부 "정산 완료"로 표시 (잔액 0). 일부만 보냈으면 그 금액만 기록. */
