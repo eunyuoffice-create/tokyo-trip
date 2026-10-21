@@ -241,7 +241,7 @@ const RECEIPT_PROMPT = `이 사진은 여행 중 받은 영수증(주로 일본,
 - 영수증이 아니면 isReceipt=false.`;
 async function readReceipt(mime, b64) {
   const key = process.env.GEMINI_API_KEY;
-  const models = process.env.GEMINI_MODEL ? [process.env.GEMINI_MODEL] : ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-flash-latest'];
+  const models = process.env.GEMINI_MODEL ? [process.env.GEMINI_MODEL] : ['gemini-flash-latest', 'gemini-2.5-flash', 'gemini-2.0-flash'];
   let lastErr = null;
   for (const model of models) {
     const c = new AbortController(); const t = setTimeout(() => c.abort(), 24000);
