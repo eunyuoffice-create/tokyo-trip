@@ -420,11 +420,11 @@ function openInfoEditor(m,type){
   const blockHtml=(b,i)=>b.k==='item'
     ?`<div class="crow lgblk" data-bi="${i}" data-k="item"><div class="ckind"><span class="lgsub">☑ 체크 항목</span><button type="button" class="lgx" data-delblk aria-label="삭제">×</button></div>${oneImg('b'+i,'이미지 (1장)',b.img)}<input type="text" class="bk-title" placeholder="타이틀" value="${esc(b.title||'')}" maxlength="80"><textarea class="bk-desc" rows="2" placeholder="디스크립션">${esc(b.desc||'')}</textarea>${linkRows('b'+i,b.link?[b.link]:[],1)}</div>`
     :`<div class="crow lgblk" data-bi="${i}" data-k="sec"><div class="ckind"><span class="lgsub">▎ 단락</span><button type="button" class="lgx" data-delblk aria-label="삭제">×</button></div><input type="text" class="bk-title" placeholder="소제목" value="${esc(b.title||'')}" maxlength="80">${oneImg('b'+i,'이미지 (1장)',b.img)}<textarea class="bk-desc" rows="3" placeholder="메모">${esc(b.body||'')}</textarea>${linkRows('b'+i,b.links||[],0)}</div>`;
-  const common=`<div class="lgf"><input type="text" id="iTitle" placeholder="타이틀 *" value="${esc(d.title)}" maxlength="60"></div>
+  const common=`<div class="lgf"><label>타이틀 <span class="lgreq" aria-label="필수">*</span></label><input type="text" id="iTitle" placeholder="타이틀" value="${esc(d.title)}" maxlength="60"></div>
     <div class="lgf"><label>라벨 <span class="lgsub">제목 옆 작은 표시</span></label><input type="text" id="iTag" value="${esc(d.tag||'')}" maxlength="20" placeholder="예: 대한항공, 10/26"></div>
     ${oneImg('cover','타이틀 이미지 (1장)',d.cover)}`;
   let form='';
-  const head2=`<div class="lgf"><input type="text" id="iTitle" placeholder="타이틀 *" value="${esc(d.title)}" maxlength="60"></div>
+  const head2=`<div class="lgf"><label>타이틀 <span class="lgreq" aria-label="필수">*</span></label><input type="text" id="iTitle" placeholder="타이틀" value="${esc(d.title)}" maxlength="60"></div>
     <div class="lgf"><label>라벨 <span class="lgsub">제목 옆 작은 표시</span></label><input type="text" id="iTag" value="${esc(d.tag||'')}" maxlength="20" placeholder="예: 대한항공, 10/26"></div>`;
   if(type==='doc') form=head2+`<div class="lghint" style="margin:-4px 0 10px">단락: 소제목 + 사진 1장 + 메모 + 링크. 메모에 ## 소제목, - 항목, [이름](주소), &lt;굵게&gt;, #빨강# 도 써져요.</div>
     <div class="lgf"><label>단락 · 체크 항목 <span class="lgsub">순서대로 쌓여요</span></label><div class="crows" id="iBlocks">${blocks.map(blockHtml).join('')}</div><div class="lgchips" style="margin-top:6px"><button type="button" class="lgchip" id="iAddSec">+ 단락</button><button type="button" class="lgchip" id="iAddItem">+ 체크 항목</button></div></div>`;
