@@ -271,7 +271,8 @@ main{padding-block:16px calc(var(--tab-h) + env(safe-area-inset-bottom,0px) + 24
 .ev .more::before{font-size:10px;color:var(--muted)}
 .ev > .cedit{top:10px;right:10px;width:28px;height:28px;background:transparent;border:1px solid var(--line)}
 .det{font-size:14px;line-height:1.65;border-top:1px solid var(--line);margin-top:10px;padding-top:10px}
-.det .k{font-size:12px;letter-spacing:.04em;text-transform:uppercase;margin-top:6px}
+.det .k{font-size:13px;font-weight:700;color:var(--fg);letter-spacing:0;text-transform:none;padding-left:8px;border-left:3px solid var(--accent);line-height:1.3;margin:10px 0 2px}
+.det .k:first-child{margin-top:0}
 .pill{font-size:11px;padding:2px 8px}
 .btn{font-size:12.5px;padding:6px 11px}
 /* 맛집·갈 곳 카드: 이름 크게, 메타 한 줄, 메모는 3줄까지만 (누르면 펼침) */
@@ -282,6 +283,7 @@ main{padding-block:16px calc(var(--tab-h) + env(safe-area-inset-bottom,0px) + 24
 .card .meta .stars{color:#D9A21B;letter-spacing:-.5px}
 .card .note{font-size:13.5px;line-height:1.55;color:var(--muted);margin-top:4px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}
 .card .note.open{display:block;-webkit-line-clamp:unset;color:var(--fg)}
+.card .more-btn{grid-column:1;justify-self:start;font-size:12px;font-weight:600;color:var(--accent);padding:2px 0;margin-top:-2px}
 .card .note::after{content:""}
 .card .chk{width:30px;height:30px;border-width:1.5px}
 .card .acts{margin-top:8px;gap:6px}
@@ -977,7 +979,12 @@ function cardHtml(item,id){
  </article>`;
 }
 function bindCards(root){
- root.querySelectorAll('.card .note').forEach(n=>{ n.onclick=e=>{ if(e.target.closest('a'))return; n.classList.toggle('open'); }; });
+ root.querySelectorAll('.card .note').forEach(n=>{
+  const toggle=()=>{ n.classList.toggle('open'); const b=n.nextElementSibling; if(b&&b.classList.contains('more-btn')) b.textContent=n.classList.contains('open')?'접기 ▴':'더보기 ▾'; };
+  n.onclick=e=>{ if(e.target.closest('a'))return; toggle(); };
+  // 3줄 넘게 잘린 메모에만 '더보기' 버튼
+  requestAnimationFrame(()=>{ if(n.classList.contains('open')||n.nextElementSibling?.classList.contains('more-btn'))return; if(n.scrollHeight>n.clientHeight+2){ const b=document.createElement('button'); b.type='button'; b.className='more-btn'; b.textContent='더보기 ▾'; b.onclick=e=>{e.stopPropagation(); toggle();}; n.after(b); } });
+ });
  root.querySelectorAll('.chk').forEach(b=>b.onclick=()=>{
   const card=b.closest('.card'); const id=card.dataset.id;
   state.done[id]=!state.done[id]; if(!state.done[id]) delete state.done[id]; save();
