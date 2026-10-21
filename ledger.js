@@ -202,7 +202,7 @@ function render(){
   else if(S.screen==='error') h=`<div class="lgbanner">⚠️ <div><b>정산 노트를 열지 못했어요.</b> ${esc(S.err)} <button class="lglink" data-act="retry">다시 시도</button></div></div>`;
   else if(S.screen==='setup'||S.screen==='login') h=viewLocked();
   else h=viewMain();
-  view.innerHTML=h; bind(view);
+  view.innerHTML=h; bind(view); fillImages(view);
   if(userEl){ userEl.innerHTML=userHtml(); bind(userEl); }
   if(window.Content&&Content.onAuth)Content.onAuth();
   if(memoView){ memoView.innerHTML=S.screen==='main'?viewMemo():viewMemoLocked(); bind(memoView); fillImages(memoView); if(window.TripSite&&TripSite.renderChips&&TripSite.state.tab==='memo')TripSite.renderChips(); }
@@ -250,7 +250,7 @@ function viewMain(){
   if(S.err) h+=`<div class="lgbanner">⚠️ <div>${esc(S.err)}</div></div>`;
   h+=viewHome();
   // 고정 버튼 바 (하단 메뉴 위에 따라다님)
-  h+=`<div class="lgbar"><div class="lgadd2"><button class="lgaddexp" data-act="add-shared">${svgPlus}공용 지출</button><button class="lgaddexp lgaddmine" data-act="add-mine">${svgPlus}내 지출</button></div></div>`;
+  h+=`<div class="lgbar"><div class="lgadd2 lgadd3x"><button class="lgaddexp" data-act="add-shared">${svgPlus}공용 지출</button><button class="lgaddexp lgaddmine" data-act="add-mine">${svgPlus}내 지출</button><button class="lgaddexp lgaddcam" data-act="receipt" aria-label="영수증 찍어서 등록">${svgCam}<span>영수증</span></button></div></div>`;
   return h;
 }
 const svgPlus='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
@@ -331,7 +331,9 @@ function rowHtml(e){
   const check=priv?'':`<button class="lgbox lgbox-s" data-settled="${esc(e.id)}" aria-label="이 건 정산 완료" aria-pressed="${!!e.settled}">${svgCheck}</button>`;
   const links=(Array.isArray(e.links)?e.links:[]).filter(x=>x&&x.u);
   const linkHtml=links.length?`<div class="lgelinks">${links.map(x=>`<a class="lgelink" href="${esc(x.u)}" target="_blank" rel="noopener">${esc(x.l||x.u.replace(/^https?:\/\//,'').slice(0,24))} ↗</a>`).join('')}</div>`:'';
-  return `<div class="lgrow ${!priv&&e.settled?'lgsettled':''}">${check}<div class="lgrowbody" role="button" tabindex="0" data-exp="${esc(e.id)}"><div class="lgmid"><div class="ti">${priv?`<span class="lglock">${svgLock}</span>`:''}<span class="lgtrunc">${esc(e.title||'(내용 없음)')}</span></div><div class="si">${sub}${e.memo?`<span class="lgtrunc">· ${esc(e.memo)}</span>`:''}</div>${linkHtml}</div><div class="lgamt"><div class="aa">${fmt(e.amount,e.cur)}</div>${right}</div><span class="lgchev" aria-hidden="true"></span></div></div>`;
+  const rc=e.receipt?`<span class="lgthumb lgthumb-rc" aria-label="영수증 크게 보기">${imgTag(e.receipt)}</span>`:'';
+  const itemsN=Array.isArray(e.items)&&e.items.length?`<span>· 품목 ${e.items.length}</span>`:'';
+  return `<div class="lgrow ${!priv&&e.settled?'lgsettled':''}">${check}<div class="lgrowbody" role="button" tabindex="0" data-exp="${esc(e.id)}">${rc}<div class="lgmid"><div class="ti">${priv?`<span class="lglock">${svgLock}</span>`:''}<span class="lgtrunc">${esc(e.title||'(내용 없음)')}</span></div><div class="si">${sub}${itemsN}${e.memo?`<span class="lgtrunc">· ${esc(e.memo)}</span>`:''}</div>${linkHtml}</div><div class="lgamt"><div class="aa">${fmt(e.amount,e.cur)}</div>${right}</div><span class="lgchev" aria-hidden="true"></span></div></div>`;
 }
 
 /* ---------- 메모: 목록은 한 줄씩, 쓰기·보기는 시트에서 ---------- */
@@ -584,7 +586,7 @@ function pressToDrag(ev,sm){
 }
 /* ---------- 바인딩 ---------- */
 function bind(c){
-  qa('[data-act]',c).forEach(b=>b.onclick=()=>{const a=b.dataset.act; if(a==='retry'){S.screen='loading';render();boot()} else if(a==='settings')openSettings(); else if(a==='setup-add')setupAddRow(); else if(a==='login')openLogin(); else if(a==='logout'){logout();toast('로그아웃했어요')} else if(a==='add-shared')openExpense(null,{priv:false}); else if(a==='add-mine')openExpense(null,{priv:true}); else if(a==='forgot')openForgot(); });
+  qa('[data-act]',c).forEach(b=>b.onclick=()=>{const a=b.dataset.act; if(a==='retry'){S.screen='loading';render();boot()} else if(a==='settings')openSettings(); else if(a==='setup-add')setupAddRow(); else if(a==='login')openLogin(); else if(a==='logout'){logout();toast('로그아웃했어요')} else if(a==='add-shared')openExpense(null,{priv:false}); else if(a==='add-mine')openExpense(null,{priv:true}); else if(a==='receipt')scanReceipt(); else if(a==='forgot')openForgot(); });
   qa('[data-scope]',c).forEach(b=>b.onclick=()=>{S.scope=b.dataset.scope;render()});
   qa('[data-exp]',c).forEach(b=>b.onclick=ev=>{if(ev.target.closest('a'))return; openExpense(S.expenses.find(e=>e.id===b.dataset.exp))});
   qa('[data-settled]',c).forEach(b=>b.onclick=()=>{const e=S.expenses.find(x=>x.id===b.dataset.settled);if(!e)return;write([{op:'update',col:'expenses',id:e.id,data:{settled:!e.settled,settledBy:!e.settled?S.me:null,settleId:null}}],e.settled?'다시 잔액에 넣었어요':'이 건만 정산 완료했어요')});
@@ -635,15 +637,61 @@ function closeSheet(){ q('.lgsheet').classList.remove('lgopen'); q('.lgscrim').c
 const expLinkRow=(l,u)=>`<div class="lgclink"><input type="text" placeholder="이름" value="${esc(l||'')}" maxlength="40"><input type="text" inputmode="url" autocapitalize="off" placeholder="https://…" value="${esc(u||'')}"><button type="button" class="lgx" data-dellink aria-label="삭제">×</button></div>`;
 const readExpLinks=sh=>[...sh.querySelectorAll('#fLinks .lgclink')].map(r=>{const [a,b]=r.querySelectorAll('input'); let u=(b.value||'').trim(); if(!u)return null; if(!/^https?:\/\//i.test(u))u='https://'+u; return {l:(a.value||'').trim(),u}}).filter(Boolean);
 function wireExpLinks(sh){ sh.querySelectorAll('#fLinks [data-dellink]').forEach(b=>b.onclick=()=>b.closest('.lgclink').remove()); const add=sh.querySelector('#fAddLink'); if(add)add.onclick=()=>{sh.querySelector('#fLinks').insertAdjacentHTML('beforeend',expLinkRow('','')); wireExpLinks(sh); const f=sh.querySelector('#fLinks .lgclink:last-child input'); if(f)f.focus(); sh.querySelector('#fMore').open=true;}; }
+/* ---------- 영수증 찍어서 자동 등록 (카드 스캔처럼): 사진 → 서버(Gemini) → 지출 한 건 저장 → 되돌리기 토스트 ---------- */
+const svgCam='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg>';
+let undoT;
+function toastUndo(msg,fn){ const t=q('.lgtoast',ov); if(!t)return; t.innerHTML=`<span>${esc(msg)}</span><button type="button" class="lgundo">되돌리기</button>`; t.classList.add('lgshow'); clearTimeout(toastT); clearTimeout(undoT);
+  t.querySelector('.lgundo').onclick=()=>{ t.classList.remove('lgshow'); t.textContent=''; fn(); };
+  undoT=setTimeout(()=>{ t.classList.remove('lgshow'); setTimeout(()=>{ if(!t.classList.contains('lgshow'))t.textContent=''; },300); },7000); }
+let scanning=false;
+function scanReceipt(){
+  if(scanning)return;
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='image/*'; inp.setAttribute('capture','environment'); inp.style.display='none'; document.body.appendChild(inp);
+  inp.onchange=async()=>{ const f=inp.files&&inp.files[0]; inp.remove(); if(!f)return;
+    scanning=true; const bar=q('[data-act="receipt"]'); if(bar){bar.disabled=true;bar.classList.add('lgbusy')}
+    const priv=S.scope==='mine';   // 지금 보고 있는 목록 기준: 개인 탭이면 내 지출, 공용·전체면 공용
+    let imgId='', data='';
+    try{
+      toast('영수증 읽는 중…');
+      const r=await resizeImage(f,1600); data=r.data;
+      imgId='im-'+uid();
+      const [j]=await Promise.all([api({action:'receipt',image:data}), api({action:'write',ops:[{op:'set',col:'images',id:imgId,data:{data,w:r.w,h:r.h,kind:'receipt'}}]}).then(()=>{imgCache[imgId]=data}).catch(()=>{imgId=''})]);
+      const rc=j.receipt||{};
+      const items=(rc.items||[]).map(it=>({name:it.name,nameKo:it.nameKo||'',qty:+it.qty||1,price:+it.price||0}));
+      const title=(rc.storeKo||rc.store||'').trim()||'영수증';
+      const day=(rc.date&&DAYS.some(x=>x.d===rc.date))?rc.date:todayKey();
+      const n=S.people.length;
+      const base={title,amount:+rc.total||0,cur:rc.currency==='KRW'?'KRW':'JPY',day,cat:rc.cat||'기타',memo:rc.note?rc.note.slice(0,120):'',links:[],ts:Date.now(),receipt:imgId||null,items:items.length?items:null};
+      if(!rc.isReceipt||!(base.amount>0)){   // 못 읽었으면 폼을 열어 직접 채우게 (사진·품목은 붙여 둠)
+        toast(!rc.isReceipt?'영수증 사진이 아닌 것 같아요. 직접 넣어주세요':'합계를 못 읽었어요. 금액만 넣어주세요');
+        openExpense(null,{priv,prefill:{title:base.title,amount:base.amount||'',cur:base.cur,day:base.day,cat:base.cat,memo:base.memo,receipt:imgId,items}});
+        return;
+      }
+      const body=priv?{owner:S.me,...base,payer:S.me,parts:[S.me],custom:null}:{owner:null,...base,payer:S.me,parts:[...Array(n).keys()],custom:null,settled:false,settledBy:null,settleId:null};
+      const id=uid();
+      const ok=await write([{op:'set',col:'expenses',id,data:body}],null);
+      if(ok) toastUndo(`${title} ${fmt(base.amount,base.cur)} 등록 (${priv?'내 지출':'공용'}${items.length?` · 품목 ${items.length}`:''})`,()=>{ write([{op:'delete',col:'expenses',id}],'되돌렸어요'); if(imgId)api({action:'write',ops:[{op:'delete',col:'images',id:imgId}]}).catch(()=>{}); });
+    }catch(e){
+      const msg=e.code==='no_key'?'서버에 GEMINI_API_KEY 가 없어요':e.code==='auth'?'다시 로그인해 주세요':e.code==='receipt'?'영수증을 못 읽었어요 — 다시 찍어주세요':(e.message||'실패했어요');
+      toast(msg);
+      if(e.code==='receipt'&&imgId) openExpense(null,{priv,prefill:{receipt:imgId}});
+    }finally{ scanning=false; const b=q('[data-act="receipt"]'); if(b){b.disabled=false;b.classList.remove('lgbusy')} }
+  };
+  inp.click();
+}
 function openExpense(e,opts={}){
   const isNew=!e; const n=S.people.length; const today=todayKey();
   const d={id:e?.id,title:e?.title||'',amount:e?.amount||'',cur:e?.cur||'JPY',day:e?.day||today,cat:e?.cat||'식비',
-    priv:e?!isShared(e):!!opts.priv,payer:e?e.payer:S.me,parts:e?(e.parts&&e.parts.length?e.parts.slice():[...Array(n).keys()]):[...Array(n).keys()],custom:e?.custom?{...e.custom}:null,memo:e?.memo||'',settled:!!(e&&e.settled)};
+    priv:e?!isShared(e):!!opts.priv,payer:e?e.payer:S.me,parts:e?(e.parts&&e.parts.length?e.parts.slice():[...Array(n).keys()]):[...Array(n).keys()],custom:e?.custom?{...e.custom}:null,memo:e?.memo||'',settled:!!(e&&e.settled),
+    receipt:e?.receipt||'',items:Array.isArray(e?.items)?e.items:[]};
+  if(opts.prefill)Object.assign(d,opts.prefill);
+  const rcHtml=(d.receipt||d.items.length)?`<div class="lgf lgrcbox"><label>영수증${d.items.length?` <span class="lgsub">품목 ${d.items.length}개</span>`:''}</label><div class="lgrc">${d.receipt?`<span class="lgthumb lgthumb-rc2">${imgTag(d.receipt)}</span>`:''}${d.items.length?`<ul class="lgitems">${d.items.map(it=>`<li><span class="lgtrunc">${esc(it.nameKo||it.name)}${it.qty>1?` ×${it.qty}`:''}</span><b class="lgnum">${fmt(it.price,d.cur)}</b></li>`).join('')}</ul>`:''}</div></div>`:'';
   const moreOpen=!isNew&&(!!d.custom||(!d.priv&&d.parts.length!==n)||!!d.memo||d.settled||(Array.isArray(e?.links)&&e.links.length>0));
   const dayShort=k=>{const x=dayOf(k);return k===today?'오늘':(x.d==='pre'?'출발 전':`D${x.n}`)};
   openSheet(`<h2><span id="fHead">${isNew?(d.priv?'내 지출':'공용 지출'):'지출 수정'}</span><button type="button" data-close>닫기</button></h2><form id="expForm">
     <div class="lgf"><label>금액 <span class="lgreq" aria-label="필수">*</span></label><div class="lgamount"><input type="text" inputmode="decimal" id="fAmt" placeholder="0" value="${d.amount?esc(d.amount):''}" aria-label="금액"><div class="lgseg" id="fCur"><button type="button" data-c="JPY" aria-pressed="${d.cur==='JPY'}">¥</button><button type="button" data-c="KRW" aria-pressed="${d.cur==='KRW'}">₩</button></div></div></div>
     <div class="lgf"><input type="text" id="fTitle" placeholder="무엇에 썼어요? 예: 모츠나베, 리무진 버스" value="${esc(d.title)}" maxlength="80" aria-label="내용"></div>
+    ${rcHtml}
     <div class="lgf" id="fPayerBox" ${d.priv?'hidden':''}><label>누가 냈어요?</label><div class="lgbig2" id="fPayer">${S.people.map((p,i)=>`<button type="button" data-i="${i}" aria-pressed="${d.payer===i}">${esc(pname(i))}${i===S.me?' <small>나</small>':''}</button>`).join('')}</div><div class="lghint" id="fPartsHint"></div></div>
     <details class="lgmore" id="fMore" ${moreOpen?'open':''}><summary><span>자세히</span><span class="lgsub" id="fMoreSum"></span></summary>
       <div class="lgf"><label>구분</label><div class="lgchips" id="fScope"><button type="button" class="lgchip" data-s="mine" aria-pressed="${d.priv}">개인 · 나만 봄</button><button type="button" class="lgchip" data-s="shared" aria-pressed="${!d.priv}">공용 · 같이 나눔</button></div></div>
@@ -674,16 +722,17 @@ function openExpense(e,opts={}){
   qa('#fPayer button',sh).forEach(b=>b.onclick=()=>{d.payer=+b.dataset.i;qa('#fPayer button',sh).forEach(x=>x.setAttribute('aria-pressed',x===b));partsHint()});
   qa('#fParts button',sh).forEach(b=>b.onclick=()=>{const i=+b.dataset.i;d.parts=d.parts.includes(i)?d.parts.filter(x=>x!==i):[...d.parts,i].sort();b.setAttribute('aria-pressed',d.parts.includes(i));partsHint();sum();if(g('#fCustom').checked)customBox()});
   g('#fCustom').onchange=()=>{g('#fCustomBox').hidden=!g('#fCustom').checked;if(g('#fCustom').checked)customBox();sum()};
-  partsHint(); sum(); if(d.custom)customBox(); wireExpLinks(sh); sh.querySelector('#fLinks').addEventListener('input',sum); const al=g('#fAddLink'); const al0=al.onclick; al.onclick=()=>{al0();sum()};
+  partsHint(); sum(); if(d.custom)customBox(); fillImages(sh); qa('.lgthumb',sh).forEach(t=>t.onclick=ev=>{ev.preventDefault();const im=t.querySelector('img');if(im&&im.src)openImg(im.src)}); wireExpLinks(sh); sh.querySelector('#fLinks').addEventListener('input',sum); const al=g('#fAddLink'); const al0=al.onclick; al.onclick=()=>{al0();sum()};
   g('#expForm').onsubmit=async ev=>{ev.preventDefault();
     const a=amt(); if(!(a>0)){toast('금액을 넣어주세요');g('#fAmt').focus();return}
     let body;
     const links=readExpLinks(sh);
-    if(d.priv) body={owner:S.me,title:g('#fTitle').value.trim(),amount:a,cur:d.cur,day:d.day,cat:d.cat,payer:S.me,parts:[S.me],custom:null,memo:g('#fMemo').value.trim(),links,ts:e?.ts||Date.now()};
+    const extra={receipt:d.receipt||null,items:d.items.length?d.items:null};
+    if(d.priv) body={owner:S.me,title:g('#fTitle').value.trim(),amount:a,cur:d.cur,day:d.day,cat:d.cat,payer:S.me,parts:[S.me],custom:null,memo:g('#fMemo').value.trim(),links,ts:e?.ts||Date.now(),...extra};
     else{ if(!d.parts.length){toast('나눌 사람을 골라주세요');g('#fMore').open=true;return}
       const useCustom=g('#fCustom').checked; const custom=useCustom?Object.fromEntries(d.parts.map(i=>[i,+(d.custom&&d.custom[i])||0])):null;
       const settled=isNew?false:!!g('#fSettled').checked;
-      body={owner:null,title:g('#fTitle').value.trim(),amount:a,cur:d.cur,day:d.day,cat:d.cat,payer:d.payer,parts:d.parts,custom,memo:g('#fMemo').value.trim(),links,ts:e?.ts||Date.now(),settled,settledBy:settled?(e&&e.settledBy!==undefined&&e.settledBy!==null?e.settledBy:S.me):null,settleId:settled?(e&&e.settleId)||null:null}; }
+      body={owner:null,title:g('#fTitle').value.trim(),amount:a,cur:d.cur,day:d.day,cat:d.cat,payer:d.payer,parts:d.parts,custom,memo:g('#fMemo').value.trim(),links,ts:e?.ts||Date.now(),settled,settledBy:settled?(e&&e.settledBy!==undefined&&e.settledBy!==null?e.settledBy:S.me):null,settleId:settled?(e&&e.settleId)||null:null,...extra}; }
     closeSheet();
     await write([{op:'set',col:'expenses',id:d.id||uid(),data:body}],isNew?'저장했어요':'수정했어요');
   };

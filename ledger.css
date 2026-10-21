@@ -641,3 +641,18 @@ body.body-edit .ev,body.body-edit .card{-webkit-user-select:none;user-select:non
 .lg .lghelp-b{margin-top:6px;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;gap:5px}
 .lg .lghelp-row{display:grid;grid-template-columns:132px 1fr;gap:8px;align-items:center;line-height:1.4}
 .lg .lghelp-row code{font-family:var(--mono);font-size:11.5px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:2px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* ---------- 영수증 스캔 ---------- */
+.lg .lgadd2.lgadd3x{grid-template-columns:1fr 1fr auto}
+.lg .lgbar .lgaddexp.lgaddcam{background:var(--surface);color:var(--fg);box-shadow:var(--shadow);border:1px solid var(--line);padding:0 14px;gap:6px}
+.lg .lgbar .lgaddexp.lgaddcam.lgbusy{opacity:.55;pointer-events:none}
+.lg .lgbar .lgaddexp.lgaddcam svg{width:20px;height:20px}
+@media (max-width:360px){ .lg .lgbar .lgaddexp.lgaddcam span{display:none} .lg .lgbar .lgaddexp.lgaddcam{padding:0 12px} }
+.lg .lgrow .lgthumb-rc{width:44px;height:56px;border-radius:8px;margin-right:2px}
+.lg .lgsheet .lgthumb-rc2{width:96px;height:124px;border-radius:10px;cursor:zoom-in}
+.lg .lgrc{display:flex;gap:12px;align-items:flex-start}
+.lg .lgitems{list-style:none;margin:0;padding:0;flex:1;min-width:0;max-height:180px;overflow:auto;font-size:13px}
+.lg .lgitems li{display:flex;justify-content:space-between;gap:10px;padding:3px 0;border-bottom:1px dashed var(--line)}
+.lg .lgitems li:last-child{border-bottom:0}
+.lg .lgitems .lgtrunc{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lg .lgtoast .lgundo{margin-left:12px;background:transparent;border:1px solid currentColor;color:inherit;border-radius:8px;padding:4px 10px;font:inherit;font-weight:700;font-size:13px}
+.lg .lgtoast{display:flex;align-items:center;max-width:calc(100vw - 32px)}

@@ -9,8 +9,10 @@
 //  content → {plan,food,places,meta} 토큰 없이 읽기 (일정·맛집·갈 곳). 쓰기는 write 로 (멤버 토큰)
 //  resetPin {sitePw, me, pin} → 사이트 입장 비밀번호로 확인 후 멤버 비밀번호 재설정 + 토큰
 //  settings (token) {names?, rate?, addMember?:{name,pin}, setPin?:{me?:idx, pin}}
+//  receipt  (token) {image:dataURL} → { receipt:{store,storeKo,date,currency,items:[{name,nameKo,qty,price}],total,cat} }  Gemini(GEMINI_API_KEY)로 영수증 읽기
 import { createHmac, createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { store, dbEnvNames, hasDbUrl } from './_lib/store.js';
+export const config = { maxDuration: 30 };   // 영수증 읽기(Gemini)가 몇 초 걸릴 수 있어서
 
 const COLS = new Set(['expenses', 'transfers', 'memos', 'plan', 'food', 'places', 'meta', 'images']);   // images: 사진(data URL) 문서, 메모·일정에서 id 로 참조   // plan/food/places/meta: 일정·맛집·갈 곳 (누구나 읽고, 멤버만 씀)
 const PRIVATE_COLS = new Set(['expenses', 'memos']);   // owner 필드로 개인/공용 구분
@@ -101,7 +103,7 @@ export default async function handler(req, res) {
     if (trip && (action === 'list' || action === 'status')) trip = await refreshRate(db, trip);
     if (trip && action === 'list') trip = await seedPreCosts(db, trip);
 
-    if (action === 'status') return res.status(200).json({ ok: true, setup: !!trip, ...(trip ? publicTrip(trip) : { people: [], rate: DEFAULT_RATE, rateInfo: { mode: 'auto', auto: null } }) });
+    if (action === 'status') return res.status(200).json({ ok: true, setup: !!trip, receipt: !!process.env.GEMINI_API_KEY, ...(trip ? publicTrip(trip) : { people: [], rate: DEFAULT_RATE, rateInfo: { mode: 'auto', auto: null } }) });
 
     if (action === 'setup') {
       if (trip) return res.status(409).json({ ok: false, error: 'already_setup' });
@@ -161,6 +163,15 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, me, ...publicTrip(trip), ...data, ts: Date.now() });
     }
 
+    if (action === 'receipt') {
+      if (!process.env.GEMINI_API_KEY) return res.status(200).json({ ok: false, error: 'no_key' });
+      const m = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(String(body.image || ''));
+      if (!m) return res.status(400).json({ ok: false, error: 'bad image' });
+      if (m[2].length > 2400000) return res.status(413).json({ ok: false, error: '사진이 너무 커요' });
+      try { const receipt = await readReceipt(m[1], m[2]); return res.status(200).json({ ok: true, receipt }); }
+      catch (e) { return res.status(200).json({ ok: false, error: 'receipt', detail: String(e && e.message || e).slice(0, 300) }); }
+    }
+
     if (action === 'write') {
       const ops = Array.isArray(body.ops) ? body.ops : [];
       if (!ops.length) return res.status(400).json({ ok: false, error: 'no ops' });
@@ -209,6 +220,51 @@ export default async function handler(req, res) {
   } catch (e) {
     return res.status(500).json({ ok: false, error: String(e && e.message || e) });
   }
+}
+/* 영수증 사진 → 구조화 JSON. Google Gemini (무료 등급). 모델은 GEMINI_MODEL 로 바꿀 수 있고, 없으면 순서대로 시도 */
+const RECEIPT_SCHEMA = { type: 'OBJECT', properties: {
+  store: { type: 'STRING', description: '가게 이름 원문' }, storeKo: { type: 'STRING', description: '가게 이름 한국어 (브랜드는 통용 표기)' },
+  date: { type: 'STRING', description: 'YYYY-MM-DD, 모르면 빈 문자열' }, time: { type: 'STRING', description: 'HH:MM, 모르면 빈 문자열' },
+  currency: { type: 'STRING', enum: ['JPY', 'KRW', 'OTHER'] },
+  items: { type: 'ARRAY', items: { type: 'OBJECT', properties: { name: { type: 'STRING' }, nameKo: { type: 'STRING' }, qty: { type: 'NUMBER' }, price: { type: 'NUMBER', description: '그 줄 금액(수량 포함, 세금 포함가 있으면 그것)' } }, required: ['name', 'price'] } },
+  subtotal: { type: 'NUMBER' }, tax: { type: 'NUMBER' }, total: { type: 'NUMBER', description: '최종 지불 합계. 합計/お買上/総額/TOTAL' },
+  cat: { type: 'STRING', enum: ['식비', '교통', '덕질', '쇼핑', '입장', '숙소', '기타'] },
+  isReceipt: { type: 'BOOLEAN', description: '영수증·계산서 사진이면 true' }, note: { type: 'STRING', description: '읽기 애매한 부분 한 줄, 없으면 빈 문자열' } },
+  required: ['store', 'storeKo', 'date', 'currency', 'items', 'total', 'cat', 'isReceipt'] };
+const RECEIPT_PROMPT = `이 사진은 여행 중 받은 영수증(주로 일본, 가끔 한국)입니다. 내용을 읽어 JSON으로 정리하세요.
+- store: 영수증 맨 위 가게·브랜드 이름 원문. storeKo: 한국어 표기 (예: ドン・キホーテ→돈키호테, ファミリーマート→패밀리마트, 読めなければ 원문 그대로).
+- items: 품목 줄마다 name(원문), nameKo(짧은 한국어 번역), qty(수량, 없으면 1), price(그 줄의 금액). 할인·포인트 줄은 price를 음수로. 소계·세금·합계·거스름돈 줄은 items에 넣지 않습니다.
+- total: 실제 지불한 최종 합계 (合計, お買上げ合計, 総額, TOTAL). 세금 포함가. 預り金/お釣り(받은 돈·거스름돈)와 혼동하지 마세요.
+- currency: 円·¥·JPY면 JPY, 원·₩면 KRW.
+- date: 영수증의 날짜를 YYYY-MM-DD로. 일본식 2026年10月25日, 26/10/25, R8.10.25(레이와 8년=2026) 모두 처리. 없으면 "".
+- cat: 음식점·편의점·카페·슈퍼 음식 → 식비, 전철·버스·택시·IC카드 충전 → 교통, 캐릭터 굿즈·애니·아이돌 샵 → 덕질, 드럭스토어·옷·잡화·돈키호테 → 쇼핑, 입장권·티켓 → 입장, 호텔 → 숙소, 그 외 → 기타.
+- 영수증이 아니면 isReceipt=false.`;
+async function readReceipt(mime, b64) {
+  const key = process.env.GEMINI_API_KEY;
+  const models = process.env.GEMINI_MODEL ? [process.env.GEMINI_MODEL] : ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-flash-latest'];
+  let lastErr = null;
+  for (const model of models) {
+    const c = new AbortController(); const t = setTimeout(() => c.abort(), 24000);
+    try {
+      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, { method: 'POST', signal: c.signal,
+        headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
+        body: JSON.stringify({ contents: [{ parts: [{ text: RECEIPT_PROMPT }, { inline_data: { mime_type: mime, data: b64 } }] }],
+          generationConfig: { temperature: 0, response_mime_type: 'application/json', response_schema: RECEIPT_SCHEMA } }) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) { lastErr = new Error(`${model}: ${r.status} ${(j.error && j.error.message) || ''}`.trim()); if (r.status === 404 || r.status === 400) continue; if (r.status === 429) continue; break; }
+      const text = j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts && j.candidates[0].content.parts.map(p => p.text || '').join('');
+      if (!text) { lastErr = new Error(model + ': 빈 응답'); continue; }
+      const o = JSON.parse(text);
+      const num = v => { const n = +String(v ?? '').replace(/[^\d.\-]/g, ''); return isFinite(n) ? n : 0; };
+      const items = (Array.isArray(o.items) ? o.items : []).slice(0, 80).map(it => ({ name: String(it.name || '').slice(0, 60), nameKo: String(it.nameKo || '').slice(0, 60), qty: num(it.qty) || 1, price: num(it.price) })).filter(it => it.name);
+      const cats = ['식비', '교통', '덕질', '쇼핑', '입장', '숙소', '기타'];
+      return { store: String(o.store || '').slice(0, 80), storeKo: String(o.storeKo || '').slice(0, 80), date: /^\d{4}-\d{2}-\d{2}$/.test(o.date || '') ? o.date : '', time: String(o.time || '').slice(0, 5),
+        currency: o.currency === 'KRW' ? 'KRW' : 'JPY', items, subtotal: num(o.subtotal), tax: num(o.tax), total: num(o.total), cat: cats.includes(o.cat) ? o.cat : '기타',
+        isReceipt: o.isReceipt !== false, note: String(o.note || '').slice(0, 120), model };
+    } catch (e) { lastErr = e; if (e && e.name === 'AbortError') break; }
+    finally { clearTimeout(t); }
+  }
+  throw lastErr || new Error('영수증을 읽지 못했어요');
 }
 function parseBody(b) {
   if (!b) return {};
