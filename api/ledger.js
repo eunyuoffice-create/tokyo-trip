@@ -12,7 +12,7 @@
 import { createHmac, createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { store, dbEnvNames, hasDbUrl } from './_lib/store.js';
 
-const COLS = new Set(['expenses', 'transfers', 'memos', 'plan', 'food', 'places', 'meta', 'images']);   // images: 사진(data URL) 문서, 메모·일정에서 id 로 참조   // plan/food/places/meta: 일정·맛집·갈 곳 (누구나 읽고, 멤버만 씀)
+const COLS = new Set(['expenses', 'transfers', 'memos', 'plan', 'food', 'places', 'meta']);   // plan/food/places/meta: 일정·맛집·갈 곳 (누구나 읽고, 멤버만 씀)
 const PRIVATE_COLS = new Set(['expenses', 'memos']);   // owner 필드로 개인/공용 구분
 const ID_RE = /^[A-Za-z0-9_\-.~:@+]{1,200}$/;
 const TOKEN_DAYS = 90;
@@ -116,13 +116,6 @@ export default async function handler(req, res) {
     }
 
     // 일정·맛집·갈 곳: 토큰 없이 읽기 (사이트 자체가 입장 비밀번호로 잠겨 있고, 내용은 공개 저장소의 index.html 과 같은 성격)
-    // 사진 한 장 읽기 (토큰 없이. id 는 무작위라 추측 어려움)
-    if (action === 'image') {
-      const doc = await db.get('images', String(body.id || ''));
-      if (!doc) return res.status(404).json({ ok: false, error: 'not_found' });
-      return res.status(200).json({ ok: true, data: doc.data, w: doc.w, h: doc.h });
-    }
-
     if (action === 'content') {
       const out = { plan: {}, food: {}, places: {}, meta: {} };
       for (const col of Object.keys(out)) for (const r of await db.all(col)) out[col][r.id] = r.data;
@@ -156,8 +149,9 @@ export default async function handler(req, res) {
     const visible = (col, d) => !PRIVATE_COLS.has(col) || ownerOf(d) === null || ownerOf(d) === me;
 
     if (action === 'list') {
-      const data = { expenses: {}, transfers: {}, memos: {}, meta: {} };
-      for (const col of Object.keys(data)) for (const r of await db.all(col)) if (visible(col, r.data)) data[col][r.id] = r.data;
+      const rows = await db.all();
+      const data = { expenses: {}, transfers: {}, memos: {} };
+      for (const r of rows) if (data[r.col] && visible(r.col, r.data)) data[r.col][r.id] = r.data;
       return res.status(200).json({ ok: true, me, ...publicTrip(trip), ...data, ts: Date.now() });
     }
 
@@ -165,7 +159,6 @@ export default async function handler(req, res) {
       const ops = Array.isArray(body.ops) ? body.ops : [];
       if (!ops.length) return res.status(400).json({ ok: false, error: 'no ops' });
       for (const op of ops) if (!COLS.has(op.col) || !ID_RE.test(String(op.id || '')) || !['set', 'update', 'delete'].includes(op.op)) return res.status(400).json({ ok: false, error: 'bad op' });
-      for (const op of ops) if (op.col === 'images' && op.data && typeof op.data.data === 'string' && op.data.data.length > 600000) return res.status(413).json({ ok: false, error: '사진이 너무 커요' });
       for (const op of ops) {
         const col = op.col, id = String(op.id);
         const existing = await db.get(col, id);
