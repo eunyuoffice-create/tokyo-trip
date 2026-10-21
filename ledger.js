@@ -376,7 +376,7 @@ function rowHtml(e){
   const linkHtml=links.length?`<div class="lgelinks">${links.map(x=>`<a class="lgelink" href="${esc(x.u)}" target="_blank" rel="noopener">${esc(x.l||x.u.replace(/^https?:\/\//,'').slice(0,24))} ↗</a>`).join('')}</div>`:'';
   const rc=e.receipt?`<span class="lgthumb lgthumb-rc" aria-label="영수증 크게 보기">${thumbTag(e.receipt)}</span>`:'';
   const itemsN=Array.isArray(e.items)&&e.items.length?`<span>· 품목 ${e.items.filter(x=>x.sel!==false).length}</span>`:'';
-  return `<div class="lgrow ${!priv&&e.settled?'lgsettled':''}">${check}<div class="lgrowbody" role="button" tabindex="0" data-exp="${esc(e.id)}">${rc}<div class="lgmid"><div class="ti">${priv?`<span class="lglock">${svgLock}</span>`:''}<span class="lgtrunc">${esc(e.title||'(내용 없음)')}</span></div><div class="si">${sub}${itemsN}${e.memo?`<span class="lgtrunc">· ${esc(e.memo)}</span>`:''}</div>${linkHtml}</div><div class="lgamt"><div class="aa">${fmt(e.amount,e.cur)}</div>${right}</div><span class="lgchev" aria-hidden="true"></span></div></div>`;
+  return `<div class="lgrow ${!priv&&e.settled?'lgsettled':''}">${check}<div class="lgrowbody" role="button" tabindex="0" data-exp="${esc(e.id)}">${rc}<div class="lgmid"><div class="ti">${priv?`<span class="lglock">${svgLock}</span>`:''}<span class="lgtrunc">${esc(e.title||'(내용 없음)')}</span></div><div class="si">${sub}${itemsN}</div>${e.memo?`<div class="mi">${esc(e.memo)}</div>`:''}${linkHtml}</div><div class="lgamt"><div class="aa">${fmt(e.amount,e.cur)}</div>${right}</div><span class="lgchev" aria-hidden="true"></span></div></div>`;
 }
 
 /* ---------- 메모: 목록은 한 줄씩, 쓰기·보기는 시트에서 ---------- */
@@ -740,10 +740,10 @@ async function scanReceipt(){
   try{
     showLoading('영수증 읽는 중…');
     const R=await readReceiptFile(f); const F=R.fields;
-    const base={title:F.title||'영수증',amount:F.amount,cur:F.cur,day:F.day||todayKey(),cat:F.cat||'기타',memo:F.memo,links:[],ts:Date.now(),receipt:R.imgId||null,items:R.items.length?R.items:null,rcTotal:F.amount||null,autoSum:true};
+    const base={title:F.title||'영수증',amount:F.amount,cur:F.cur,day:F.day||todayKey(),cat:F.cat||'기타',memo:'',rcNote:F.memo||null,links:[],ts:Date.now(),receipt:R.imgId||null,items:R.items.length?R.items:null,rcTotal:F.amount||null,autoSum:true};
     if(!R.ok){
       toast(R.rc.isReceipt===false?'영수증 사진이 아닌 것 같아요. 직접 넣어주세요':'합계를 못 읽었어요. 금액만 넣어주세요');
-      openExpense(null,{priv,newImg:R.imgId,prefill:{title:base.title,amount:base.amount||'',cur:base.cur,day:base.day,cat:base.cat,memo:base.memo,receipt:R.imgId,items:R.items,rcTotal:base.rcTotal}});
+      openExpense(null,{priv,newImg:R.imgId,prefill:{title:base.title,amount:base.amount||'',cur:base.cur,day:base.day,cat:base.cat,memo:'',receipt:R.imgId,items:R.items,rcTotal:base.rcTotal}});
       return;
     }
     const n=S.people.length;
