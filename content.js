@@ -223,7 +223,7 @@ function openEditor(tab,id){
       ${F.text('eP','장소',it?.p,'예: 아카사카')}
       ${F.text('ePills','태그 (쉼표로 구분)',(it?.pills||[]).join(', '),'예: 예약 완료, 필수')}
       ${F.toggle('eBig','강조 (큰 제목)',!!it?.big)}
-      <div class="lgf"><label>사진</label><div class="lgimgs lgimgs-edit" id="eImgs"></div><button type="button" class="lglink" id="eAddImg">+ 사진 추가</button></div>
+      <div class="lgf"><label>사진 (최대 3장)</label><div class="lgimgs lgimgs-edit" id="eImgs"></div><button type="button" class="lglink" id="eAddImg">+ 사진 추가</button></div>
       ${F.links('eLinks','링크 버튼',it?.links)}
       ${F.rows('eD','자세히 내용 (펼쳐서 보는 부분)',dBlocks(it?.d).map(dRow).join(''),'내용 추가')}
       ${F.rows('eR','이동 경로 (구글맵 경로 보기 버튼이 붙어요)',(it?.r?(Array.isArray(it.r)?it.r:[it.r]):[]).map(rRow).join(''),'이동 경로 추가')}`;
@@ -259,7 +259,7 @@ function openEditor(tab,id){
   wireChips(sh); wireLinks(sh); wireRows(sh);
   const imgs=(it&&Array.isArray(it.images))?it.images.slice():[]; const imgBox=sh.querySelector('#eImgs');
   const paintImgs=()=>{ if(!imgBox)return; imgBox.innerHTML=imgs.map(id=>`<span class="lgthumb" data-rm="${esc(id)}">${Lg.imgTag(id)}<b>×</b></span>`).join(''); Lg.fillImages(imgBox); imgBox.querySelectorAll('[data-rm]').forEach(t=>t.onclick=()=>{const i=imgs.indexOf(t.dataset.rm); if(i>=0)imgs.splice(i,1); paintImgs();}); };
-  paintImgs(); const addImg=sh.querySelector('#eAddImg'); if(addImg)addImg.onclick=async()=>{ const ids=await Lg.pickImages(); if(ids.length){ imgs.push(...ids); paintImgs(); } };
+  paintImgs(); const addImg=sh.querySelector('#eAddImg'); if(addImg)addImg.onclick=async()=>{ const room=3-imgs.length; if(room<=0){Lg.toast('일정 사진은 3장까지예요');return} const ids=await Lg.pickImages(room); if(ids.length){ imgs.push(...ids); paintImgs(); } };
   g('#cForm').onsubmit=async ev=>{ ev.preventDefault();
     let data; const nextOrder=()=>{ const l=listOf(col)||[]; const pool=tab==='plan'?l.filter(x=>x.day===v('#eDay')):l; return (pool.length?Math.max(...pool.map(x=>x.order||0)):0)+1000; };
     if(tab==='plan'){ if(!v('#eTitle')){toast('제목을 넣어주세요');return} const day=v('#eDay');

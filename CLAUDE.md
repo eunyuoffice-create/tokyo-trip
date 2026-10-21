@@ -2,8 +2,8 @@
 
 - **수정 전 반드시 `git pull --ff-only origin main` 먼저.** 이 저장소는 여러 세션·기기에서 동시에 고치는 경우가 있어서, pull 없이 작업하면 다른 세션이 올린 내용을 덮어쓴다. (10/16에 eSIM 메모가 두 번 사라진 원인)
 - 푸시 직전에도 `git pull --ff-only` 한 번 더. 충돌이 나면 덮어쓰지 말고 양쪽 내용을 합친다.
-- 메모 탭의 정적 카드는 모두 없어졌다(2026-10-21). 항공편·숙소·이동·스튜디오·도쿄역 선물·쇼핑은 `notes-seed.js`(NOTE_SEED)로 첫 로그인 때 공용 메모로 한 번 옮겨지고(`meta/notes.seeded`), 그 뒤로는 사이트에서 편집한다. eSIM·챙길 것 카드는 2026-10-20에 삭제됨. index.html 에 정적 메모를 다시 넣지 않는다. 메모 탭 칩은 '내 메모' + 공용 메모 제목(누르면 그 메모로 스크롤·펼침).
-- 글 메모 본문 서식: `## 소제목`, `- 항목`, 빈 줄 문단, `[이름](url)` 링크, 주소 자동 링크 (`bodyHtml`). 사진: `images` 컬렉션(data URL, 클라이언트에서 1280px·≤~400KB 로 줄임, `pickImages`)에 저장하고 메모 `images:[id]`·체크 항목 `img`·일정 `images:[id]` 로 참조, `action:'image'`(토큰 불필요)로 받아 `fillImages`가 채운다. 내 메모/공용 메모 섹션 자체도 `details.lgsecacc`(열림 상태 localStorage `tl_sec`).
+- 메모 탭의 정적 카드는 모두 없어졌다(2026-10-21). 항공편·숙소·이동·스튜디오·도쿄역 선물·쇼핑은 `notes-seed.js`(NOTE_SEED)로 첫 로그인 때 메모 문서(`cat:'info'`, 공용)로 한 번 옮겨지고(`meta/notes.seeded`), 메모 탭의 세 번째 섹션 **여행 정보**(내 메모·공용 메모와 별도, 제목 큼·라벨 `tag`·머리글 체크 없음)에 보인다. 하단 바 세 번째 버튼 [정보]로 새 정보 글을 쓴다. eSIM·챙길 것 카드는 2026-10-20에 삭제됨. index.html 에 정적 메모를 다시 넣지 않는다. 메모 탭 칩은 '내 메모' + 공용 메모 제목(누르면 그 메모로 스크롤·펼침).
+- 글 메모 본문 서식: `## 소제목`, `- 항목`, 빈 줄 문단, `[이름](url)` 링크, 주소 자동 링크 (`bodyHtml`). 사진: `images` 컬렉션(data URL, 클라이언트에서 1280px·WebP(지원 안 되면 JPEG)·≤~400KB 로 줄임, `pickImages(max)`). 글 메모는 여러 장, 체크리스트는 대표 사진 1장(`images[0]`, 펼치면 맨 위) + 항목마다 1장(`items[].img`, 편집 시트의 📷), 일정은 최대 3장.에 저장하고 메모 `images:[id]`·체크 항목 `img`·일정 `images:[id]` 로 참조, `action:'image'`(토큰 불필요)로 받아 `fillImages`가 채운다. 내 메모/공용 메모 섹션 자체도 `details.lgsecacc`(열림 상태 localStorage `tl_sec`).
 - `index.html` 한 파일이 사이트 전체다. 다른 세션이 추가한 블록(메모 탭의 eSIM, 도쿄역·선물, 쇼핑 등)을 모를 수 있으니, 어떤 블록을 통째로 지우기 전에 `git log -p`로 누가 왜 넣었는지 확인한다.
 - 커밋 후 GitHub Pages 반영까지 1~2분. 확인은 `gh run list --limit 1`.
 - `.omc/state/hud-state.json`은 커밋하지 않는다.

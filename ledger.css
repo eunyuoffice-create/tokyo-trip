@@ -513,3 +513,20 @@ body.body-edit .ev,body.body-edit .card{-webkit-user-select:none;user-select:non
 .lg details.lgsecacc > summary .lgnum{font-size:12.5px;color:var(--muted)}
 .lg details.lgsecacc > summary .lgnum::after{content:"▾";margin-left:6px;color:var(--muted)}
 .lg details.lgsecacc:not([open]) > summary .lgnum::after{content:"▸"}
+
+/* 여행 정보 카드 */
+.lg .lgmemoacc.lginfo summary .lgmtitle{font-size:15px;font-weight:700;gap:8px}
+.lg .lgmemoacc.lginfo summary{padding-left:14px;min-height:54px}
+.lg .lgpill{font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent);flex-shrink:0}
+.lg .lgmemoacc.lginfo .lgmemoin{font-size:14.5px}
+.lg .lgmemoacc.lginfo .lgmemobody .lgh2{color:var(--fg);font-size:13px;background:var(--bg);display:inline-block;padding:2px 8px;border-radius:6px;margin:12px 0 6px}
+.lg .lgadd2.lgadd3{grid-template-columns:1fr 1fr .7fr}
+.lg .lgbar .lgaddexp.lgaddinfo{background:var(--surface);color:var(--fg);box-shadow:var(--shadow);border:1px solid var(--line)}
+
+/* 체크리스트 대표 사진 · 항목 사진 */
+.lg .lgcover{margin:2px 0 10px}
+.lg .lgthumb-cover{width:100%;height:auto;aspect-ratio:16/9;border-radius:12px}
+.lg .lgthumb-cover img{width:100%;height:100%;object-fit:cover}
+.lg .lgsheet .lgli .lgthumb-xs{width:34px;height:34px;border-radius:7px;margin-right:2px;cursor:pointer}
+.lg .lgsheet .lgli .lgthumb-xs.lgarm{outline:2px solid var(--accent)}
+.lg .lgcam{width:30px;height:30px;border-radius:8px;background:var(--chip);font-size:14px;display:grid;place-items:center;flex-shrink:0;opacity:.8}
