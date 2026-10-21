@@ -752,10 +752,10 @@ body.body-edit .ev,body.body-edit .card{-webkit-user-select:none;user-select:non
 .lg form.lgviewmode .lgvhide{display:none}
 /* 제목 밑 설명(메모): 품목 글씨 크기 정도로 작게 */
 .lg .lgtitlef{display:flex;flex-direction:column;gap:4px}
-.lg .lgf input.lgdesc[type=text]{height:32px;font-size:13.5px;padding:0 12px;border-radius:9px;color:var(--fg)}
-.lg .lgf input.lgdesc::placeholder{color:var(--muted)}
-.lg form.lgviewmode .lgf input.lgdesc[type=text]{padding-left:0;height:auto;line-height:1.4;color:var(--muted)}
-@media (min-width:900px){ .lg .lgf input.lgdesc[type=text]{height:36px;font-size:14.5px} }
+.lg .lgf textarea.lgdesc{min-height:32px;height:32px;font-size:13.5px;line-height:1.45;padding:6px 12px;border-radius:9px;color:var(--fg);resize:none;overflow:hidden;white-space:pre-wrap;overflow-wrap:anywhere}
+.lg .lgf textarea.lgdesc::placeholder{color:var(--muted)}
+.lg form.lgviewmode .lgf textarea.lgdesc{padding:0;min-height:0;color:var(--muted);background:transparent;border-color:transparent}
+@media (min-width:900px){ .lg .lgf textarea.lgdesc{font-size:14.5px} }
 /* 금액·낸 사람 영역 줄이기 */
 .lg .lgsheet .lgamount input{height:46px !important;font-size:22px;padding:0 12px !important}
 .lg .lgsheet .lgseg{border-radius:10px}

@@ -775,7 +775,7 @@ function openExpense(e,opts={}){
   const dayShort=k=>{const x=dayOf(k);return k===today?'오늘':(x.d==='pre'?'출발 전':`D${x.n}`)};
   openSheet(`<h2><span id="fHead">${isNew?(d.priv?'내 지출':'공용 지출'):'지출'}</span><span class="lgh2btns">${isNew?'':'<button type="button" class="lgh2edit" id="fEditBtn">수정</button>'}<button type="button" data-close>닫기</button></span></h2><form id="expForm" class="${viewing?'lgviewmode':''}">
     <div class="lgf"><label>금액 <span class="lgreq" aria-label="필수">*</span></label><div class="lgamtview" id="fAmtView"></div><div class="lgamount"><input type="text" inputmode="decimal" id="fAmt" placeholder="0" value="${d.amount?esc(d.amount):''}" aria-label="금액"><div class="lgseg" id="fCur"><button type="button" data-c="JPY" aria-pressed="${d.cur==='JPY'}">¥</button><button type="button" data-c="KRW" aria-pressed="${d.cur==='KRW'}">₩</button></div></div></div>
-    <div class="lgf lgtitlef"><input type="text" id="fTitle" placeholder="무엇에 썼어요? 예: 모츠나베, 리무진 버스" value="${esc(d.title)}" maxlength="80" aria-label="내용"><input type="text" id="fMemo" class="lgdesc" placeholder="설명 (선택) · 누구 거 샀는지, 메모 등" value="${esc(d.memo)}" maxlength="120" aria-label="설명"></div>
+    <div class="lgf lgtitlef"><input type="text" id="fTitle" placeholder="무엇에 썼어요? 예: 모츠나베, 리무진 버스" value="${esc(d.title)}" maxlength="80" aria-label="내용"><textarea id="fMemo" class="lgdesc" rows="1" placeholder="설명 (선택) · 누구 거 샀는지, 메모 등" maxlength="300" aria-label="설명">${esc(d.memo)}</textarea></div>
     <div class="lgvsum" id="fVSum"></div>
     <div id="fRc"></div>
     <div class="lgf" id="fPayerBox" ${d.priv?'hidden':''}><label>누가 냈어요?</label><div class="lgbig2" id="fPayer">${S.people.map((p,i)=>`<button type="button" data-i="${i}" aria-pressed="${d.payer===i}">${esc(pname(i))}${i===S.me?' <small>나</small>':''}</button>`).join('')}</div><div class="lghint" id="fPartsHint"></div></div>
@@ -800,7 +800,10 @@ function openExpense(e,opts={}){
   const setScope=priv=>{d.priv=priv; qa('#fScope .lgchip',sh).forEach(x=>x.setAttribute('aria-pressed',(x.dataset.s==='mine')===priv)); g('#fSharedBox').hidden=priv; g('#fPayerBox').hidden=priv; if(isNew)g('#fHead').textContent=priv?'내 지출':'공용 지출'; partsHint(); sum()};
   qa('#fScope .lgchip',sh).forEach(b=>b.onclick=()=>setScope(b.dataset.s==='mine'));
   g('#fAmt').oninput=()=>{partsHint();customHint()};
-  g('#fMemo').oninput=()=>{d.memo=g('#fMemo').value;sum()};
+  /* 설명은 줄바꿈되는 칸: 내용 길이만큼 자동으로 늘어남 */
+  const fitMemo=()=>{ const t=g('#fMemo'); if(!t)return; t.style.height='auto'; t.style.height=t.scrollHeight+'px'; };
+  g('#fMemo').oninput=()=>{d.memo=g('#fMemo').value;fitMemo();sum()};
+  requestAnimationFrame(fitMemo); setTimeout(fitMemo,300);
   qa('#fCur button',sh).forEach(b=>b.onclick=()=>{d.cur=b.dataset.c;qa('#fCur button',sh).forEach(x=>x.setAttribute('aria-pressed',x===b));partsHint();customHint()});
   qa('#fDay button',sh).forEach(b=>b.onclick=()=>{d.day=b.dataset.d;qa('#fDay button',sh).forEach(x=>x.setAttribute('aria-pressed',x===b));sum()});
   qa('#fCat button',sh).forEach(b=>b.onclick=()=>{d.cat=b.dataset.c;qa('#fCat button',sh).forEach(x=>x.setAttribute('aria-pressed',x===b));sum()});
@@ -918,6 +921,7 @@ function openExpense(e,opts={}){
       rows.push(['날짜',dayLabel(d.day)]); rows.push(['카테고리',d.cat]);
       const ln=readExpLinks(sh).filter(x=>x.u);
       g('#fVSum').innerHTML=`<dl class="lgkv2">${rows.map(([k,v2])=>`<dt>${esc(k)}</dt><dd>${esc(v2)}</dd>`).join('')}${ln.length?`<dt>링크</dt><dd>${ln.map(x=>`<a href="${esc(x.u)}" target="_blank" rel="noopener" class="lglinkx">${esc(x.l||x.u.replace(/^https?:\/\//,'').slice(0,30))} ↗</a>`).join(' ')}</dd>`:''}</dl>`; }
+    requestAnimationFrame(()=>{ const t=g('#fMemo'); if(t){ t.style.height='auto'; t.style.height=t.scrollHeight+'px'; } });
     if(!isNew){ g('#fHead').textContent=v?'지출':'지출 수정'; const eb=g('#fEditBtn'); if(eb)eb.hidden=!v; }
     if(!v){ const m=g('#fMore'); if(m&&!moreOpen)m.open=false; } };
   if(!isNew){ const go=()=>{ setView(false); setTimeout(()=>g('#fAmt').focus(),50); }; g('#fEditBtn').onclick=go; g('#fEditBig').onclick=go; setView(viewing); }
