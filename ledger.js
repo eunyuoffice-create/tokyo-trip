@@ -142,7 +142,9 @@ const rateLabel=()=>{const ri=S.rateInfo||{};return `1엔 = ${S.rate}원`+(ri.mo
 const balLine=(b,cur)=>Math.abs(b)<0.5?`<b>정산 끝</b>`:(b>0?`받을 돈 <b class="lgnum" style="color:var(--ok)">${fmt(b,cur)}</b>`:`줄 돈 <b class="lgnum" style="color:var(--accent)">${fmt(-b,cur)}</b>`);
 
 /* ---------- 글 본문: ## 소제목, - 목록, 빈 줄 문단, [이름](url) 링크, 주소 자동 링크 ---------- */
-const mdLinks=t=>{let out='',last=0; const re=/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g; let m; while((m=re.exec(t))){ out+=linkify(t.slice(last,m.index))+`<a href="${esc(m[2])}" target="_blank" rel="noopener" class="lglinkx">${esc(m[1])} ↗</a>`; last=m.index+m[0].length; } return out+linkify(t.slice(last)); };
+/* 강조 문법: <글자> → 굵게, #글자# → 빨간색. 링크 안쪽은 건드리지 않는다 */
+const emph=h=>h.split(/(<a [^>]*>.*?<\/a>)/).map((seg,i)=>i%2?seg:seg.replace(/&lt;([^&\n]{1,80}?)&gt;/g,'<b class="lgem">$1</b>').replace(/#([^#\n<>]{1,60}?)#/g,'<span class="lgred">$1</span>')).join('');
+const mdLinks=t=>{let out='',last=0; const re=/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g; let m; while((m=re.exec(t))){ out+=emph(linkify(t.slice(last,m.index)))+`<a href="${esc(m[2])}" target="_blank" rel="noopener" class="lglinkx">${esc(m[1])} ↗</a>`; last=m.index+m[0].length; } return out+emph(linkify(t.slice(last))); };
 function bodyHtml(t){ let h='',ul=false; const close=()=>{if(ul){h+='</ul>';ul=false}};
   String(t||'').split('\n').forEach(l=>{ const s=l.trim(); let m;
     if(!s){close(); h+='<div class="lgbr"></div>'; return}
@@ -421,7 +423,7 @@ function openInfoEditor(m,type){
     <div class="lgf"><label>라벨 <span class="lgsub">제목 옆 작은 표시</span></label><input type="text" id="iTag" value="${esc(d.tag||'')}" maxlength="20" placeholder="예: 대한항공, 10/26"></div>
     ${oneImg('cover','타이틀 이미지 (1장)',d.cover)}`;
   let form='';
-  if(type==='doc') form=common+`<div class="lgf"><label>메모</label><textarea id="iBody" rows="5" placeholder="본문. ## 소제목, - 항목, [이름](주소) 도 써져요.">${esc(d.body||'')}</textarea></div>${linkRows('top',d.links||[],0)}
+  if(type==='doc') form=common+`<div class="lgf"><label>메모</label><textarea id="iBody" rows="5" placeholder="본문. ## 소제목, - 항목, [이름](주소), <굵게>, #빨강# 도 써져요.">${esc(d.body||'')}</textarea></div>${linkRows('top',d.links||[],0)}
     <div class="lgf"><label>블록 <span class="lgsub">소제목·체크 항목을 순서대로</span></label><div class="crows" id="iBlocks">${blocks.map(blockHtml).join('')}</div><div class="lgchips" style="margin-top:6px"><button type="button" class="lgchip" id="iAddSec">+ 소제목</button><button type="button" class="lgchip" id="iAddItem">+ 체크 항목</button></div></div>`;
   else if(type==='flight') form=common+`<div class="lgf"><label>구간</label><div class="crows" id="mLegs">${((d.legs&&d.legs.length)?d.legs:[{}]).map(legRow).join('')}</div><button type="button" class="lglink" id="mAddLeg">+ 구간 추가</button></div><div class="lgf"><label>메모</label><textarea id="iBody" rows="4" placeholder="예약번호 안내, 전자신고 링크 등">${esc(d.body||'')}</textarea></div>${linkRows('top',d.links||[],0)}`;
   else { const h=d.hotel||{}; form=common+`<div class="lgf"><label>주소</label><input type="text" id="hAddr" value="${esc(h.addr||'')}" placeholder="東京都豊島区…"></div><div class="lgrow2"><div class="lgf"><label>체크인</label><input type="text" id="hCin" value="${esc(h.cin||'')}" placeholder="15:00"></div><div class="lgf"><label>체크아웃</label><input type="text" id="hCout" value="${esc(h.cout||'')}" placeholder="11:00"></div></div><div class="lgrow2"><div class="lgf"><label>구글맵 검색어</label><input type="text" id="hQ" value="${esc(h.q||'')}" placeholder="ホテルリソル池袋"></div><div class="lgf"><label>전화</label><input type="text" id="hTel" inputmode="tel" value="${esc(h.tel||'')}"></div></div><div class="lgf"><label>메모</label><textarea id="iBody" rows="4">${esc(d.body||'')}</textarea></div>${linkRows('top',d.links||[],0)}`; }
@@ -459,7 +461,7 @@ function openMemoEditor(m,opts={}){
     <div class="lgf"><input type="text" id="mTitle" placeholder="제목" value="${esc(d.title)}" maxlength="60"></div>
     ${info?`<div class="lgf"><label>라벨 <span class="lgsub">제목 옆 작은 표시 (예: 대한항공, 10/26)</span></label><input type="text" id="mTag" value="${esc(d.tag)}" maxlength="20"></div>`:''}
     ${d.type==='flight'?`<div class="lgf" id="mLegsBox"><label>구간</label><div class="crows" id="mLegs">${(d.legs.length?d.legs:[{}]).map(legRow).join('')}</div><button type="button" class="lglink" id="mAddLeg">+ 구간 추가</button></div>`:''}
-    <div class="lgf" id="mBodyBox" ${(d.type==='text'||d.type==='flight')?'':'hidden'}>${d.type==='flight'?'<label>메모</label>':''}<textarea id="mBody" rows="${d.type==='flight'?4:7}" placeholder="${d.type==='flight'?'예약번호 안내, 전자신고 링크 등':'여기에 그냥 써요. 줄바꿈 그대로 남아요.'}">${esc(d.body)}</textarea><div class="lghint">"## 소제목", "- 항목", "[이름](주소)" 를 쓰면 제목·목록·링크로 보여요.</div></div>
+    <div class="lgf" id="mBodyBox" ${(d.type==='text'||d.type==='flight')?'':'hidden'}>${d.type==='flight'?'<label>메모</label>':''}<textarea id="mBody" rows="${d.type==='flight'?4:7}" placeholder="${d.type==='flight'?'예약번호 안내, 전자신고 링크 등':'여기에 그냥 써요. 줄바꿈 그대로 남아요.'}">${esc(d.body)}</textarea><div class="lghint">"## 소제목", "- 항목", "[이름](주소)" 는 제목·목록·링크로, "&lt;글자&gt;" 는 굵게, "#글자#" 는 빨간색으로 보여요.</div></div>
     <div class="lgf" id="mListBox" ${d.type==='list'?'':'hidden'}><div id="mItems">${itemsHtml()}</div>
       <div class="lgaddli"><span class="lgplus">${svgPlus}</span><input type="text" id="mAdd" placeholder="항목 추가" maxlength="200"><span id="mAddWho">${shared()?whoBtn(null,'id="mAddWhoBtn"'):''}</span><button type="button" class="lgaddbtn" id="mAddBtn">입력</button></div>
       <div class="lghint" id="mItemsHint">${isNew?'':'체크·추가·삭제는 바로 저장돼요. 글자를 고치면 칸을 벗어날 때 저장돼요.'}</div></div>

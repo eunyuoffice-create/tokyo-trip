@@ -577,3 +577,6 @@ body.body-edit .ev,body.body-edit .card{-webkit-user-select:none;user-select:non
 .lg .lgblk .lgclink input{background:var(--surface)}
 
 .lg .lgtophint{margin:4px 2px 0;font-size:12px}
+
+.lg .lgem{font-weight:700}
+.lg .lgred{color:var(--accent);font-weight:600}
