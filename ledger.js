@@ -415,7 +415,8 @@ function wireOneImgs(sh){ sh.querySelectorAll('[data-oneimg]').forEach(box=>{ co
 const readOneImg=(root,id)=>{const b=root.querySelector(`[data-oneimg="${id}"]`); return b?(b.dataset.val||''):''};
 function openInfoEditor(m,type){
   const isNew=!m; const d=isNew?{type,title:'',tag:'',cover:'',body:'',links:[],blocks:[],legs:[],hotel:{}}:infoDocOf(m); type=d.type;
-  const blocks=(d.blocks||[]).map(b=>({...b,id:b.id||uid()}));
+  let blocks=(d.blocks||[]).map(b=>({...b,id:b.id||uid()}));
+  if(type==='doc'){ if((d.body&&d.body.trim())||d.cover||(d.links&&d.links.length)) blocks=[{k:'sec',id:uid(),title:'',body:d.body||'',img:d.cover||'',links:d.links||[]},...blocks]; if(!blocks.length) blocks=[{k:'sec',id:uid(),title:'',body:'',img:'',links:[]}]; }
   const blockHtml=(b,i)=>b.k==='item'
     ?`<div class="crow lgblk" data-bi="${i}" data-k="item"><div class="ckind"><span class="lgsub">☑ 체크 항목</span><button type="button" class="lgx" data-delblk aria-label="삭제">×</button></div>${oneImg('b'+i,'이미지 (1장)',b.img)}<input type="text" class="bk-title" placeholder="타이틀" value="${esc(b.title||'')}" maxlength="80"><textarea class="bk-desc" rows="2" placeholder="디스크립션">${esc(b.desc||'')}</textarea>${linkRows('b'+i,b.link?[b.link]:[],1)}</div>`
     :`<div class="crow lgblk" data-bi="${i}" data-k="sec"><div class="ckind"><span class="lgsub">▎ 단락</span><button type="button" class="lgx" data-delblk aria-label="삭제">×</button></div><input type="text" class="bk-title" placeholder="소제목" value="${esc(b.title||'')}" maxlength="80">${oneImg('b'+i,'이미지 (1장)',b.img)}<textarea class="bk-desc" rows="3" placeholder="메모">${esc(b.body||'')}</textarea>${linkRows('b'+i,b.links||[],0)}</div>`;
@@ -423,7 +424,9 @@ function openInfoEditor(m,type){
     <div class="lgf"><label>라벨 <span class="lgsub">제목 옆 작은 표시</span></label><input type="text" id="iTag" value="${esc(d.tag||'')}" maxlength="20" placeholder="예: 대한항공, 10/26"></div>
     ${oneImg('cover','타이틀 이미지 (1장)',d.cover)}`;
   let form='';
-  if(type==='doc') form=common+`<div class="lgf"><label>메모</label><textarea id="iBody" rows="5" placeholder="본문. ## 소제목, - 항목, [이름](주소), <굵게>, #빨강# 도 써져요.">${esc(d.body||'')}</textarea></div>${linkRows('top',d.links||[],0)}
+  const head2=`<div class="lgf"><input type="text" id="iTitle" placeholder="타이틀 *" value="${esc(d.title)}" maxlength="60"></div>
+    <div class="lgf"><label>라벨 <span class="lgsub">제목 옆 작은 표시</span></label><input type="text" id="iTag" value="${esc(d.tag||'')}" maxlength="20" placeholder="예: 대한항공, 10/26"></div>`;
+  if(type==='doc') form=head2+`<div class="lghint" style="margin:-4px 0 10px">단락: 소제목 + 사진 1장 + 메모 + 링크. 메모에 ## 소제목, - 항목, [이름](주소), &lt;굵게&gt;, #빨강# 도 써져요.</div>
     <div class="lgf"><label>단락 · 체크 항목 <span class="lgsub">순서대로 쌓여요</span></label><div class="crows" id="iBlocks">${blocks.map(blockHtml).join('')}</div><div class="lgchips" style="margin-top:6px"><button type="button" class="lgchip" id="iAddSec">+ 단락</button><button type="button" class="lgchip" id="iAddItem">+ 체크 항목</button></div></div>`;
   else if(type==='flight') form=common+`<div class="lgf"><label>구간</label><div class="crows" id="mLegs">${((d.legs&&d.legs.length)?d.legs:[{}]).map(legRow).join('')}</div><button type="button" class="lglink" id="mAddLeg">+ 구간 추가</button></div><div class="lgf"><label>메모</label><textarea id="iBody" rows="4" placeholder="예약번호 안내, 전자신고 링크 등">${esc(d.body||'')}</textarea></div>${linkRows('top',d.links||[],0)}`;
   else { const h=d.hotel||{}; form=common+`<div class="lgf"><label>주소</label><input type="text" id="hAddr" value="${esc(h.addr||'')}" placeholder="東京都豊島区…"></div><div class="lgrow2"><div class="lgf"><label>체크인</label><input type="text" id="hCin" value="${esc(h.cin||'')}" placeholder="15:00"></div><div class="lgf"><label>체크아웃</label><input type="text" id="hCout" value="${esc(h.cout||'')}" placeholder="11:00"></div></div><div class="lgrow2"><div class="lgf"><label>구글맵 검색어</label><input type="text" id="hQ" value="${esc(h.q||'')}" placeholder="ホテルリソル池袋"></div><div class="lgf"><label>전화</label><input type="text" id="hTel" inputmode="tel" value="${esc(h.tel||'')}"></div></div><div class="lgf"><label>메모</label><textarea id="iBody" rows="4">${esc(d.body||'')}</textarea></div>${linkRows('top',d.links||[],0)}`; }
@@ -438,7 +441,7 @@ function openInfoEditor(m,type){
   if(g('#iAddSec'))g('#iAddSec').onclick=()=>addBlk('sec'); if(g('#iAddItem'))g('#iAddItem').onclick=()=>addBlk('item');
   if(type==='flight'){ const wireLegs=()=>{ qa('#mLegs [data-delleg]',sh).forEach(b=>b.onclick=()=>b.closest('.lgleg').remove()); }; wireLegs(); g('#mAddLeg').onclick=()=>{ g('#mLegs').insertAdjacentHTML('beforeend',legRow()); wireLegs(); }; }
   g('#infoForm').onsubmit=async ev=>{ ev.preventDefault(); const title=g('#iTitle').value.trim(); if(!title){toast('타이틀은 꼭 넣어주세요'); g('#iTitle').focus(); return}
-    const data={cat:'info',owner:null,type,title,tag:g('#iTag').value.trim(),cover:readOneImg(sh,'cover'),body:(g('#iBody')?.value||''),links:readLinkRows(sh,'top'),items:[],images:[]};
+    const data={cat:'info',owner:null,type,title,tag:g('#iTag').value.trim(),cover:type==='doc'?'':readOneImg(sh,'cover'),body:type==='doc'?'':(g('#iBody')?.value||''),links:type==='doc'?[]:readLinkRows(sh,'top'),items:[],images:[]};
     if(type==='doc'){ syncBlocks(); data.blocks=blocks; }
     if(type==='flight') data.legs=readLegs(sh);
     if(type==='hotel') data.hotel={addr:g('#hAddr').value.trim(),cin:g('#hCin').value.trim(),cout:g('#hCout').value.trim(),q:g('#hQ').value.trim(),tel:g('#hTel').value.trim()};
