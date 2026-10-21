@@ -800,3 +800,14 @@ body.body-edit .ev,body.body-edit .card{-webkit-user-select:none;user-select:non
 .lg .lgspin.lgspin-sm{width:16px;height:16px;border-width:2px;flex:none}
 /* 날짜·카테고리는 위쪽(수정할 때만, 보기에서는 요약 표에 나옴) */
 .lg form.lgviewmode .lgeditrow{display:none}
+/* 품목 이름: 길면 줄바꿈 (모바일·PC 모두, 잘리지 않음) */
+.lg .lgf .lgit textarea.lgitname{display:block;width:100%;min-width:0;min-height:22px;height:22px;padding:1px 2px;font-size:13px;line-height:20px;border-radius:5px;border:1px solid transparent;background:transparent;box-shadow:none;color:var(--fg);resize:none;overflow:hidden;white-space:pre-wrap;overflow-wrap:anywhere;font-family:inherit}
+.lg .lgit textarea.lgitname[readonly]{cursor:pointer;outline:none}
+.lg .lgitlist.lgediting .lgit textarea.lgitname{border-color:var(--line);background:var(--bg);min-height:26px;padding:3px 4px}
+.lg .lgit{align-items:start}
+.lg .lgit .lgitck,.lg .lgit .lgqty,.lg .lgf .lgit input.lgitprice[type=text],.lg .lgit .lgitdel{align-self:center}
+.lg .lgit.lgitoff textarea.lgitname{color:var(--muted);text-decoration:line-through}
+.lg .lgitlist.lgediting .lgit.lgitoff textarea.lgitname{text-decoration:none;opacity:.6}
+.lg .lgf .lgit.lgitdisc textarea.lgitname{color:var(--accent)}
+.lg .lgitlist{max-height:none}
+
