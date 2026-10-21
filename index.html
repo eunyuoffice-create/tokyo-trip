@@ -44,6 +44,14 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
 .chips:empty{display:none}
 .chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:0;-webkit-overflow-scrolling:touch}
 .chips::-webkit-scrollbar{display:none}
+/* PC(마우스): 휠·드래그로 가로 스크롤, 얇은 스크롤바 표시 */
+@media (hover:hover) and (pointer:fine){
+ .chips{scrollbar-width:thin;scrollbar-color:var(--line) transparent;padding-bottom:4px;cursor:grab}
+ .chips::-webkit-scrollbar{display:block;height:6px}
+ .chips::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
+ .chips.dragging{cursor:grabbing;user-select:none}
+ .chips.dragging .chip{pointer-events:none}
+}
 .chip{flex:0 0 auto;padding:6px 12px;border-radius:999px;background:var(--chip);font-size:13px;font-weight:500;white-space:nowrap;border:1px solid transparent}
 .chip[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
 .chip .sub{font-family:var(--mono);font-size:11px;opacity:.7;margin-left:4px}
@@ -811,8 +819,23 @@ const todayStr=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMo
 })();
 
 /* ---------- RENDER: sub chips ---------- */
+/* 칩 줄: 마우스 휠(세로)을 가로 스크롤로, 마우스 드래그로 끌어서 이동. 터치는 기본 동작 그대로 */
+function wireChipScroll(box){
+ if(box._wired) return; box._wired=true;
+ box.addEventListener('wheel',e=>{ if(box.scrollWidth<=box.clientWidth) return; if(Math.abs(e.deltaY)<=Math.abs(e.deltaX)) return;
+  const max=box.scrollWidth-box.clientWidth; const next=Math.max(0,Math.min(max,box.scrollLeft+e.deltaY));
+  if(next===box.scrollLeft) return; box.scrollLeft=next; e.preventDefault(); },{passive:false});
+ let down=null, moved=false;
+ box.addEventListener('pointerdown',e=>{ if(e.pointerType!=='mouse'||e.button!==0) return; down={x:e.clientX,l:box.scrollLeft,id:e.pointerId}; moved=false; });
+ box.addEventListener('pointermove',e=>{ if(!down||e.pointerId!==down.id) return; const dx=e.clientX-down.x;
+  if(!moved&&Math.abs(dx)>5){ moved=true; box.classList.add('dragging'); try{box.setPointerCapture(e.pointerId)}catch(_){} }
+  if(moved) box.scrollLeft=down.l-dx; });
+ const up=()=>{ if(!down) return; down=null; if(moved) setTimeout(()=>box.classList.remove('dragging'),0); };
+ box.addEventListener('pointerup',up); box.addEventListener('pointercancel',up);
+ box.addEventListener('click',e=>{ if(moved){ e.stopPropagation(); e.preventDefault(); moved=false; } },true);
+}
 function renderChips(){
- const box=document.getElementById('subchips'); box.innerHTML='';
+ const box=document.getElementById('subchips'); wireChipScroll(box); box.innerHTML='';
  let list=[];
  if(state.tab==='plan') list=DAYS.map(d=>({id:d.date,label:`${d.n}일차`,sub:`${d.date.slice(5).replace('-','.')} ${d.w}`,on:d.date===state.day}));
  else if(state.tab==='food'){ const base=getFood().filter(f=>(state.ftype==='전체'||foodType(f)===state.ftype)&&tagMatch(f)); list=['전체',...FOOD_AREAS].map(a=>({id:a,label:a,sub:a==='전체'?base.length:base.filter(f=>f.a===a).length,on:a===state.farea})); }
