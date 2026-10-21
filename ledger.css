@@ -580,3 +580,45 @@ body.body-edit .ev,body.body-edit .card{-webkit-user-select:none;user-select:non
 
 .lg .lgem{font-weight:700}
 .lg .lgred{color:var(--accent);font-weight:600}
+/* 정보 글쓰기 폼: 단락 요소 압축 */
+.lg .lgblk{padding:6px 8px 8px;gap:4px;border-radius:10px}
+.lg .lgblk .ckind{min-height:22px} .lg .lgblk .ckind .lgsub{font-size:11px} .lg .lgblk .ckind .lgx{width:22px;height:22px;font-size:15px}
+.lg .lgblk input.bk-title{height:34px;font-size:13.5px;padding:0 8px;border-radius:7px}
+.lg .lgblk textarea{min-height:40px;font-size:13.5px;padding:6px 8px;line-height:1.45;border-radius:7px}
+.lg .lgblk .lgf{margin-bottom:4px} .lg .lgblk .lgf label{font-size:11px;margin-bottom:3px}
+.lg .lgblk .lgimgs-edit{margin-bottom:2px} .lg .lgblk .lgimgs-edit .lgthumb{width:56px;height:56px;border-radius:8px}
+.lg .lgblk .lglink{font-size:12px}
+.lg .lgblk .lgclinks{gap:4px;margin-bottom:4px}
+.lg .lgblk .lgclink{grid-template-columns:1fr 1.4fr 24px;gap:4px}
+.lg .lgblk .lgclink input{height:32px !important;font-size:12.5px;padding:0 8px;border-radius:7px}
+.lg .lgblk .lgclink .lgx{width:24px;height:24px;font-size:15px}
+.lg .lgsheet #iBlocks{gap:6px}
+.lg .lgsheet [data-oneimg] .lglink{display:inline-block;margin-top:2px}
+.lg .lgsheet .lgf label{font-size:11.5px;margin-bottom:4px}
+.lg .lgsheet .lgf input[type=text]#iTitle,.lg .lgsheet .lgf input[type=text]#iTag{height:40px}
+/* 폼 요소 전체 축소 (시트 안 입력칸) */
+.lg .lgf{margin-bottom:10px}
+.lg .lgf label{font-size:11.5px;margin-bottom:4px}
+.lg .lgf input[type=text],.lg .lgf input[type=number],.lg .lgf input[type=password],.lg .lgf select{height:38px;border-radius:10px;padding:0 10px;font-size:14px}
+.lg .lgf textarea{min-height:56px;padding:8px 10px;font-size:14px;line-height:1.45}
+.lg .lgsheet .lgf input#fTitle{height:40px;font-size:14.5px}
+.lg .lgamount input{height:48px !important;font-size:24px}
+.lg .lgchip{height:28px;padding:0 11px;font-size:12.5px} .lg .lgchip.lgsm{height:24px;padding:0 9px;font-size:11.5px}
+.lg .lgclinks{gap:4px} .lg .lgclink{gap:4px;grid-template-columns:1fr 1.4fr 24px}
+.lg .lgclink input{height:34px !important;font-size:13px;padding:0 8px;border-radius:8px}
+.lg .lgclink .lgx{width:24px;height:24px;font-size:15px}
+.lg .crow{padding:6px 8px 8px;gap:4px;border-radius:10px}
+.lg .crow .ckind{min-height:22px} .lg .crow .ckind .lgsub{font-size:11px} .lg .crow .ckind .lgx{width:22px;height:22px;font-size:15px}
+.lg .crow input{height:34px !important;font-size:13px;padding:0 8px;border-radius:7px}
+.lg .crow textarea{min-height:40px;font-size:13.5px;padding:6px 8px;line-height:1.45;border-radius:7px}
+.lg .lgblk input.bk-title{height:34px;font-size:13.5px;padding:0 8px;border-radius:7px}
+.lg .lgblk .lgf{margin-bottom:4px} .lg .lgblk .lgf label{font-size:11px;margin-bottom:3px}
+.lg .lgblk .lgimgs-edit{margin-bottom:2px} .lg .lgblk .lgimgs-edit .lgthumb{width:56px;height:56px;border-radius:8px}
+.lg .lgblk .lglink,.lg .lgsheet [data-oneimg] .lglink{font-size:12px}
+.lg .lgsheet #iBlocks{gap:6px}
+.lg .lgimgs-edit .lgthumb{width:64px;height:64px}
+.lg .lgsheet .lgli .lgtxin{height:30px;font-size:13.5px}
+.lg .lgsheet .lgaddli input{height:32px}
+.lg .lgbtn{height:44px;font-size:14.5px}
+.lg .lgactions{margin-top:12px}
+.lg .lgsheet h2{font-size:16px}
