@@ -717,4 +717,11 @@ body.body-edit .ev,body.body-edit .card{-webkit-user-select:none;user-select:non
 /* 할인 줄 */
 .lg .lgf .lgit.lgitdisc input.lgitprice[type=text],.lg .lgf .lgit.lgitdisc input.lgitname[type=text]{color:var(--accent)}
 .lg .lgf .lgit.lgitdisc.lgitoff input[type=text]{color:var(--muted)}
+/* 되돌리기 알림: 두 줄(금액·구분 / 가게 이름), 버튼은 오른쪽, 눌러짐 */
+.lg .lgtoast.lgtoast-undo{white-space:normal;border-radius:14px;padding:10px 10px 10px 14px;gap:10px;width:calc(100vw - 32px);max-width:420px;pointer-events:auto;justify-content:space-between}
+.lg .lgtoast-undo .lgut{display:flex;flex-direction:column;min-width:0;flex:1;line-height:1.35}
+.lg .lgtoast-undo .lgut b{font-weight:700;font-size:13.5px}
+.lg .lgtoast-undo .lgut small{font-size:12px;font-weight:500;opacity:.75;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lg .lgtoast-undo .lgundo{margin-left:0;flex:none;height:34px;padding:0 12px}
+.lg .lgtoast:not(.lgshow){pointer-events:none}
 

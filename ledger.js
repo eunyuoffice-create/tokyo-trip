@@ -35,7 +35,7 @@ const ownerOf=d=>(d.owner===null||d.owner===undefined||d.owner==='')?null:+d.own
 const isShared=d=>ownerOf(d)===null;
 const q=(sel,el)=>{ if(el)return el.querySelector(sel); for(const r of roots()){const x=r.querySelector(sel); if(x)return x} return ov?ov.querySelector(sel):null };
 const qa=(sel,el)=>el?[...el.querySelectorAll(sel)]:[...roots(),ov].filter(Boolean).flatMap(r=>[...r.querySelectorAll(sel)]);
-const toast=m=>{const t=q('.lgtoast',ov);if(!t)return;t.textContent=m;t.classList.add('lgshow');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('lgshow'),1800)};
+const toast=m=>{const t=q('.lgtoast',ov);if(!t)return;t.classList.remove('lgtoast-undo');t.textContent=m;t.classList.add('lgshow');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('lgshow'),1800)};
 const svgCheck='<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>';
 const svgX='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const svgLock='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
@@ -684,7 +684,7 @@ function wireExpLinks(sh){ sh.querySelectorAll('#fLinks [data-dellink]').forEach
 /* ---------- 영수증 찍어서 자동 등록 (카드 스캔처럼): 사진 → 서버(Gemini) → 지출 한 건 저장 → 되돌리기 토스트 ---------- */
 const svgCam='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg>';
 let undoT;
-function toastUndo(msg,fn){ const t=q('.lgtoast',ov); if(!t)return; t.innerHTML=`<span>${esc(msg)}</span><button type="button" class="lgundo">되돌리기</button>`; t.classList.add('lgshow'); clearTimeout(toastT); clearTimeout(undoT);
+function toastUndo(msg,fn,sub=''){ const t=q('.lgtoast',ov); if(!t)return; t.classList.add('lgtoast-undo'); t.innerHTML=`<span class="lgut"><b>${esc(msg)}</b>${sub?`<small>${esc(sub)}</small>`:''}</span><button type="button" class="lgundo">되돌리기</button>`; t.classList.add('lgshow'); clearTimeout(toastT); clearTimeout(undoT);
   t.querySelector('.lgundo').onclick=()=>{ t.classList.remove('lgshow'); t.textContent=''; fn(); };
   undoT=setTimeout(()=>{ t.classList.remove('lgshow'); setTimeout(()=>{ if(!t.classList.contains('lgshow'))t.textContent=''; },300); },7000); }
 let scanning=false;
@@ -750,7 +750,7 @@ async function scanReceipt(){
     const body=priv?{owner:S.me,...base,payer:S.me,parts:[S.me],custom:null}:{owner:null,...base,payer:S.me,parts:[...Array(n).keys()],custom:null,settled:false,settledBy:null,settleId:null};
     const id=uid();
     const ok=await write([{op:'set',col:'expenses',id,data:body}],null);
-    if(ok) toastUndo(`${base.title} ${fmt(base.amount,base.cur)} 등록 (${priv?'내 지출':'공용'}${R.items.length?` · 품목 ${R.items.length}`:''})`,()=>{ write([{op:'delete',col:'expenses',id}],'되돌렸어요'); dropImage(R.imgId); });
+    if(ok) toastUndo(`${fmt(base.amount,base.cur)} 등록했어요 · ${priv?'내 지출':'공용'}${R.items.length?` · 품목 ${R.items.length}`:''}`,()=>{ write([{op:'delete',col:'expenses',id}],'되돌렸어요'); dropImage(R.imgId); },base.title);
   }catch(e){
     toast(receiptErr(e));
     if(e.imgId){ if(e.queued)toast('연결 안 됨 — 사진만 붙였어요. 금액을 넣어 저장하세요'); else if(e.code==='quota')toast('자동 읽기 한도 초과 — 사진만 붙였어요. 금액을 넣어 저장하세요'); openExpense(null,{priv,newImg:e.imgId,prefill:{receipt:e.imgId}}); }
