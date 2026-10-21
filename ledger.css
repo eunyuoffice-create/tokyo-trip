@@ -656,3 +656,33 @@ body.body-edit .ev,body.body-edit .card{-webkit-user-select:none;user-select:non
 .lg .lgitems .lgtrunc{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lg .lgtoast .lgundo{margin-left:12px;background:transparent;border:1px solid currentColor;color:inherit;border-radius:8px;padding:4px 10px;font:inherit;font-weight:700;font-size:13px}
 .lg .lgtoast{display:flex;align-items:center;max-width:calc(100vw - 32px)}
+/* 지출 폼: 사진 + 품목 — 작게 (썸네일 왼쪽, 품목 오른쪽). 품목은 잠긴 입력칸, "수정"이면 그 자리에서 입력 */
+.lg .lgrcbox .lgrc{display:flex;gap:12px;align-items:flex-start}
+.lg .lgsheet .lgthumb-rc2{width:96px;height:124px;border-radius:10px;cursor:zoom-in;flex:none}
+.lg .lgrcbtns{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:6px;font-size:13px}
+.lg .lgrcbtns .lglink{display:inline-flex;align-items:center;gap:4px;font-size:13px}
+.lg .lgrcbtns .lglink svg{width:16px;height:16px}
+.lg .lgrcbtns .lglink.lgbusy{opacity:.5;pointer-events:none}
+.lg .lglink.lgdim{color:var(--muted)}
+.lg .lgithead{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.lg .lgithead label{margin:0}
+.lg .lgitlist{flex:1;min-width:0;max-height:180px;overflow:auto;font-size:13px}
+.lg .lgit{display:grid;grid-template-columns:18px minmax(0,1fr) 10px 26px 64px 0;align-items:center;gap:2px;border-bottom:1px dashed var(--line);padding:1px 0}
+.lg .lgit:last-child{border-bottom:0}
+.lg .lgit .lgitck{width:16px;height:16px;border:0;background:transparent;color:var(--accent);font-weight:800;font-size:12px;padding:0;display:grid;place-items:center}
+.lg .lgf .lgit input[type=text]{height:22px;padding:0 2px;font-size:13px;line-height:22px;min-width:0;width:100%;border-radius:5px;border:1px solid transparent;background:transparent;box-shadow:none;color:var(--fg)}
+.lg .lgf .lgit input.lgitqty[type=text]{width:26px;text-align:center;padding:0}
+.lg .lgit .lgitx{color:var(--muted);font-size:12px}
+.lg .lgf .lgit input.lgitprice[type=text]{text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+.lg .lgit input[readonly]{cursor:pointer;outline:none}
+.lg .lgit .lgitdel{display:none;width:20px;height:20px;place-items:center;color:var(--muted);font-size:15px;background:transparent;border:0;padding:0}
+.lg .lgitlist:not(.lgediting) .lgit.lgq1 .lgitqty,.lg .lgitlist:not(.lgediting) .lgit.lgq1 .lgitx{display:none}
+.lg .lgitlist.lgediting{max-height:260px}
+.lg .lgitlist.lgediting .lgit{grid-template-columns:18px minmax(0,1fr) 10px 26px 64px 20px;padding:2px 0}
+/* 보기에서 수량 1이면 수량칸 자리도 없앰 */
+.lg .lgitlist:not(.lgediting) .lgit.lgq1{grid-template-columns:18px minmax(0,1fr) 64px 0}
+.lg .lgitlist.lgediting .lgit input[type=text]{border-color:var(--line);background:var(--bg);height:26px}
+.lg .lgitlist.lgediting .lgit .lgitdel{display:grid}
+.lg .lgit.lgitoff input{color:var(--muted);text-decoration:line-through}
+.lg .lgitlist.lgediting .lgit.lgitoff input{text-decoration:none;opacity:.6}
+

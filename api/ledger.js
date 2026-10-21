@@ -241,17 +241,19 @@ const RECEIPT_PROMPT = `이 사진은 여행 중 받은 영수증(주로 일본,
 - 영수증이 아니면 isReceipt=false.`;
 async function readReceipt(mime, b64) {
   const key = process.env.GEMINI_API_KEY;
-  const models = process.env.GEMINI_MODEL ? [process.env.GEMINI_MODEL] : ['gemini-flash-latest', 'gemini-2.5-flash', 'gemini-2.0-flash'];
-  let lastErr = null;
+  // 2026-10 기준: 2.5/2.0 은 새 키에 막힘(404), flash-latest 는 가끔 503(과부하) → 다음 모델로
+  const models = process.env.GEMINI_MODEL ? [process.env.GEMINI_MODEL] : ['gemini-flash-latest', 'gemini-flash-lite-latest', 'gemini-3.5-flash', 'gemini-3.1-flash-lite'];
+  let lastErr = null; const deadline = Date.now() + 26000;   // Vercel 함수 30초 안에 끝내기
   for (const model of models) {
-    const c = new AbortController(); const t = setTimeout(() => c.abort(), 24000);
+    const left = deadline - Date.now(); if (left < 3000) break;
+    const c = new AbortController(); const t = setTimeout(() => c.abort(), Math.min(15000, left));
     try {
       const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, { method: 'POST', signal: c.signal,
         headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
         body: JSON.stringify({ contents: [{ parts: [{ text: RECEIPT_PROMPT }, { inline_data: { mime_type: mime, data: b64 } }] }],
           generationConfig: { temperature: 0, response_mime_type: 'application/json', response_schema: RECEIPT_SCHEMA } }) });
       const j = await r.json().catch(() => ({}));
-      if (!r.ok) { lastErr = new Error(`${model}: ${r.status} ${(j.error && j.error.message) || ''}`.trim()); if (r.status === 404 || r.status === 400) continue; if (r.status === 429) continue; break; }
+      if (!r.ok) { lastErr = new Error(`${model}: ${r.status} ${(j.error && j.error.message) || ''}`.trim()); if (r.status === 401 || r.status === 403) break; continue; }   // 키 문제만 중단, 404·429·5xx 는 다음 모델
       const text = j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts && j.candidates[0].content.parts.map(p => p.text || '').join('');
       if (!text) { lastErr = new Error(model + ': 빈 응답'); continue; }
       const o = JSON.parse(text);
@@ -261,7 +263,7 @@ async function readReceipt(mime, b64) {
       return { store: String(o.store || '').slice(0, 80), storeKo: String(o.storeKo || '').slice(0, 80), date: /^\d{4}-\d{2}-\d{2}$/.test(o.date || '') ? o.date : '', time: String(o.time || '').slice(0, 5),
         currency: o.currency === 'KRW' ? 'KRW' : 'JPY', items, subtotal: num(o.subtotal), tax: num(o.tax), total: num(o.total), cat: cats.includes(o.cat) ? o.cat : '기타',
         isReceipt: o.isReceipt !== false, note: String(o.note || '').slice(0, 120), model };
-    } catch (e) { lastErr = e; if (e && e.name === 'AbortError') break; }
+    } catch (e) { lastErr = e; }   // 시간 초과·파싱 실패도 다음 모델로 (deadline 안에서)
     finally { clearTimeout(t); }
   }
   throw lastErr || new Error('영수증을 읽지 못했어요');
