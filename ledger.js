@@ -172,9 +172,10 @@ let seedingNotes=false;
 async function seedNotes(){
   if(seedingNotes||!window.NOTE_SEED||S.screen!=='main')return;
   if(S.meta.notes&&S.meta.notes.seeded){ const fx=S.memos.find(m=>m.id==='note-flight'&&m.type!=='flight'); if(fx&&!seedingNotes){ seedingNotes=true; try{ const sd=NOTE_SEED.find(x=>x.id==='note-flight'); await api({action:'write',ops:[{op:'update',col:'memos',id:'note-flight',data:{type:'flight',legs:sd.legs,body:sd.body}}]}); await load(); }catch(e){} finally{seedingNotes=false} return; }
+    const conv=S.memos.filter(m=>m.cat==='info'&&['text','list'].includes(m.type)); if(conv.length&&!seedingNotes){ seedingNotes=true; try{ const ops=conv.map(m=>{ if(m.id==='note-hotel'){ const sd=NOTE_SEED.find(x=>x.id==='note-hotel'); return {op:'update',col:'memos',id:m.id,data:{type:'hotel',hotel:sd.hotel,body:sd.body,links:[],cover:'',blocks:[],items:[]}}; } const d=infoDocOf(m); return {op:'update',col:'memos',id:m.id,data:{type:'doc',cover:d.cover||'',links:d.links||[],blocks:d.blocks||[],body:d.body||'',items:[]}}; }); for(let i=0;i<ops.length;i+=10) await api({action:'write',ops:ops.slice(i,i+10)}); await load(); }catch(e){} finally{seedingNotes=false} return; }
     const fix=S.memos.filter(m=>m.id&&m.id.startsWith('note-')&&m.cat!=='info'); if(fix.length&&!seedingNotes){ seedingNotes=true; try{ await api({action:'write',ops:fix.map(m=>({op:'update',col:'memos',id:m.id,data:{cat:'info',tag:(NOTE_SEED.find(x=>x.id===m.id)||{}).tag||''}}))}); await load(); }catch(e){} finally{seedingNotes=false} } return; }
   seedingNotes=true;
-  try{ const n=NOTE_SEED.length; const ops=NOTE_SEED.map((x,i)=>({op:'set',col:'memos',id:x.id,data:{type:x.type,owner:null,cat:'info',tag:x.tag||'',title:x.title,body:x.body||'',items:x.items||[],legs:x.legs||[],images:[],ts:Date.now(),order:(n-i)*1000}}));
+  try{ const n=NOTE_SEED.length; const ops=NOTE_SEED.map((x,i)=>({op:'set',col:'memos',id:x.id,data:{type:x.type,owner:null,cat:'info',tag:x.tag||'',title:x.title,body:x.body||'',items:[],legs:x.legs||[],hotel:x.hotel||undefined,blocks:x.blocks||(x.items||[]).map(it=>({k:'item',id:it.id,title:it.text,desc:'',img:it.img||'',link:null,done:false})),cover:'',links:[],images:[],ts:Date.now(),order:(n-i)*1000}}));
     for(let i=0;i<ops.length;i+=10) await api({action:'write',ops:ops.slice(i,i+10)});
     await api({action:'write',ops:[{op:'set',col:'meta',id:'notes',data:{seeded:true}}]});
     await load(); toast('메모 탭의 안내 카드들을 공용 메모로 옮겼어요');
@@ -335,9 +336,10 @@ function viewMemo(){
   secs.forEach(sec=>{
     if(!sec.list.length)return;
     const list=sec.list.slice().sort((a,b)=>(memoDone(a)?1:0)-(memoDone(b)?1:0)||(b.order||b.ts||0)-(a.order||a.ts||0));
-    h+=`<details class="lgsecacc" data-sec="${sec.k}" ${S.secOpen[sec.k]!==false?'open':''}><summary><h3>${sec.title} <span class="lgsub">${esc(sec.sub)}</span></h3><span class="lgnum">${list.length}개${list.length>1?' <span class="lgsub">· 길게 눌러 순서 바꾸기</span>':''}</span></summary><div class="lgmemolist">${list.map(memoRow).join('')}</div></details>`;
+    h+=`<details class="lgsecacc" data-sec="${sec.k}" ${S.secOpen[sec.k]!==false?'open':''}><summary><h3>${sec.title} <span class="lgsub">${esc(sec.sub)}</span></h3><span class="lgnum">${list.length}개</span></summary><div class="lgmemolist">${list.map(memoRow).join('')}</div></details>`;
   });
-  if(!S.memos.length) h+=`<div class="lghint" style="text-align:center;margin:6px 0 10px">아래 [내 메모] [공용 메모]로 체크 리스트나 글을 써요.</div>`;
+  h=`<div class="lghint lgtophint">메모를 길게 눌러 끌면 순서를 바꿀 수 있어요 · 체크는 바로 저장돼요</div>`+h;
+  if(!S.memos.length) h+=`<div class="lghint" style="text-align:center;margin:6px 0 10px">아래 [내 메모] [공용 메모] [정보]로 써요.</div>`;
   h+=`<div class="lgbar"><div class="lgadd2 lgadd3"><button class="lgaddexp lgaddmine" data-newmemo="mine">${svgPlus}내 메모</button><button class="lgaddexp lgaddmine" data-newmemo="shared">${svgPlus}공용 메모</button><button class="lgaddexp lgaddinfo" data-newmemo="info">${svgPlus}정보</button></div></div>`;
   return h;
 }
@@ -361,16 +363,28 @@ function memoRow(m){
     }
   }else inner=body.trim()?`<div class="lgmemobody">${bodyHtml(body)}</div>`:`<div class="lghint" style="margin:0 0 6px">내용이 없어요.</div>`;
   if(m.images&&m.images.length){ if(list) inner=`<div class="lgcover"><span class="lgthumb lgthumb-cover" data-img="${esc(m.images[0])}">${imgTag(m.images[0])}</span></div>`+inner; else inner+=`<div class="lgimgs">${m.images.map(id=>`<span class="lgthumb" data-img="${esc(id)}">${imgTag(id)}</span>`).join('')}</div>`; }
-  if(info){
-    const sub=t=>String(t||'').split('\n').map(l=>{const s=l.trim(); let x; if(!s)return ''; if((x=s.match(/^##\s*(.+)/)))return `<div class="sub-h">${mdLinks(x[1])}</div>`; if((x=s.match(/^[-•]\s+(.+)/)))return `<p class="lgbul">· ${mdLinks(x[1])}</p>`; return `<p>${mdLinks(s)}</p>`;}).join('');
-    const cl=items.length?`<div class="cl">${items.map(it=>`<label><input type="checkbox" data-tgl-m="${esc(m.id)}|${esc(it.id)}" ${it.done?'checked':''}>${it.img?imgTag(it.img,'thumb'):''}<span>${mdLinks(it.text)}</span></label>`).join('')}</div>`:(list?'<p class="lghint">아직 항목이 없어요.</p>':'');
-    const cover=m.images&&m.images[0]?`<span class="lgthumb lgthumb-cover" data-img="${esc(m.images[0])}">${imgTag(m.images[0])}</span>`:'';
-    const gallery=(!list&&m.images&&m.images.length>1)?`<div class="lgimgs">${m.images.slice(1).map(id=>`<span class="lgthumb" data-img="${esc(id)}">${imgTag(id)}</span>`).join('')}</div>`:'';
-    const flight=m.type==='flight'; const legs=Array.isArray(m.legs)?m.legs:[];
-    const fl=flight?legs.map(x=>`<div class="flight"><div><div class="ap">${esc(x.f)}</div><div class="tm">${esc(x.ft)}</div><div class="sm">${esc([x.d,x.fs].filter(Boolean).join(' · '))}</div></div><div class="arrow">${esc(x.no||'')}<br>→</div><div class="r"><div class="ap">${esc(x.t)}</div><div class="tm">${esc(x.tt)}</div><div class="sm">${esc(x.ts||'')}</div></div></div>`).join('')+(body.trim()?`<div style="margin-top:10px">${sub(body)}</div>`:''):'';
-    return `<details class="memo lginfo" data-accm="${esc(m.id)}" ${open?'open':''}><summary><h3>${esc(title)}${m.tag?` <span class="pill acc">${esc(m.tag)}</span>`:''}</h3></summary><div class="lginfo-b">${cover}${flight?fl:(list?cl:sub(body))}${gallery}<div class="lgmemofoot"><span class="lgsub">${list&&items.length?`${done}/${items.length} 완료`:''}</span><button type="button" class="lgaddbtn" data-memoedit="${esc(m.id)}">수정</button></div></div></details>`;
-  }
+  if(info) return infoCardHtml(m,open);
+
   return `<details class="lgdetails lgmemoacc ${mdone?'lgmdone':''}" data-accm="${esc(m.id)}" ${open?'open':''}><summary><button type="button" class="lgbox lgbox-m" data-mdone="${esc(m.id)}" aria-pressed="${mdone}" aria-label="${list?'전체 체크':'확인 완료'}">${svgCheck}</button><span class="lgmic ${list?'lgmic-list':'lgmic-text'}" title="${list?'체크 리스트':'글'}">${list?svgList:svgText}</span><span class="lgmtitle">${priv?`<span class="lglock">${svgLock}</span>`:''}<span class="lgtrunc">${esc(title)}</span></span>${list&&items.length?`<span class="lgmprog ${done===items.length?'lgokt':''}">${done}/${items.length}</span>`:''}<span class="lgchevbtn" aria-hidden="true"></span></summary><div class="lgdetails-b lgmemoin">${inner}<div class="lgmemofoot"><span class="lgsub">${list?`${done}/${items.length} 완료`:''}</span><button type="button" class="lgaddbtn" data-memoedit="${esc(m.id)}">수정</button></div></div></details>`;
+}
+/* ---------- 여행 정보 문서 ---------- */
+const infoDocOf=m=>{ if(['doc','flight','hotel'].includes(m.type))return m;
+  if(m.type==='list') return {...m,type:'doc',cover:(m.images||[])[0]||'',links:m.links||[],blocks:(m.items||[]).map(it=>({k:'item',id:it.id,title:it.text,desc:'',img:it.img||'',link:null,done:!!it.done}))};
+  return {...m,type:'doc',cover:(m.images||[])[0]||'',links:m.links||[],blocks:[],body:m.body||''}; };
+const infoSub=t=>String(t||'').split('\n').map(l=>{const s=l.trim(); let x; if(!s)return ''; if((x=s.match(/^##\s*(.+)/)))return `<div class="sub-h">${mdLinks(x[1])}</div>`; if((x=s.match(/^[-•]\s+(.+)/)))return `<p class="lgbul">· ${mdLinks(x[1])}</p>`; return `<p>${mdLinks(s)}</p>`;}).join('');
+const linksBtns=ls=>(Array.isArray(ls)&&ls.length)?`<div class="lginfo-links">${ls.filter(x=>x&&x.u).map(x=>`<a class="btn link" href="${esc(x.u)}" target="_blank" rel="noopener">${esc(x.l||x.u.replace(/^https?:\/\//,'').slice(0,28))} ↗</a>`).join('')}</div>`:'';
+const coverHtml=id=>id?`<span class="lgthumb lgthumb-cover" data-img="${esc(id)}">${imgTag(id)}</span>`:'';
+function infoCardHtml(m0,open){
+  const m=infoDocOf(m0); const title=m.title||'제목 없음'; let body='';
+  if(m.type==='flight'){ const legs=Array.isArray(m.legs)?m.legs:[];
+    body=coverHtml(m.cover)+legs.map(x=>`<div class="flight"><div><div class="ap">${esc(x.f)}</div><div class="tm">${esc(x.ft)}</div><div class="sm">${esc([x.d,x.fs].filter(Boolean).join(' · '))}</div></div><div class="arrow">${esc(x.no||'')}<br>→</div><div class="r"><div class="ap">${esc(x.t)}</div><div class="tm">${esc(x.tt)}</div><div class="sm">${esc(x.ts||'')}</div></div></div>`).join('')+(String(m.body||'').trim()?`<div style="margin-top:10px">${infoSub(m.body)}</div>`:'')+linksBtns(m.links); }
+  else if(m.type==='hotel'){ const h=m.hotel||{}; const mapq=h.q||h.addr||m.title;
+    body=coverHtml(m.cover)+`<dl class="kv">${h.addr?`<dt>주소</dt><dd>${esc(h.addr)}</dd>`:''}${(h.cin||h.cout)?`<dt>체크인·아웃</dt><dd>${esc([h.cin&&'체크인 '+h.cin,h.cout&&'체크아웃 '+h.cout].filter(Boolean).join(' · '))}</dd>`:''}${h.tel?`<dt>전화</dt><dd><a href="tel:${esc(h.tel)}">${esc(h.tel)}</a></dd>`:''}</dl>`+(String(m.body||'').trim()?`<div style="margin-top:10px">${infoSub(m.body)}</div>`:'')+`<div class="lginfo-links">${mapq?`<a class="btn map" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapq)}" target="_blank" rel="noopener">지도 열기 ↗</a>`:''}${(m.links||[]).filter(x=>x&&x.u).map(x=>`<a class="btn link" href="${esc(x.u)}" target="_blank" rel="noopener">${esc(x.l||x.u)} ↗</a>`).join('')}</div>`; }
+  else { const blocks=Array.isArray(m.blocks)?m.blocks:[]; let items=[]; const flush=()=>{ if(!items.length)return ''; const h=`<div class="cl">${items.map(it=>`<label><input type="checkbox" data-blk="${esc(m.id)}|${esc(it.id)}" ${it.done?'checked':''}>${it.img?`<span class="lgthumb lgthumb-xs" data-img="${esc(it.img)}">${imgTag(it.img,'thumb')}</span>`:''}<span><b>${esc(it.title||'')}</b>${it.desc?mdLinks(it.desc):''}${it.link&&it.link.u?`<a class="lginfo-il" href="${esc(it.link.u)}" target="_blank" rel="noopener">${esc(it.link.l||'링크')} ↗</a>`:''}</span></label>`).join('')}</div>`; items=[]; return h; };
+    body=coverHtml(m.cover)+(String(m.body||'').trim()?infoSub(m.body):'')+linksBtns(m.links);
+    blocks.forEach(b=>{ if(b.k==='item'){items.push(b);return} body+=flush(); body+=`<div class="sub-h">${esc(b.title||'')}</div>`+(b.img?`<span class="lgthumb lgthumb-cover lgthumb-sec" data-img="${esc(b.img)}">${imgTag(b.img)}</span>`:'')+(b.body?infoSub(b.body):'')+linksBtns(b.links); });
+    body+=flush(); const its=blocks.filter(b=>b.k==='item'); if(its.length)body+=`<div class="lgsub" style="text-align:right">${its.filter(i=>i.done).length}/${its.length} 완료</div>`; }
+  return `<details class="memo lginfo" data-accm="${esc(m.id)}" ${open?'open':''}><summary><h3>${esc(title)}${m.tag?` <span class="pill acc">${esc(m.tag)}</span>`:''}</h3></summary><div class="lginfo-b">${body}<div class="lgmemofoot"><span></span><button type="button" class="lgaddbtn" data-memoedit="${esc(m.id)}">수정</button></div></div></details>`;
 }
 const memoDone=m=>{const items=m.items||[]; return (m.type!=='text'&&items.length)?items.every(i=>i.done):!!m.done};
 const memoItems=m=>(m&&Array.isArray(m.items)?m.items:[]).map(x=>({...x}));
@@ -380,16 +394,59 @@ const nextWho=cur=>{const n=S.people.length; if(cur===null||cur===undefined)retu
 function confirmReplace(b){ if(b.dataset.arm==='1'){ b.dataset.arm=''; return true; } b.dataset.arm='1'; b.classList.add('lgarm'); toast('한 번 더 누르면 사진을 바꿔요 (×는 항목 삭제)'); setTimeout(()=>{b.dataset.arm='';b.classList.remove('lgarm')},2500); return false; }
 function chooseInfo(){
   openSheet(`<h2>여행 정보 쓰기<button type="button" data-close>닫기</button></h2><div class="lgopts">
-    <button type="button" data-mk="list"><span class="lgic">${svgList}</span><div><b>체크 리스트</b><span>살 것·챙길 것처럼 항목마다 체크. 항목 사진 + 대표 사진.</span></div></button>
-    <button type="button" data-mk="text"><span class="lgic">${svgText}</span><div><b>글</b><span>## 소제목, - 항목, [이름](주소) 링크. 사진 여러 장.</span></div></button>
-    <button type="button" data-mk="flight"><span class="lgic">✈</span><div><b>항공편</b><span>출발·도착 공항과 시간, 편명을 넣으면 항공편 카드로.</span></div></button></div>`);
-  qa('[data-mk]',q('.lgsheet',ov)).forEach(b=>b.onclick=()=>{closeSheet(); setTimeout(()=>openMemoEditor(null,{owner:null,cat:'info',type:b.dataset.mk}),200)});
+    <button type="button" data-mk="doc"><span class="lgic">${svgText}</span><div><b>글쓰기</b><span>제목·라벨·대표 사진·메모·링크. 아래에 소제목 블록과 체크 항목을 계속 추가.</span></div></button>
+    <button type="button" data-mk="flight"><span class="lgic">✈</span><div><b>항공편</b><span>출발·도착 공항과 시간, 편명을 넣으면 항공편 카드로.</span></div></button>
+    <button type="button" data-mk="hotel"><span class="lgic">🏨</span><div><b>숙소</b><span>호텔 이름·주소·체크인/아웃·지도.</span></div></button></div>`);
+  qa('[data-mk]',q('.lgsheet',ov)).forEach(b=>b.onclick=()=>{closeSheet(); setTimeout(()=>openInfoEditor(null,b.dataset.mk),200)});
 }
 const legRow=(x={})=>`<div class="crow lgleg"><div class="ckind"><span class="lgsub">구간</span><button type="button" class="lgx" data-delleg aria-label="삭제">×</button></div>
   <div class="lgrow2"><input type="text" class="lg-d" placeholder="날짜 (예: 10.24 토)" value="${esc(x.d||'')}"><input type="text" class="lg-no" placeholder="편명 (예: KE2101)" value="${esc(x.no||'')}"></div>
   <div class="lgrow3"><input type="text" class="lg-f" placeholder="출발 (GMP)" value="${esc(x.f||'')}" maxlength="6"><input type="text" class="lg-ft" placeholder="09:00" value="${esc(x.ft||'')}" maxlength="5"><input type="text" class="lg-fs" placeholder="김포 1터미널" value="${esc(x.fs||'')}"></div>
   <div class="lgrow3"><input type="text" class="lg-t" placeholder="도착 (HND)" value="${esc(x.t||'')}" maxlength="6"><input type="text" class="lg-tt" placeholder="11:20" value="${esc(x.tt||'')}" maxlength="5"><input type="text" class="lg-ts" placeholder="하네다 3터미널" value="${esc(x.ts||'')}"></div></div>`;
 const readLegs=sh=>[...sh.querySelectorAll('#mLegs .lgleg')].map(r=>{const g=c=>(r.querySelector(c)?.value||'').trim(); const o={d:g('.lg-d'),no:g('.lg-no').toUpperCase(),f:g('.lg-f').toUpperCase(),ft:g('.lg-ft'),fs:g('.lg-fs'),t:g('.lg-t').toUpperCase(),tt:g('.lg-tt'),ts:g('.lg-ts')}; return (o.f||o.t||o.no)?o:null}).filter(Boolean);
+/* ---------- 여행 정보 편집기: 글쓰기(doc) / 항공편(flight) / 숙소(hotel). 필수는 제목뿐 ---------- */
+const linkRows=(id,arr,max)=>`<div class="lgf" data-links="${id}"><label>링크${max===1?' (1개)':''}</label><div class="lgclinks">${(arr||[]).filter(Boolean).map(x=>expLinkRow(x.l,x.u)).join('')}</div>${(max===1&&(arr||[]).length>=1)?'':`<button type="button" class="lglink" data-addlink="${id}" data-max="${max||0}">+ 링크 추가</button>`}</div>`;
+function wireLinkRows(sh){ sh.querySelectorAll('[data-addlink]').forEach(b=>b.onclick=()=>{const box=b.parentElement.querySelector('.lgclinks'); const max=+b.dataset.max; if(max&&box.children.length>=max)return; box.insertAdjacentHTML('beforeend',expLinkRow('','')); wireLinkRows(sh); if(max&&box.children.length>=max)b.hidden=true; const f=box.lastElementChild.querySelector('input'); if(f)f.focus();}); sh.querySelectorAll('.lgclinks [data-dellink]').forEach(b=>b.onclick=()=>{const wrap=b.closest('[data-links]'); b.closest('.lgclink').remove(); const add=wrap&&wrap.querySelector('[data-addlink]'); if(add)add.hidden=false;}); }
+const readLinkRows=(root,id)=>[...root.querySelectorAll(`[data-links="${id}"] .lgclink`)].map(r=>{const [a,b]=r.querySelectorAll('input'); let u=(b.value||'').trim(); if(!u)return null; if(!/^https?:\/\//i.test(u))u='https://'+u; return {l:(a.value||'').trim(),u}}).filter(Boolean);
+const oneImg=(id,label,cur)=>`<div class="lgf" data-oneimg="${id}"><label>${label}</label><div class="lgimgs lgimgs-edit">${cur?`<span class="lgthumb" data-cur="${esc(cur)}">${imgTag(cur)}<b data-rmimg>×</b></span>`:''}</div><button type="button" class="lglink" data-pickimg>${cur?'사진 바꾸기':'+ 사진 추가 (1장)'}</button></div>`;
+function wireOneImgs(sh){ sh.querySelectorAll('[data-oneimg]').forEach(box=>{ const btn=box.querySelector('[data-pickimg]'); if(btn)btn.onclick=async()=>{ const ids=await pickImages(1); if(!ids.length)return; box.dataset.val=ids[0]; box.querySelector('.lgimgs').innerHTML=`<span class="lgthumb" data-cur="${esc(ids[0])}">${imgTag(ids[0])}<b data-rmimg>×</b></span>`; fillImages(box); btn.textContent='사진 바꾸기'; wireOneImgs(sh); }; const rm=box.querySelector('[data-rmimg]'); if(rm)rm.onclick=()=>{ box.dataset.val=''; box.querySelector('.lgimgs').innerHTML=''; btn.textContent='+ 사진 추가 (1장)'; }; if(box.dataset.val===undefined){ const cur=box.querySelector('[data-cur]'); box.dataset.val=cur?cur.dataset.cur:''; } }); }
+const readOneImg=(root,id)=>{const b=root.querySelector(`[data-oneimg="${id}"]`); return b?(b.dataset.val||''):''};
+function openInfoEditor(m,type){
+  const isNew=!m; const d=isNew?{type,title:'',tag:'',cover:'',body:'',links:[],blocks:[],legs:[],hotel:{}}:infoDocOf(m); type=d.type;
+  const blocks=(d.blocks||[]).map(b=>({...b,id:b.id||uid()}));
+  const blockHtml=(b,i)=>b.k==='item'
+    ?`<div class="crow lgblk" data-bi="${i}" data-k="item"><div class="ckind"><span class="lgsub">☑ 체크 항목</span><button type="button" class="lgx" data-delblk aria-label="삭제">×</button></div>${oneImg('b'+i,'이미지 (1장)',b.img)}<input type="text" class="bk-title" placeholder="타이틀" value="${esc(b.title||'')}" maxlength="80"><textarea class="bk-desc" rows="2" placeholder="디스크립션">${esc(b.desc||'')}</textarea>${linkRows('b'+i,b.link?[b.link]:[],1)}</div>`
+    :`<div class="crow lgblk" data-bi="${i}" data-k="sec"><div class="ckind"><span class="lgsub">▎ 소제목</span><button type="button" class="lgx" data-delblk aria-label="삭제">×</button></div><input type="text" class="bk-title" placeholder="소제목" value="${esc(b.title||'')}" maxlength="80">${oneImg('b'+i,'이미지 (1장)',b.img)}<textarea class="bk-desc" rows="3" placeholder="소제목 관련 메모">${esc(b.body||'')}</textarea>${linkRows('b'+i,b.links||[],0)}</div>`;
+  const common=`<div class="lgf"><input type="text" id="iTitle" placeholder="타이틀 *" value="${esc(d.title)}" maxlength="60"></div>
+    <div class="lgf"><label>라벨 <span class="lgsub">제목 옆 작은 표시</span></label><input type="text" id="iTag" value="${esc(d.tag||'')}" maxlength="20" placeholder="예: 대한항공, 10/26"></div>
+    ${oneImg('cover','타이틀 이미지 (1장)',d.cover)}`;
+  let form='';
+  if(type==='doc') form=common+`<div class="lgf"><label>메모</label><textarea id="iBody" rows="5" placeholder="본문. ## 소제목, - 항목, [이름](주소) 도 써져요.">${esc(d.body||'')}</textarea></div>${linkRows('top',d.links||[],0)}
+    <div class="lgf"><label>블록 <span class="lgsub">소제목·체크 항목을 순서대로</span></label><div class="crows" id="iBlocks">${blocks.map(blockHtml).join('')}</div><div class="lgchips" style="margin-top:6px"><button type="button" class="lgchip" id="iAddSec">+ 소제목</button><button type="button" class="lgchip" id="iAddItem">+ 체크 항목</button></div></div>`;
+  else if(type==='flight') form=common+`<div class="lgf"><label>구간</label><div class="crows" id="mLegs">${((d.legs&&d.legs.length)?d.legs:[{}]).map(legRow).join('')}</div><button type="button" class="lglink" id="mAddLeg">+ 구간 추가</button></div><div class="lgf"><label>메모</label><textarea id="iBody" rows="4" placeholder="예약번호 안내, 전자신고 링크 등">${esc(d.body||'')}</textarea></div>${linkRows('top',d.links||[],0)}`;
+  else { const h=d.hotel||{}; form=common+`<div class="lgf"><label>주소</label><input type="text" id="hAddr" value="${esc(h.addr||'')}" placeholder="東京都豊島区…"></div><div class="lgrow2"><div class="lgf"><label>체크인</label><input type="text" id="hCin" value="${esc(h.cin||'')}" placeholder="15:00"></div><div class="lgf"><label>체크아웃</label><input type="text" id="hCout" value="${esc(h.cout||'')}" placeholder="11:00"></div></div><div class="lgrow2"><div class="lgf"><label>구글맵 검색어</label><input type="text" id="hQ" value="${esc(h.q||'')}" placeholder="ホテルリソル池袋"></div><div class="lgf"><label>전화</label><input type="text" id="hTel" inputmode="tel" value="${esc(h.tel||'')}"></div></div><div class="lgf"><label>메모</label><textarea id="iBody" rows="4">${esc(d.body||'')}</textarea></div>${linkRows('top',d.links||[],0)}`; }
+  const head={doc:'글쓰기',flight:'항공편',hotel:'숙소'}[type];
+  openSheet(`<h2>${isNew?head+' 추가':head+' 수정'}<button type="button" data-close>닫기</button></h2><form id="infoForm" autocomplete="off">${form}
+    <div class="lgactions">${isNew?'':'<button type="button" class="lgbtn lgdanger" id="iDel">삭제</button>'}<button type="submit" class="lgbtn lgprimary">저장</button></div></form>`);
+  const sh=q('.lgsheet',ov); const g=s=>q(s,sh);
+  const syncBlocks=()=>{ qa('#iBlocks .lgblk',sh).forEach(el=>{ const i=+el.dataset.bi; const b=blocks[i]; if(!b)return; b.title=(el.querySelector('.bk-title')?.value||'').trim(); const desc=(el.querySelector('.bk-desc')?.value||''); if(b.k==='item'){b.desc=desc.trim(); const ls=readLinkRows(el,'b'+i); b.link=ls[0]||null;} else {b.body=desc; b.links=readLinkRows(el,'b'+i);} b.img=readOneImg(el,'b'+i); }); };
+  const paintBlocks=()=>{ const box=g('#iBlocks'); if(!box)return; box.innerHTML=blocks.map(blockHtml).join(''); wireLinkRows(sh); wireOneImgs(sh); fillImages(box); qa('#iBlocks [data-delblk]',sh).forEach(b=>b.onclick=()=>{ syncBlocks(); blocks.splice(+b.closest('.lgblk').dataset.bi,1); paintBlocks(); }); qa('#iBlocks textarea',sh).forEach(ta=>{const grow=()=>{ta.style.height='auto';ta.style.height=Math.max(44,ta.scrollHeight+2)+'px'}; ta.oninput=grow; grow();}); };
+  wireLinkRows(sh); wireOneImgs(sh); fillImages(sh); paintBlocks();
+  const addBlk=k=>{ syncBlocks(); blocks.push(k==='item'?{k:'item',id:uid(),title:'',desc:'',img:'',link:null,done:false}:{k:'sec',id:uid(),title:'',body:'',img:'',links:[]}); paintBlocks(); const last=g('#iBlocks .lgblk:last-child .bk-title'); if(last)last.focus(); };
+  if(g('#iAddSec'))g('#iAddSec').onclick=()=>addBlk('sec'); if(g('#iAddItem'))g('#iAddItem').onclick=()=>addBlk('item');
+  if(type==='flight'){ const wireLegs=()=>{ qa('#mLegs [data-delleg]',sh).forEach(b=>b.onclick=()=>b.closest('.lgleg').remove()); }; wireLegs(); g('#mAddLeg').onclick=()=>{ g('#mLegs').insertAdjacentHTML('beforeend',legRow()); wireLegs(); }; }
+  g('#infoForm').onsubmit=async ev=>{ ev.preventDefault(); const title=g('#iTitle').value.trim(); if(!title){toast('타이틀은 꼭 넣어주세요'); g('#iTitle').focus(); return}
+    const data={cat:'info',owner:null,type,title,tag:g('#iTag').value.trim(),cover:readOneImg(sh,'cover'),body:(g('#iBody')?.value||''),links:readLinkRows(sh,'top'),items:[],images:[]};
+    if(type==='doc'){ syncBlocks(); data.blocks=blocks; }
+    if(type==='flight') data.legs=readLegs(sh);
+    if(type==='hotel') data.hotel={addr:g('#hAddr').value.trim(),cin:g('#hCin').value.trim(),cout:g('#hCout').value.trim(),q:g('#hQ').value.trim(),tel:g('#hTel').value.trim()};
+    closeSheet();
+    if(isNew){ const now=Date.now(); await write([{op:'set',col:'memos',id:uid(),data:{...data,ts:now,order:now}}],'저장했어요'); }
+    else await write([{op:'update',col:'memos',id:d.id,data}],'저장했어요');
+  };
+  arm(g('#iDel'),async()=>{closeSheet();await write([{op:'delete',col:'memos',id:d.id}],'삭제했어요')});
+  setTimeout(()=>{ if(isNew)g('#iTitle').focus() },250);
+}
 function openMemoEditor(m,opts={}){
   const isNew=!m; const me=S.me;
   const d={id:m?.id,type:m?(['text','flight'].includes(m.type)?m.type:'list'):(opts.type||'list'),legs:(m&&Array.isArray(m.legs))?m.legs.map(x=>({...x})):[],title:m?.title||'',owner:m?ownerOf(m):(opts.owner===undefined?null:opts.owner),body:m?.body||'',items:memoItems(m),images:(m&&Array.isArray(m.images))?m.images.slice():[],addWho:null,cat:m?(m.cat||''):(opts.cat||''),tag:m?.tag||''};
@@ -498,14 +555,16 @@ function bind(c){
   qa('[data-tr]',c).forEach(b=>b.onclick=()=>openRecord(S.transfers.find(t=>t.id===b.dataset.tr)));
   qa('[data-settle]',c).forEach(b=>b.onclick=()=>{const [f,t,a,cur]=b.dataset.settle.split('|');openSettle({from:+f,to:+t,amount:+a,cur})});
   qa('[data-newmemo]',c).forEach(b=>b.onclick=()=>{ if(b.dataset.newmemo==='info')chooseInfo(); else openMemoEditor(null,{owner:b.dataset.newmemo==='mine'?S.me:null}); });
-  qa('[data-memoedit]',c).forEach(b=>b.onclick=()=>openMemoEditor(S.memos.find(m=>m.id===b.dataset.memoedit)));
+  qa('[data-memoedit]',c).forEach(b=>b.onclick=()=>{const m=S.memos.find(x=>x.id===b.dataset.memoedit); if(!m)return; if(m.cat==='info')openInfoEditor(m); else openMemoEditor(m);});
   qa('[data-mdone]',c).forEach(b=>{b.onclick=ev=>{ev.preventDefault();ev.stopPropagation();const m=S.memos.find(x=>x.id===b.dataset.mdone);if(!m)return;const items=memoItems(m);const nowDone=memoDone(m);
     if(m.type!=='text'&&items.length){const next=items.map(it=>({...it,done:!nowDone,doneBy:!nowDone?S.me:null}));write([{op:'update',col:'memos',id:m.id,data:{items:next,done:!nowDone}}],!nowDone?'전부 체크했어요':'전부 해제했어요')}
     else write([{op:'update',col:'memos',id:m.id,data:{done:!nowDone}}],!nowDone?'확인 완료':'다시 올렸어요')}});
   qa('details.lgsecacc',c).forEach(d=>d.ontoggle=()=>{S.secOpen[d.dataset.sec]=d.open; ls.set('tl_sec',JSON.stringify(S.secOpen))});
-  qa('.lgthumb',c).forEach(t=>t.onclick=ev=>{ev.stopPropagation(); const im=t.querySelector('img'); if(im&&im.src)openImg(im.src)});
+  qa('.lgthumb',c).forEach(t=>t.onclick=ev=>{ev.stopPropagation(); ev.preventDefault(); const im=t.querySelector('img'); if(im&&im.src)openImg(im.src)});
+  qa('.lginfo-il',c).forEach(a=>a.onclick=ev=>ev.stopPropagation());
   qa('details[data-accm] > summary',c).forEach(sm=>{sm.onpointerdown=ev=>pressToDrag(ev,sm); sm.oncontextmenu=ev=>ev.preventDefault(); sm.onclick=ev=>{if(sm.dataset.suppress){ev.preventDefault();ev.stopPropagation()}}});
   qa('[data-accm]',c).forEach(d=>d.ontoggle=()=>{if(d.open)S.openMemos.add(d.dataset.accm);else S.openMemos.delete(d.dataset.accm)});
+  qa('[data-blk]',c).forEach(cb=>cb.onchange=()=>{const [mid,bid]=cb.dataset.blk.split('|'); const m=S.memos.find(x=>x.id===mid); if(!m)return; const d=infoDocOf(m); const blocks=d.blocks.map(b=>b.id===bid?{...b,done:!b.done}:b); write([{op:'update',col:'memos',id:mid,data:{type:'doc',blocks,cover:d.cover||'',links:d.links||[],items:[]}}]);});
   qa('[data-tgl-m]',c).forEach(b=>b[b.tagName==='INPUT'?'onchange':'onclick']=()=>{const [mid,iid]=b.dataset.tglM.split('|');const m=S.memos.find(x=>x.id===mid);if(!m)return;const items=memoItems(m).map(it=>it.id===iid?{...it,done:!it.done,doneBy:!it.done?S.me:null}:it);write([{op:'update',col:'memos',id:mid,data:{items}}])});
   // setup / login (정산 탭 쪽에만 있다)
   const sf=q('#setupForm',c); if(sf){
