@@ -51,7 +51,7 @@ async function api(body,{timeout=20000}={}){
   try{
     const res=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...body,token:S.token||undefined}),signal:ctrl.signal});
     let j; try{j=await res.json()}catch(e){throw {code:'network',message:'응답을 읽지 못했어요'}}
-    if(!j.ok) throw {code:j.error||'server',message:j.error||'server',status:res.status};
+    if(!j.ok) throw {code:j.error||'server',message:j.error||'server',status:res.status,data:j};
     return j;
   }catch(e){ if(e&&e.code)throw e; throw {code:'network',message:String(e&&e.message||e)} }
   finally{clearTimeout(t)}
@@ -702,8 +702,17 @@ async function uploadPhoto(f){
 }
 
 /* 영수증 읽기 (서버 → Gemini). 결과 {rc, fields, items, ok} */
+/* 영수증 자동 읽기 사용량 (두 사람 합계, 서버 기준). 한도 다 쓰면 초기화 시각까지 읽기를 건너뜀 */
+const rcUse=()=>{ const u=S.rcUsage; return u&&Date.now()<u.resetAt?u:null; };
+const rcQuota=()=>{ const u=rcUse(); return !!(u&&u.quotaHit); };
+const rcReset=()=>{ const u=rcUse(); return u?new Date(u.resetAt).toLocaleTimeString('ko-KR',{hour:'numeric',minute:'2-digit'}):'오후 4:00'; };
+function setUsage(u){ if(u&&u.resetAt){ S.rcUsage={...u,at:Date.now()}; ls.set('tl_rcuse',JSON.stringify(S.rcUsage)); } }
+try{ const u=JSON.parse(ls.get('tl_rcuse')||'null'); if(u&&Date.now()<u.resetAt)S.rcUsage=u; }catch(e){}
+async function refreshUsage(){ const u=rcUse(); if(u&&Date.now()-(u.at||0)<120000)return; try{ const j=await api({action:'usage'}); setUsage(j.usage); }catch(e){} }
 async function readReceiptData(data){
-  const j=await api({action:'receipt',image:data},{timeout:40000});
+  if(rcQuota())throw {code:'quota'};
+  let j; try{ j=await api({action:'receipt',image:data},{timeout:40000}); }catch(e){ if(e.data&&e.data.usage)setUsage(e.data.usage); throw e; }
+  setUsage(j.usage);
   const rc=j.receipt||{};
   const items=(rc.items||[]).map(it=>({name:it.name,nameKo:it.nameKo||'',qty:+it.qty||1,price:+it.price||0,sel:true}));
   const fields={title:(rc.storeKo||rc.store||'').trim(),amount:+rc.total||0,cur:rc.currency==='KRW'?'KRW':'JPY',day:(rc.date&&DAYS.some(x=>x.d===rc.date))?rc.date:'',cat:rc.cat||'',memo:rc.note?rc.note.slice(0,120):''};
@@ -714,7 +723,7 @@ async function readReceiptFile(f){
   if(P.queued)throw {code:'network',queued:true,imgId:P.imgId};   // 끊김: 사진은 대기열, 영수증 읽기는 못 함
   try{ return {imgId:P.imgId,...await readReceiptData(P.data)}; }catch(e){ e.imgId=P.imgId; throw e; }
 }
-const receiptErr=e=>e.code==='no_key'?'서버에 GEMINI_API_KEY 가 없어요':e.code==='auth'?'다시 로그인해 주세요':e.code==='receipt'?'영수증을 못 읽었어요 — 직접 넣어주세요':e.code==='network'?'연결이 느려서 못 읽었어요 — 다시 해 주세요':(e.message||'실패했어요');
+const receiptErr=e=>e.code==='quota'?`오늘 영수증 자동 읽기 한도를 다 썼어요 · ${rcReset()}에 다시 돼요`:e.code==='no_key'?'서버에 GEMINI_API_KEY 가 없어요':e.code==='auth'?'다시 로그인해 주세요':e.code==='receipt'?'영수증을 못 읽었어요 — 직접 넣어주세요':e.code==='network'?'연결이 느려서 못 읽었어요 — 다시 해 주세요':(e.message||'실패했어요');
 const dropImage=id=>{ if(id)writeOrQueue([{op:'delete',col:'images',id},{op:'delete',col:'images',id:id+'.t'}]).catch(()=>{}); };
 /* 하단 바 "영수증": 찍으면 바로 지출 등록 + 되돌리기 */
 async function scanReceipt(){
@@ -738,7 +747,7 @@ async function scanReceipt(){
     if(ok) toastUndo(`${base.title} ${fmt(base.amount,base.cur)} 등록 (${priv?'내 지출':'공용'}${R.items.length?` · 품목 ${R.items.length}`:''})`,()=>{ write([{op:'delete',col:'expenses',id}],'되돌렸어요'); dropImage(R.imgId); });
   }catch(e){
     toast(receiptErr(e));
-    if(e.imgId){ if(e.queued)toast('연결 안 됨 — 사진만 붙였어요. 금액을 넣어 저장하세요'); openExpense(null,{priv,newImg:e.imgId,prefill:{receipt:e.imgId}}); }
+    if(e.imgId){ if(e.queued)toast('연결 안 됨 — 사진만 붙였어요. 금액을 넣어 저장하세요'); else if(e.code==='quota')toast('자동 읽기 한도 초과 — 사진만 붙였어요. 금액을 넣어 저장하세요'); openExpense(null,{priv,newImg:e.imgId,prefill:{receipt:e.imgId}}); }
   }finally{ scanning=false; const b=q('[data-act="receipt"]'); if(b){b.disabled=false;b.classList.remove('lgbusy')} }
 }
 function openExpense(e,opts={}){
@@ -800,7 +809,10 @@ function openExpense(e,opts={}){
     const head=has?`<div class="lgithead"><label>${d.items.length?'영수증':'사진'}${d.items.length?` <span class="lgsub" id="fItSum">${itSumText()}</span>`:''}</label>${d.items.length?`<button type="button" class="lglink" id="fItEdit">${itEdit?'완료':'수정'}</button>`:''}</div>`:'';
     const body=has?`<div class="lgrc">${thumb}${list}</div>`:'';
     const links=`<div class="lgrcbtns"><button type="button" class="lglink" id="fRcCam">${svgCam}${d.receipt?'다시 찍기':'사진 찍기'}</button><button type="button" class="lglink" id="fRcPick">앨범</button><button type="button" class="lglink" id="fAddItem">+ 품목</button>${itEdit&&d.items.some(x=>x.sel&&+x.price)?'<button type="button" class="lglink" id="fItApply">선택 합계→금액</button>':''}${d.receipt&&!itEdit?'<button type="button" class="lglink lgdim" id="fRcDel">사진 빼기</button>':''}</div>`;
-    return `<div class="lgf lgrcbox">${head}${body}${links}</div>`; };
+    const u=rcUse();
+    const note=rcQuota()?`<div class="lgrcalert" role="alert"><b>오늘 영수증 자동 읽기 한도를 다 썼어요.</b> 사진 첨부와 직접 입력은 그대로 돼요. <b>${rcReset()}</b>에 다시 돼요.</div>`
+      :`<div class="lgrcdesc">영수증 자동 읽기${u?` · 오늘 ${u.n}회`:''} · 매일 ${rcReset()} 초기화 (구글 무료 한도)</div>`;
+    return `<div class="lgf lgrcbox">${head}${body}${links}${note}</div>`; };
   const refreshSum=()=>{ const el=g('#fItSum'); if(el)el.innerHTML=itSumText(); sum(); };
   const clickChip=(box,attr,val)=>{ const b=qa(`${box} button`,sh).find(x=>x.dataset[attr]===val); if(b)b.click(); };
   const applyReceipt=R=>{ const F=R.rc&&R.rc.isReceipt===false?{}:(R.fields||{});
@@ -829,7 +841,7 @@ function openExpense(e,opts={}){
       try{ const R=await readReceiptData(P.data); if(closed)return;
         if(R.rc.isReceipt===false){ toast('사진을 붙였어요'); return; }
         applyReceipt({imgId:P.imgId,...R}); toast(R.ok?(R.items.length?`영수증 품목 ${R.items.length}개를 읽었어요`:'영수증을 읽었어요'):'합계를 못 읽었어요. 금액은 직접 넣어주세요'); }
-      catch(e){ if(!closed) toast(e.code==='no_key'||e.code==='auth'?receiptErr(e):'사진은 붙였어요 (영수증 내용은 못 읽음)'); }
+      catch(e){ if(!closed){ if(e.code==='quota'){ toast('사진은 붙였어요 · '+receiptErr(e)); paintRc(); } else toast(e.code==='no_key'||e.code==='auth'?receiptErr(e):'사진은 붙였어요 (영수증 내용은 못 읽음)'); } }
     }finally{ busy=null; done(); if(!closed)setBusy(false); } };
   const paintRc=()=>{ const box=g('#fRc'); box.innerHTML=rcHtml(); fillImages(box);
     box.querySelectorAll('.lgthumb').forEach(t=>t.onclick=ev=>{ev.preventDefault();openThumb(t)});
@@ -846,7 +858,7 @@ function openExpense(e,opts={}){
       row.querySelector('.lgitdel').onclick=()=>{ d.items.splice(+row.dataset.i,1); paintRc(); }; });
     const ap=g('#fItApply'); if(ap)ap.onclick=()=>{ const t=itTotal(); if(!(t>0))return; g('#fAmt').value=String(Math.round(t)); touched.add('amount'); partsHint(); customHint(); toast('선택 품목 합계로 바꿨어요'); };
   };
-  paintRc();
+  paintRc(); refreshUsage().then(()=>{ if(!closed&&g('#fRc'))paintRc(); });
   let closed=false; sheetCloseHook=()=>{ closed=true; if(!saved) newImgs.forEach(dropImage); };
   partsHint(); sum(); if(d.custom)customBox(); wireExpLinks(sh); sh.querySelector('#fLinks').addEventListener('input',sum); const al=g('#fAddLink'); const al0=al.onclick; al.onclick=()=>{al0();sum()};
   g('#expForm').onsubmit=async ev=>{ev.preventDefault();

@@ -173,9 +173,11 @@ export default async function handler(req, res) {
       const m = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(String(body.image || ''));
       if (!m) return res.status(400).json({ ok: false, error: 'bad image' });
       if (m[2].length > 2400000) return res.status(413).json({ ok: false, error: '사진이 너무 커요' });
-      try { const receipt = await readReceipt(m[1], m[2]); return res.status(200).json({ ok: true, receipt }); }
-      catch (e) { return res.status(200).json({ ok: false, error: 'receipt', detail: String(e && e.message || e).slice(0, 300) }); }
+      try { const receipt = await readReceipt(m[1], m[2]); const u = await bumpUsage(db); return res.status(200).json({ ok: true, receipt, usage: u }); }
+      catch (e) { const u = e && e.quota ? await bumpUsage(db, true) : await usageOf(db); return res.status(200).json({ ok: false, error: e && e.quota ? 'quota' : 'receipt', usage: u, detail: String(e && e.message || e).slice(0, 300) }); }
     }
+    // 영수증 자동 읽기 사용량 (오늘 몇 번 · 언제 초기화)
+    if (action === 'usage') return res.status(200).json({ ok: true, usage: await usageOf(db) });
 
     if (action === 'write') {
       const ops = Array.isArray(body.ops) ? body.ops : [];
@@ -244,11 +246,21 @@ const RECEIPT_PROMPT = `이 사진은 여행 중 받은 영수증(주로 일본,
 - date: 영수증의 날짜를 YYYY-MM-DD로. 일본식 2026年10月25日, 26/10/25, R8.10.25(레이와 8년=2026) 모두 처리. 없으면 "".
 - cat: 음식점·편의점·카페·슈퍼 음식 → 식비, 전철·버스·택시·IC카드 충전 → 교통, 캐릭터 굿즈·애니·아이돌 샵 → 덕질, 드럭스토어·옷·잡화·돈키호테 → 쇼핑, 입장권·티켓 → 입장, 호텔 → 숙소, 그 외 → 기타.
 - 영수증이 아니면 isReceipt=false.`;
+/* Gemini 무료 등급 하루 한도는 태평양 시간 자정에 초기화 (한국·일본 시간 오후 4시, 11월 서머타임 끝나면 오후 5시) */
+function ptDayAndReset(now = Date.now()) {
+  const f = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Los_Angeles', hour12: false, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const p = Object.fromEntries(f.formatToParts(new Date(now)).map(x => [x.type, x.value]));
+  const wall = Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour % 24, +p.minute, +p.second);
+  const offset = wall - Math.floor(now / 1000) * 1000;
+  return { day: `${p.year}-${p.month}-${p.day}`, resetAt: Date.UTC(+p.year, +p.month - 1, +p.day + 1) - offset };
+}
+async function usageOf(db) { const { day, resetAt } = ptDayAndReset(); let d = null; try { d = await db.get('usage', 'receipt-' + day); } catch (_) {} return { day, n: (d && +d.n) || 0, quotaHit: !!(d && d.quotaHit), resetAt }; }
+async function bumpUsage(db, quota) { const u = await usageOf(db); const next = { n: u.n + (quota ? 0 : 1), quotaHit: quota ? true : u.quotaHit }; try { await db.put('usage', 'receipt-' + u.day, next); } catch (_) {} return { ...u, ...next }; }
 async function readReceipt(mime, b64) {
   const key = process.env.GEMINI_API_KEY;
   // 2026-10 기준: 2.5/2.0 은 새 키에 막힘(404), flash-latest 는 가끔 503(과부하) → 다음 모델로
   const models = process.env.GEMINI_MODEL ? [process.env.GEMINI_MODEL] : ['gemini-flash-latest', 'gemini-flash-lite-latest', 'gemini-3.5-flash', 'gemini-3.1-flash-lite'];
-  let lastErr = null; const deadline = Date.now() + 26000;   // Vercel 함수 30초 안에 끝내기
+  let lastErr = null; const deadline = Date.now() + 26000; let tried = 0, limited = 0;   // Vercel 함수 30초 안에 끝내기
   for (const model of models) {
     const left = deadline - Date.now(); if (left < 3000) break;
     const c = new AbortController(); const t = setTimeout(() => c.abort(), Math.min(15000, left));
@@ -258,6 +270,7 @@ async function readReceipt(mime, b64) {
         body: JSON.stringify({ contents: [{ parts: [{ text: RECEIPT_PROMPT }, { inline_data: { mime_type: mime, data: b64 } }] }],
           generationConfig: { temperature: 0, response_mime_type: 'application/json', response_schema: RECEIPT_SCHEMA } }) });
       const j = await r.json().catch(() => ({}));
+      tried++; if (r.status === 429) limited++;
       if (!r.ok) { lastErr = new Error(`${model}: ${r.status} ${(j.error && j.error.message) || ''}`.trim()); if (r.status === 401 || r.status === 403) break; continue; }   // 키 문제만 중단, 404·429·5xx 는 다음 모델
       const text = j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts && j.candidates[0].content.parts.map(p => p.text || '').join('');
       if (!text) { lastErr = new Error(model + ': 빈 응답'); continue; }
@@ -271,7 +284,9 @@ async function readReceipt(mime, b64) {
     } catch (e) { lastErr = e; }   // 시간 초과·파싱 실패도 다음 모델로 (deadline 안에서)
     finally { clearTimeout(t); }
   }
-  throw lastErr || new Error('영수증을 읽지 못했어요');
+  const err = lastErr || new Error('영수증을 읽지 못했어요');
+  if (tried && limited === tried) err.quota = true;   // 시도한 모델이 전부 한도 초과(429)
+  throw err;
 }
 function parseBody(b) {
   if (!b) return {};
