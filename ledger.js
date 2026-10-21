@@ -51,11 +51,39 @@ async function api(body,{timeout=20000}={}){
   try{
     const res=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...body,token:S.token||undefined}),signal:ctrl.signal});
     let j; try{j=await res.json()}catch(e){throw {code:'network',message:'응답을 읽지 못했어요'}}
-    if(!j.ok) throw {code:j.error||'server',message:j.error||'server'};
+    if(!j.ok) throw {code:j.error||'server',message:j.error||'server',status:res.status};
     return j;
   }catch(e){ if(e&&e.code)throw e; throw {code:'network',message:String(e&&e.message||e)} }
   finally{clearTimeout(t)}
 }
+/* ---------- 끊김 대비: 일시적 실패 판별 · 저장 대기열(outbox) · 마지막 목록 캐시 ----------
+   네트워크가 끊기거나 서버/DB가 5xx(무료 한도 초과 포함)면 화면은 마지막으로 받은 내용으로 계속 보여 주고,
+   쓰기는 휴대폰(localStorage)에 쌓아 두었다가 연결되면 순서대로 다시 보낸다. 대기열·캐시는 멤버별 키. */
+const transient=e=>!!e&&(e.code==='network'||!e.status||e.status>=500);
+const obKey=()=>'tl_outbox_'+(S.me??ls.get('tl_me')??'x');
+const cacheKey=()=>'tl_cache_'+(S.me??ls.get('tl_me')??'x');
+function outbox(){ try{ const a=JSON.parse(ls.get(obKey())||'[]'); return Array.isArray(a)?a:[]; }catch(e){ return []; } }
+function setOutbox(a){ try{ if(a.length)localStorage.setItem(obKey(),JSON.stringify(a)); else localStorage.removeItem(obKey()); return true; }catch(e){ return false; } }
+function queueOps(ops){ const a=outbox(); a.push({ops,ts:Date.now()}); if(setOutbox(a))return true;
+  // 저장 공간 부족(사진이 큼): 사진 원본만 빼고 다시 시도
+  const slim=ops.filter(o=>!(o.col==='images'&&!String(o.id).endsWith('.t'))); a[a.length-1]={ops:slim,ts:Date.now()}; if(slim.length&&setOutbox(a)){ toast('휴대폰 저장 공간이 부족해 사진 원본은 못 남겼어요'); return true; } return false; }
+const pendingOps=()=>outbox().flatMap(x=>x.ops);
+let flushing=null;
+function flushOutbox(){ if(flushing)return flushing; if(!S.token||!outbox().length)return Promise.resolve(true);
+  flushing=(async()=>{ let a=outbox(), sent=0;
+    try{ while(a.length){ try{ await api({action:'write',ops:a[0].ops}); sent++; }
+        catch(e){ if(transient(e))return false; if(e.code==='auth')return false; toast('대기 중이던 저장 하나는 서버가 거절해서 뺐어요'); }
+        a=outbox(); a.shift(); setOutbox(a); }
+      if(sent){ toast(`대기 중이던 저장 ${sent}건을 보냈어요`); S.v=''; } return true; }
+    finally{ flushing=null; paintSync(); } })();
+  return flushing; }
+/* 서버·캐시 어디서 온 목록이든, 아직 못 보낸 내 수정은 위에 다시 얹는다 */
+function reapplyPending(){ pendingOps().forEach(op=>{ if(['expenses','transfers','memos'].includes(op.col))localApply(op); }); }
+function saveCache(j){ try{ const {v,...rest}=j; localStorage.setItem(cacheKey(),JSON.stringify({...rest,at:Date.now()})); }catch(e){} }
+function loadCache(){ try{ return JSON.parse(ls.get(cacheKey())||'null'); }catch(e){ return null; } }
+const hhmm=t=>new Date(t).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
+function syncHtml(){ const n=outbox().length; if(!S.offline&&!n)return ''; return `<div class="lgsync">${S.offline?`📴 연결 안 됨 · 마지막 동기화 ${S.syncAt?hhmm(S.syncAt):'-'}`:'저장 보내는 중'}${n?` · 저장 대기 ${n}건`:''}</div>`; }
+function paintSync(){ document.querySelectorAll('.lgsync-slot').forEach(el=>el.innerHTML=syncHtml()); }
 function applyList(j){
   S.me=j.me; S.people=j.people||[]; S.rate=+j.rate||S.rate; S.rateInfo=j.rateInfo||S.rateInfo;
   S.expenses=Object.entries(j.expenses||{}).map(([id,e])=>({id,...e,amount:+e.amount||0,payer:+e.payer||0,parts:Array.isArray(e.parts)?e.parts.map(Number):[]}));
@@ -67,21 +95,30 @@ function applyList(j){
 let loading=false;
 async function load(){
   if(!S.token||loading)return; loading=true;
-  try{ const j=await api({action:'list'}); applyList(j); S.screen='main'; S.err=''; render(); seedNotes(); }
+  try{
+    await flushOutbox();
+    const j=await api({action:'list',v:S.loaded&&!outbox().length?S.v:''});
+    const was=S.offline; S.offline=false; S.syncAt=Date.now();
+    if(j.unchanged&&S.loaded&&S.screen==='main'){ if(was||S.err){S.err='';render();} else paintSync(); return; }
+    applyList(j); S.v=j.v||''; saveCache(j); reapplyPending(); S.screen='main'; S.err=''; render(); seedNotes();
+  }
   catch(e){
     if(e.code==='auth'){logout(false);await boot();}
     else if(e.code==='not_setup'){logout(false);await boot();}
+    else if(transient(e)&&S.loaded){ if(!S.offline){S.offline=true;render();} else paintSync(); }
     else{S.err=e.code==='network'?'서버에 연결하지 못했어요. 잠시 후 다시 시도돼요.':String(e.message||'');render()}
   }finally{loading=false}
 }
 async function boot(){
   S.token=ls.get('tl_token')||''; 
+  // 마지막으로 받은 목록이 있으면 먼저 그걸로 그려서 바로 보이게 (서버가 안 돼도 볼 수 있음)
+  if(S.token&&!S.loaded){ const c=loadCache(); if(c&&c.me!==undefined&&String(c.me)===String(ls.get('tl_me'))){ applyList(c); reapplyPending(); S.syncAt=c.at; S.screen='main'; render(); } }
   if(S.token){await load(); if(S.screen==='main')return;}
   try{ const st=await api({action:'status'}); S.people=st.people||[]; S.rate=+st.rate||S.rate; S.rateInfo=st.rateInfo||S.rateInfo; S.screen=st.setup?'login':'setup'; S.err=''; }
   catch(e){ S.screen='error'; S.err=e.code==='network'?'서버에 연결하지 못했어요. 로컬 미리보기라면 `node dev/server.js`로 띄워야 해요.':String(e.message||'') }
   render();
 }
-function logout(rerender=true){ S.token=''; S.me=null; ls.del('tl_token'); S.screen='login'; if(rerender)render(); }
+function logout(rerender=true){ try{localStorage.removeItem(cacheKey())}catch(e){} S.token=''; S.me=null; S.v=''; S.loaded=false; S.offline=false; ls.del('tl_token'); S.screen='login'; if(rerender)render(); }
 
 /* 낙관적 반영 + 서버 쓰기 */
 function localApply(op){
@@ -95,8 +132,10 @@ function localApply(op){
 async function write(ops,okMsg,{silent}={}){
   ops.forEach(localApply); if(!silent)render();
   S.saving++;
-  try{ await api({action:'write',ops}); if(okMsg)toast(okMsg); return true; }
+  try{ if(outbox().length)throw {code:'network'};   // 앞에 대기 중인 저장이 있으면 순서 지키려고 뒤에 붙임
+    await api({action:'write',ops}); S.v=''; if(okMsg)toast(okMsg); return true; }
   catch(e){
+    if(transient(e)){ if(queueOps(ops)){ if(e.code==='network'||e.status)S.offline=true; toast('연결되면 자동으로 저장해요'); paintSync(); flushOutbox(); return true; } toast('저장 실패 — 휴대폰 저장 공간이 부족해요'); return false; }
     if(e.code==='auth'){toast('다시 로그인해 주세요');logout();}
     else if(e.code==='forbidden'){toast('내 항목만 고칠 수 있어요');}
     else toast('저장 실패 — 다시 시도해 주세요');
@@ -250,7 +289,7 @@ function openLogin(){
   setTimeout(()=>{const i=q('#loginPin',sh); if(i)i.focus()},250);
 }
 function viewMain(){
-  let h='';
+  let h=`<div class="lgsync-slot">${syncHtml()}</div>`;
   if(S.err) h+=`<div class="lgbanner">⚠️ <div>${esc(S.err)}</div></div>`;
   h+=viewHome();
   // 고정 버튼 바 (하단 메뉴 위에 따라다님)
@@ -345,7 +384,7 @@ const svgDrag='<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6
 const svgList='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="7" height="7" rx="1.5"/><path d="M5 7.5l1.5 1.5L9 6"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 7.5h7M14 17.5h7"/></svg>';
 const svgText='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17v3z"/><path d="M13.5 6.5l3 3"/><path d="M4 4h7"/></svg>';
 function viewMemo(){
-  let h='';
+  let h=`<div class="lgsync-slot">${syncHtml()}</div>`;
   const isInfo=m=>m.cat==='info';
   const secs=[{k:'mine',title:'내 메모',sub:`${pname(S.me)}만 봄`,list:S.memos.filter(m=>ownerOf(m)===S.me&&!isInfo(m))},{k:'shared',title:'공용 메모',sub:'둘 다 보고 체크',list:S.memos.filter(m=>isShared(m)&&!isInfo(m))},{k:'info',title:'여행 정보',sub:'항공·숙소·쇼핑 같은 안내 글',list:S.memos.filter(isInfo)}];
   secs.forEach(sec=>{
@@ -657,9 +696,11 @@ function pickPhoto(camera){ return new Promise(res=>{ const inp=document.createE
 async function uploadPhoto(f){
   const r=await resizeImage(f,1600); const t=await makeThumb(r.data); const imgId='im-'+uid();
   const ops=[{op:'set',col:'images',id:imgId,data:{data:r.data,w:r.w,h:r.h,kind:'receipt'}}]; if(t)ops.push({op:'set',col:'images',id:imgId+'.t',data:{data:t,kind:'thumb'}});
-  await api({action:'write',ops}); imgCache[imgId]=r.data; if(t)imgCache[imgId+'.t']=t;
-  return {imgId,data:r.data};
+  imgCache[imgId]=r.data; if(t)imgCache[imgId+'.t']=t;
+  const how=await writeOrQueue(ops);   // 끊겼으면 대기열 (화면엔 바로 보임)
+  return {imgId,data:r.data,queued:how==='queued'};
 }
+
 /* 영수증 읽기 (서버 → Gemini). 결과 {rc, fields, items, ok} */
 async function readReceiptData(data){
   const j=await api({action:'receipt',image:data},{timeout:40000});
@@ -670,10 +711,11 @@ async function readReceiptData(data){
 }
 async function readReceiptFile(f){
   const P=await uploadPhoto(f);
+  if(P.queued)throw {code:'network',queued:true,imgId:P.imgId};   // 끊김: 사진은 대기열, 영수증 읽기는 못 함
   try{ return {imgId:P.imgId,...await readReceiptData(P.data)}; }catch(e){ e.imgId=P.imgId; throw e; }
 }
 const receiptErr=e=>e.code==='no_key'?'서버에 GEMINI_API_KEY 가 없어요':e.code==='auth'?'다시 로그인해 주세요':e.code==='receipt'?'영수증을 못 읽었어요 — 직접 넣어주세요':e.code==='network'?'연결이 느려서 못 읽었어요 — 다시 해 주세요':(e.message||'실패했어요');
-const dropImage=id=>{ if(id)api({action:'write',ops:[{op:'delete',col:'images',id},{op:'delete',col:'images',id:id+'.t'}]}).catch(()=>{}); };
+const dropImage=id=>{ if(id)writeOrQueue([{op:'delete',col:'images',id},{op:'delete',col:'images',id:id+'.t'}]).catch(()=>{}); };
 /* 하단 바 "영수증": 찍으면 바로 지출 등록 + 되돌리기 */
 async function scanReceipt(){
   if(scanning)return;
@@ -696,7 +738,7 @@ async function scanReceipt(){
     if(ok) toastUndo(`${base.title} ${fmt(base.amount,base.cur)} 등록 (${priv?'내 지출':'공용'}${R.items.length?` · 품목 ${R.items.length}`:''})`,()=>{ write([{op:'delete',col:'expenses',id}],'되돌렸어요'); dropImage(R.imgId); });
   }catch(e){
     toast(receiptErr(e));
-    if(e.code==='receipt'&&e.imgId) openExpense(null,{priv,newImg:e.imgId,prefill:{receipt:e.imgId}});
+    if(e.imgId){ if(e.queued)toast('연결 안 됨 — 사진만 붙였어요. 금액을 넣어 저장하세요'); openExpense(null,{priv,newImg:e.imgId,prefill:{receipt:e.imgId}}); }
   }finally{ scanning=false; const b=q('[data-act="receipt"]'); if(b){b.disabled=false;b.classList.remove('lgbusy')} }
 }
 function openExpense(e,opts={}){
@@ -782,6 +824,7 @@ function openExpense(e,opts={}){
       let P; try{ P=await uploadPhoto(f); }catch(e){ toast(e.code==='auth'?receiptErr(e):'사진을 못 올렸어요: '+(e.message||e)); return; }
       applyReceipt({imgId:P.imgId,rc:{isReceipt:false},fields:{},items:[]});   // 사진은 바로 붙임
       if(closed)return;
+      if(P.queued){ toast('연결 안 됨 — 사진은 연결되면 올라가요 (영수증 읽기는 못 함)'); return; }
       toast('사진을 붙였어요 · 영수증인지 읽는 중…');
       try{ const R=await readReceiptData(P.data); if(closed)return;
         if(R.rc.isReceipt===false){ toast('사진을 붙였어요'); return; }
@@ -908,9 +951,13 @@ function mount(el,memoEl){
   const visible=()=>roots().some(r=>!r.closest('[hidden]'));
   clearInterval(pollT); pollT=setInterval(()=>{if(document.visibilityState==='visible'&&S.screen==='main'&&!S.saving&&visible())load()},POLL_MS);
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&S.screen==='main')load()});
+  window.addEventListener('online',()=>{ if(S.screen==='main')load(); });
 }
 function scrollToMemo(id){ const d=q(`details[data-accm="${id}"]`); if(!d)return; const sec=d.closest('details.lgsecacc'); if(sec&&!sec.open){sec.open=true;} d.open=true; S.openMemos.add(id); setTimeout(()=>d.scrollIntoView({behavior:'smooth',block:'start'}),50); }
-window.Ledger={mount,state:S,reload:load,openExpense,openSettle,openLogin,API,api,openSheet,closeSheet,toast,arm,pickImages,imgSrc,fillImages,imgTag,scrollToMemo,bodyHtml};
+/* 다른 모듈용 쓰기: 성공 'ok', 끊김이면 대기열에 넣고 'queued', 영구 실패면 throw */
+async function writeOrQueue(ops){ try{ if(outbox().length)throw {code:'network'}; await api({action:'write',ops}); S.v=''; return 'ok'; }
+  catch(e){ if(transient(e)&&S.token){ if(queueOps(ops)){ S.offline=true; paintSync(); flushOutbox(); return 'queued'; } } throw e; } }
+window.Ledger={writeOrQueue,pendingOps,flushOutbox,mount,state:S,reload:load,openExpense,openSettle,openLogin,API,api,openSheet,closeSheet,toast,arm,pickImages,imgSrc,fillImages,imgTag,scrollToMemo,bodyHtml};
 const auto=document.getElementById('ledger-root');
 if(auto){ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>mount(auto)); else mount(auto); }
 })();

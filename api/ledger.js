@@ -126,9 +126,12 @@ export default async function handler(req, res) {
     }
 
     if (action === 'content') {
+      // 바뀐 게 없으면 내용 없이 답함 (데이터·DB 전송량 절약). 클라이언트는 받은 v 를 다음에 보냄
+      const v = 'c' + await db.version(['plan', 'food', 'places', 'meta']);
+      if (body.v && body.v === v) return res.status(200).json({ ok: true, unchanged: true, v });
       const out = { plan: {}, food: {}, places: {}, meta: {} };
       for (const col of Object.keys(out)) for (const r of await db.all(col)) out[col][r.id] = r.data;
-      return res.status(200).json({ ok: true, ...out });
+      return res.status(200).json({ ok: true, v, ...out });
     }
 
     if (!trip) return res.status(200).json({ ok: false, error: 'not_setup' });
@@ -158,9 +161,11 @@ export default async function handler(req, res) {
     const visible = (col, d) => !PRIVATE_COLS.has(col) || ownerOf(d) === null || ownerOf(d) === me;
 
     if (action === 'list') {
+      const v = 'l' + me + ':' + await db.version(['expenses', 'transfers', 'memos', 'meta', 'settings']);
+      if (body.v && body.v === v) return res.status(200).json({ ok: true, unchanged: true, v, me });
       const data = { expenses: {}, transfers: {}, memos: {}, meta: {} };
       for (const col of Object.keys(data)) for (const r of await db.all(col)) if (visible(col, r.data)) data[col][r.id] = r.data;
-      return res.status(200).json({ ok: true, me, ...publicTrip(trip), ...data, ts: Date.now() });
+      return res.status(200).json({ ok: true, me, v, ...publicTrip(trip), ...data, ts: Date.now() });
     }
 
     if (action === 'receipt') {

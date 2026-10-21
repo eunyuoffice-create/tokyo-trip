@@ -17,19 +17,36 @@ const colOf=tab=>COLS[tab]||tab;
 const listOf=col=>col==='plan'?C.plan:col==='food'?C.food:C.places;
 const setList=(col,arr)=>{ if(col==='plan')C.plan=arr; else if(col==='food')C.food=arr; else C.places=arr; };
 const push=()=>{ T().setContent({plan:C.plan,food:C.food,places:C.places}); };
-const toast=m=>{ if(L()&&L().toast)L().toast(m); };
+const toast=m=>{ if(m&&L()&&L().toast)L().toast(m); };
 
 /* ---------- 읽기 ---------- */
+/* 마지막으로 받은 일정·맛집·갈 곳은 휴대폰에 저장 → 다음에 열면 바로 보이고, 서버가 안 돼도 계속 볼 수 있음.
+   서버엔 받은 버전(v)을 보내서, 바뀐 게 없으면 내용 없이 답을 받는다 (데이터 절약) */
+const CKEY='tc_content';
+let curV='';
+function applyContent(j){
+  const arr=o=>Object.entries(o||{}).map(([id,d])=>({id,...d})).sort(byOrder);
+  C.meta=(j.meta&&j.meta.seeded)||{};
+  C.plan=C.meta.plan?arr(j.plan):null; C.food=C.meta.food?arr(j.food):null; C.places=C.meta.places?arr(j.places):null;
+  // 아직 못 보낸 내 수정(대기열)을 위에 얹기
+  try{ (L()&&L().pendingOps?L().pendingOps():[]).forEach(op=>{ if(!['plan','food','places'].includes(op.col))return; const list=(listOf(op.col)||[]).slice(); const i=list.findIndex(x=>x.id===op.id);
+    if(op.op==='delete'){ if(i>=0)list.splice(i,1); } else if(op.op==='update'){ if(i>=0)list[i]={...list[i],...op.data}; } else { const d={id:op.id,...op.data}; if(i>=0)list[i]=d; else list.push(d); }
+    list.sort(byOrder); setList(op.col,list); }); }catch(e){}
+  C.loaded=true; push();
+}
+function loadContentCache(){ try{ const c=JSON.parse(localStorage.getItem(CKEY)||'null'); if(c&&c.meta){ curV=c.v||''; applyContent(c); C.cachedAt=c.at; return true; } }catch(e){} return false; }
 async function fetchContent(){
   if(!L())return false;
   try{
-    const res=await fetch(L().API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'content'})});
+    const ctrl=new AbortController(); const t=setTimeout(()=>ctrl.abort(),20000);
+    let res; try{ res=await fetch(L().API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'content',v:C.loaded?curV:''}),signal:ctrl.signal}); } finally{ clearTimeout(t); }
     const j=await res.json(); if(!j.ok)return false;
-    const arr=o=>Object.entries(o||{}).map(([id,d])=>({id,...d})).sort(byOrder);
-    C.meta=(j.meta&&j.meta.seeded)||{};
-    C.plan=C.meta.plan?arr(j.plan):null; C.food=C.meta.food?arr(j.food):null; C.places=C.meta.places?arr(j.places):null;
-    C.loaded=true; push(); return true;
-  }catch(e){ return false; }
+    C.offline=false;
+    if(j.unchanged&&C.loaded)return true;
+    curV=j.v||''; applyContent(j);
+    try{ localStorage.setItem(CKEY,JSON.stringify({...j,at:Date.now()})); }catch(e){}
+    return true;
+  }catch(e){ C.offline=true; return false; }
 }
 C.reload=fetchContent;
 
@@ -75,13 +92,13 @@ async function importExtras(){
 async function save(col,id,data,msg){
   const list=(listOf(col)||[]).slice(); const i=list.findIndex(x=>x.id===id);
   const doc={id,...data}; if(i>=0)list[i]=doc; else list.push(doc); list.sort(byOrder); setList(col,list); push();
-  try{ await L().api({action:'write',ops:[{op:'set',col,id,data}]}); if(msg)toast(msg); }
-  catch(e){ toast(e.code==='auth'?'다시 로그인해 주세요':'저장 실패 — 다시 시도해 주세요'); fetchContent(); }
+  try{ const how=await L().writeOrQueue([{op:'set',col,id,data}]); curV=''; toast(how==='queued'?'연결되면 자동으로 저장해요':msg); }
+  catch(e){ toast(e.code==='auth'?'다시 로그인해 주세요':'저장 실패 — 다시 시도해 주세요'); curV=''; fetchContent(); }
 }
 async function remove(col,id){
   setList(col,(listOf(col)||[]).filter(x=>x.id!==id)); push();
-  try{ await L().api({action:'write',ops:[{op:'delete',col,id}]}); toast('삭제했어요'); }
-  catch(e){ toast('삭제 실패 — 다시 시도해 주세요'); fetchContent(); }
+  try{ const how=await L().writeOrQueue([{op:'delete',col,id}]); curV=''; toast(how==='queued'?'연결되면 자동으로 삭제해요':'삭제했어요'); }
+  catch(e){ toast('삭제 실패 — 다시 시도해 주세요'); curV=''; fetchContent(); }
 }
 async function reorder(col,ids){
   // 화면에 보이는 부분 목록만 재배열: 그 항목들이 갖고 있던 order 값들을 새 순서대로 다시 나눠 준다 (다른 그룹과의 상대 위치 유지)
@@ -90,7 +107,7 @@ async function reorder(col,ids){
   const ops=[]; items.forEach((it,i)=>{ if(it.order!==slots[i]){ it.order=slots[i]; ops.push({op:'update',col,id:it.id,data:{order:slots[i]}}); } });
   list.sort(byOrder); push();
   if(!ops.length)return;
-  try{ await L().api({action:'write',ops}); toast('순서를 바꿨어요'); }catch(e){ toast('순서 저장 실패'); fetchContent(); }
+  try{ const how=await L().writeOrQueue(ops); curV=''; toast(how==='queued'?'연결되면 자동으로 저장해요':'순서를 바꿨어요'); }catch(e){ toast('순서 저장 실패'); curV=''; fetchContent(); }
 }
 
 /* ---------- 길게 눌러 끌어서 정렬 (메모와 같은 방식) ---------- */
@@ -279,6 +296,7 @@ C.openEditor=openEditor;
 /* ---------- 시작 ---------- */
 function boot(){
   if(!window.TripSite||!window.Ledger){ setTimeout(boot,60); return; }
+  loadContentCache();   // 저장해 둔 내용으로 먼저 그림
   fetchContent().then(()=>{ C.onAuth(); });
   document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'&&!C.dragging)fetchContent(); });
   setInterval(()=>{ if(document.visibilityState==='visible'&&!C.dragging&&!document.querySelector('.lgov .lgsheet.lgopen'))fetchContent(); },60000);

@@ -39,6 +39,11 @@ async function neonStore() {
       return r.length > 0;
     },
     async del(col, id) { await sql`DELETE FROM ledger_docs WHERE col = ${col} AND id = ${id}`; },
+    // 변경 감지용 버전: 행 수 + 마지막 수정 시각 (삭제는 행 수로 잡힘). 내용은 안 읽어서 가볍다
+    async version(cols) {
+      const r = await sql`SELECT count(*)::int n, coalesce(max(updated), 'epoch')::text m FROM ledger_docs WHERE col = ANY(${cols})`;
+      return r[0].n + '|' + r[0].m;
+    },
   };
 }
 
@@ -50,12 +55,14 @@ async function fakeStore() {
   try { mem = JSON.parse(fs.readFileSync(file, 'utf8')); } catch (_) { mem = {}; }
   const save = () => { try { fs.writeFileSync(file, JSON.stringify(mem, null, 1)); } catch (_) {} };
   const key = (c, i) => c + '/' + i;
+  const boot = Date.now().toString(36); const ver = {}; const bump = c => { ver[c] = (ver[c] || 0) + 1; };
   return {
     async all(col) { return Object.entries(mem).filter(([k]) => !col || k.startsWith(col + '/')).map(([k, data]) => ({ col: k.split('/')[0], id: k.slice(k.indexOf('/') + 1), data })); },
     async get(col, id) { return mem[key(col, id)] ?? null; },
-    async put(col, id, data) { mem[key(col, id)] = data; save(); },
-    async patch(col, id, data) { const k = key(col, id); if (!(k in mem)) return false; mem[k] = { ...mem[k], ...data }; save(); return true; },
-    async del(col, id) { delete mem[key(col, id)]; save(); },
+    async put(col, id, data) { mem[key(col, id)] = data; bump(col); save(); },
+    async patch(col, id, data) { const k = key(col, id); if (!(k in mem)) return false; mem[k] = { ...mem[k], ...data }; bump(col); save(); return true; },
+    async del(col, id) { delete mem[key(col, id)]; bump(col); save(); },
+    async version(cols) { return boot + '|' + cols.map(c => ver[c] || 0).join('.'); },
   };
 }
 
