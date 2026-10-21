@@ -714,4 +714,7 @@ body.body-edit .ev,body.body-edit .card{-webkit-user-select:none;user-select:non
 .lg .lgloadskip{font-size:13px}
 @keyframes lgspin{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.lg .lgspin{animation-duration:2.4s}}
+/* 할인 줄 */
+.lg .lgf .lgit.lgitdisc input.lgitprice[type=text],.lg .lgf .lgit.lgitdisc input.lgitname[type=text]{color:var(--accent)}
+.lg .lgf .lgit.lgitdisc.lgitoff input[type=text]{color:var(--muted)}
 

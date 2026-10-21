@@ -807,7 +807,11 @@ function openExpense(e,opts={}){
   const itTotal=()=>d.items.filter(x=>x.sel).reduce((a,x)=>a+(+x.price||0),0);
   const itSumText=()=>{ const sel=d.items.filter(x=>x.sel).length; return d.items.length?`${sel===d.items.length?`품목 ${sel}개`:`품목 ${sel}/${d.items.length}개`} · 합계 ${fmt(itTotal(),d.cur)}${d.rcTotal&&Math.round(d.rcTotal)!==Math.round(itTotal())?` <span class="lgsub">(영수증 ${fmt(d.rcTotal,d.cur)})</span>`:''}`:''; };
   // 품목: 한 목록. 평소엔 잠긴 입력칸(글자처럼 보임), "수정"이면 그 자리에서 입력
-  const itemRows=()=>d.items.map((it,i)=>`<div class="lgit ${it.sel?'':'lgitoff'} ${(+it.qty||1)>1?'':'lgq1'}" data-i="${i}"><button type="button" class="lgitck" aria-pressed="${it.sel}" aria-label="이 품목 포함">${it.sel?'✓':''}</button><input type="text" class="lgitname" value="${esc(it.nameKo||it.name)}" placeholder="품목 이름" maxlength="60" ${itEdit?'':'readonly tabindex="-1"'}${it.nameKo&&it.name&&it.nameKo!==it.name?` title="${esc(it.name)}"`:''}><span class="lgitx">×</span><input type="text" inputmode="numeric" class="lgitqty" value="${esc(+it.qty||1)}" aria-label="수량" ${itEdit?'':'readonly tabindex="-1"'}><input type="text" inputmode="decimal" class="lgitprice" value="${itEdit?esc(it.price||''):esc(fmt(it.price,d.cur))}" placeholder="0" aria-label="가격" ${itEdit?'':'readonly tabindex="-1"'}><button type="button" class="lgitdel" aria-label="품목 삭제">×</button></div>`).join('');
+  // 할인 줄: 가격이 마이너스. 상품 바로 아래 붙은 할인은 그 상품 몫(같이 넣고 뺌), 쿠폰·포인트 같은 전체 할인은 따로
+  const WIDE=/クーポン|coupon|쿠폰|ポイント|포인트|会計|合計|総額|全品|전체|まとめ/i;
+  const isDisc=it=>(+it.price||0)<0;
+  const attached=i=>{ const out=[]; if(isDisc(d.items[i]))return out; for(let k=i+1;k<d.items.length&&isDisc(d.items[k])&&!WIDE.test((d.items[k].name||'')+' '+(d.items[k].nameKo||''));k++)out.push(k); return out; };
+  const itemRows=()=>d.items.map((it,i)=>`<div class="lgit ${isDisc(it)?'lgitdisc':''} ${it.sel?'':'lgitoff'} ${(+it.qty||1)>1?'':'lgq1'}" data-i="${i}"><button type="button" class="lgitck" aria-pressed="${it.sel}" aria-label="이 품목 포함">${it.sel?'✓':''}</button><input type="text" class="lgitname" value="${esc(it.nameKo||it.name)}" placeholder="품목 이름" maxlength="60" ${itEdit?'':'readonly tabindex="-1"'}${it.nameKo&&it.name&&it.nameKo!==it.name?` title="${esc(it.name)}"`:''}><span class="lgitx">×</span><input type="text" inputmode="numeric" class="lgitqty" value="${esc(+it.qty||1)}" aria-label="수량" ${itEdit?'':'readonly tabindex="-1"'}><input type="text" inputmode="decimal" class="lgitprice" value="${itEdit?esc(it.price||''):esc(fmt(it.price,d.cur))}" placeholder="0" aria-label="가격" ${itEdit?'':'readonly tabindex="-1"'}><button type="button" class="lgitdel" aria-label="품목 삭제">×</button></div>`).join('');
   const rcHtml=()=>{
     const has=d.receipt||d.items.length;
     const thumb=d.receipt?`<span class="lgthumb lgthumb-rc2" aria-label="사진 크게 보기">${thumbTag(d.receipt)}</span>`:'';
@@ -857,7 +861,7 @@ function openExpense(e,opts={}){
     const ed=g('#fItEdit'); if(ed)ed.onclick=()=>{ if(itEdit)clean(); itEdit=!itEdit; paintRc(); };
     g('#fAddItem').onclick=()=>{ d.items.push({name:'',nameKo:'',qty:1,price:0,sel:true}); itEdit=true; paintRc(); const ins=box.querySelectorAll('.lgitname'); if(ins.length)ins[ins.length-1].focus(); };
     box.querySelectorAll('.lgit').forEach(row=>{ const it=d.items[+row.dataset.i];
-      row.querySelector('.lgitck').onclick=()=>{ it.sel=!it.sel; row.classList.toggle('lgitoff',!it.sel); const b=row.querySelector('.lgitck'); b.setAttribute('aria-pressed',it.sel); b.textContent=it.sel?'✓':''; refreshSum(); };
+      row.querySelector('.lgitck').onclick=()=>{ const i=+row.dataset.i; it.sel=!it.sel; const linked=attached(i); linked.forEach(k=>{d.items[k].sel=it.sel}); [i,...linked].forEach(k=>{ const r=box.querySelector(`.lgit[data-i="${k}"]`); if(!r)return; r.classList.toggle('lgitoff',!d.items[k].sel); const b=r.querySelector('.lgitck'); b.setAttribute('aria-pressed',d.items[k].sel); b.textContent=d.items[k].sel?'✓':''; }); refreshSum(); if(linked.length&&!it.sel)toast(`붙어 있던 할인 ${linked.length}줄도 같이 뺐어요`); };
       row.querySelector('.lgitname').oninput=ev=>{it.nameKo=ev.target.value; if(!it.name)it.name=ev.target.value};
       row.querySelector('.lgitqty').oninput=ev=>{it.qty=parseNum(ev.target.value)||1};
       row.querySelector('.lgitprice').oninput=ev=>{it.price=parseNum(ev.target.value); refreshSum()};
