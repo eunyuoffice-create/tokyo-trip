@@ -157,7 +157,11 @@ function bodyHtml(t){ let h='',ul=false; const close=()=>{if(ul){h+='</ul>';ul=f
 const imgCache={};
 async function imgSrc(id){ if(imgCache[id])return imgCache[id]; try{ const j=await api({action:'image',id}); imgCache[id]=j.data; return j.data; }catch(e){ return ''; } }
 const imgTag=(ref,cls='lgimg')=>/^(img\/|https?:|data:)/.test(ref)?`<img class="${cls}" src="${esc(ref)}" alt="" loading="lazy">`:`<img class="${cls}" data-imgid="${esc(ref)}" alt="">`;
-function fillImages(root){ (root||document).querySelectorAll('img[data-imgid]:not([src])').forEach(async im=>{ const src=await imgSrc(im.dataset.imgid); if(src)im.src=src; else im.classList.add('lgimg-missing'); }); }
+function fillImages(root){ (root||document).querySelectorAll('img[data-imgid]:not([src])').forEach(async im=>{ let src=await imgSrc(im.dataset.imgid); if(!src&&im.dataset.full)src=await imgSrc(im.dataset.full); if(src)im.src=src; else im.classList.add('lgimg-missing'); }); }
+/* 영수증·지출 사진: 목록·폼에는 작은 썸네일(<id>.t, 약 10KB)만 받고, 누르면 원본을 받아서 크게 */
+const thumbTag=id=>`<img class="lgimg" data-imgid="${esc(id)}.t" data-full="${esc(id)}" alt="">`;
+async function openThumb(t){ const im=t.querySelector('img'); if(!im)return; if(im.dataset.full){ toast('사진 여는 중…'); const src=await imgSrc(im.dataset.full); if(src){openImg(src);return} } if(im.src)openImg(im.src); }
+function makeThumb(dataUrl,max=240){ return new Promise(res=>{ const im=new Image(); im.onload=()=>{ const r=Math.min(1,max/Math.max(im.width,im.height)); const c=document.createElement('canvas'); c.width=Math.round(im.width*r); c.height=Math.round(im.height*r); c.getContext('2d').drawImage(im,0,0,c.width,c.height); let d=c.toDataURL('image/webp',0.7); if(!d.startsWith('data:image/webp'))d=c.toDataURL('image/jpeg',0.7); res(d); }; im.onerror=()=>res(''); im.src=dataUrl; }); }
 function openImg(src){ if(window.openLightbox)openLightbox(src,''); else window.open(src,'_blank'); }
 function resizeImage(file,max=1280){ return new Promise((res,rej)=>{ const url=URL.createObjectURL(file); const im=new Image(); im.onload=()=>{ let {width:w,height:h}=im; const r=Math.min(1,max/Math.max(w,h)); w=Math.round(w*r); h=Math.round(h*r); const c=document.createElement('canvas'); c.width=w; c.height=h; c.getContext('2d').drawImage(im,0,0,w,h);
     // WebP 가 되는 브라우저(크롬·최신 사파리)는 WebP, 아니면 JPEG. 400KB 넘으면 품질을 낮춰 다시
@@ -331,7 +335,7 @@ function rowHtml(e){
   const check=priv?'':`<button class="lgbox lgbox-s" data-settled="${esc(e.id)}" aria-label="이 건 정산 완료" aria-pressed="${!!e.settled}">${svgCheck}</button>`;
   const links=(Array.isArray(e.links)?e.links:[]).filter(x=>x&&x.u);
   const linkHtml=links.length?`<div class="lgelinks">${links.map(x=>`<a class="lgelink" href="${esc(x.u)}" target="_blank" rel="noopener">${esc(x.l||x.u.replace(/^https?:\/\//,'').slice(0,24))} ↗</a>`).join('')}</div>`:'';
-  const rc=e.receipt?`<span class="lgthumb lgthumb-rc" aria-label="영수증 크게 보기">${imgTag(e.receipt)}</span>`:'';
+  const rc=e.receipt?`<span class="lgthumb lgthumb-rc" aria-label="영수증 크게 보기">${thumbTag(e.receipt)}</span>`:'';
   const itemsN=Array.isArray(e.items)&&e.items.length?`<span>· 품목 ${e.items.filter(x=>x.sel!==false).length}</span>`:'';
   return `<div class="lgrow ${!priv&&e.settled?'lgsettled':''}">${check}<div class="lgrowbody" role="button" tabindex="0" data-exp="${esc(e.id)}">${rc}<div class="lgmid"><div class="ti">${priv?`<span class="lglock">${svgLock}</span>`:''}<span class="lgtrunc">${esc(e.title||'(내용 없음)')}</span></div><div class="si">${sub}${itemsN}${e.memo?`<span class="lgtrunc">· ${esc(e.memo)}</span>`:''}</div>${linkHtml}</div><div class="lgamt"><div class="aa">${fmt(e.amount,e.cur)}</div>${right}</div><span class="lgchev" aria-hidden="true"></span></div></div>`;
 }
@@ -598,7 +602,7 @@ function bind(c){
     if(m.type!=='text'&&items.length){const next=items.map(it=>({...it,done:!nowDone,doneBy:!nowDone?S.me:null}));write([{op:'update',col:'memos',id:m.id,data:{items:next,done:!nowDone}}],!nowDone?'전부 체크했어요':'전부 해제했어요')}
     else write([{op:'update',col:'memos',id:m.id,data:{done:!nowDone}}],!nowDone?'확인 완료':'다시 올렸어요')}});
   qa('details.lgsecacc',c).forEach(d=>d.ontoggle=()=>{S.secOpen[d.dataset.sec]=d.open; ls.set('tl_sec',JSON.stringify(S.secOpen))});
-  qa('.lgthumb',c).forEach(t=>t.onclick=ev=>{ev.stopPropagation(); ev.preventDefault(); const im=t.querySelector('img'); if(im&&im.src)openImg(im.src)});
+  qa('.lgthumb',c).forEach(t=>t.onclick=ev=>{ev.stopPropagation(); ev.preventDefault(); openThumb(t)});
   qa('.lginfo-il',c).forEach(a=>a.onclick=ev=>ev.stopPropagation());
   qa('details[data-accm] > summary',c).forEach(sm=>{sm.onpointerdown=ev=>pressToDrag(ev,sm); sm.oncontextmenu=ev=>ev.preventDefault(); sm.onclick=ev=>{if(sm.dataset.suppress){ev.preventDefault();ev.stopPropagation()}}});
   qa('[data-accm]',c).forEach(d=>d.ontoggle=()=>{if(d.open)S.openMemos.add(d.dataset.accm);else S.openMemos.delete(d.dataset.accm)});
@@ -649,18 +653,27 @@ let scanning=false;
 function pickPhoto(camera){ return new Promise(res=>{ const inp=document.createElement('input'); inp.type='file'; inp.accept='image/*'; if(camera)inp.setAttribute('capture','environment'); inp.style.display='none'; document.body.appendChild(inp);
   inp.onchange=()=>{ const f=inp.files&&inp.files[0]; inp.remove(); res(f||null); }; inp.click(); }); }
 /* 영수증 사진 → 이미지 저장 + 서버(Gemini) 읽기. 결과: {imgId, rc, fields, items}. 실패하면 err.imgId 에 저장된 사진 id */
-async function readReceiptFile(f){
-  const r=await resizeImage(f,1600); let imgId='im-'+uid();
-  const up=api({action:'write',ops:[{op:'set',col:'images',id:imgId,data:{data:r.data,w:r.w,h:r.h,kind:'receipt'}}]}).then(()=>{imgCache[imgId]=r.data}).catch(()=>{imgId=''});
-  let j; try{ j=await api({action:'receipt',image:r.data},{timeout:40000}); }catch(e){ await up; e.imgId=imgId; throw e; }
-  await up;
+/* 사진 올리기: 원본(1600px)과 썸네일을 한 번에 저장. 결과 {imgId, data} */
+async function uploadPhoto(f){
+  const r=await resizeImage(f,1600); const t=await makeThumb(r.data); const imgId='im-'+uid();
+  const ops=[{op:'set',col:'images',id:imgId,data:{data:r.data,w:r.w,h:r.h,kind:'receipt'}}]; if(t)ops.push({op:'set',col:'images',id:imgId+'.t',data:{data:t,kind:'thumb'}});
+  await api({action:'write',ops}); imgCache[imgId]=r.data; if(t)imgCache[imgId+'.t']=t;
+  return {imgId,data:r.data};
+}
+/* 영수증 읽기 (서버 → Gemini). 결과 {rc, fields, items, ok} */
+async function readReceiptData(data){
+  const j=await api({action:'receipt',image:data},{timeout:40000});
   const rc=j.receipt||{};
   const items=(rc.items||[]).map(it=>({name:it.name,nameKo:it.nameKo||'',qty:+it.qty||1,price:+it.price||0,sel:true}));
   const fields={title:(rc.storeKo||rc.store||'').trim(),amount:+rc.total||0,cur:rc.currency==='KRW'?'KRW':'JPY',day:(rc.date&&DAYS.some(x=>x.d===rc.date))?rc.date:'',cat:rc.cat||'',memo:rc.note?rc.note.slice(0,120):''};
-  return {imgId,rc,fields,items,ok:rc.isReceipt!==false&&fields.amount>0};
+  return {rc,fields,items,ok:rc.isReceipt!==false&&fields.amount>0};
+}
+async function readReceiptFile(f){
+  const P=await uploadPhoto(f);
+  try{ return {imgId:P.imgId,...await readReceiptData(P.data)}; }catch(e){ e.imgId=P.imgId; throw e; }
 }
 const receiptErr=e=>e.code==='no_key'?'서버에 GEMINI_API_KEY 가 없어요':e.code==='auth'?'다시 로그인해 주세요':e.code==='receipt'?'영수증을 못 읽었어요 — 직접 넣어주세요':e.code==='network'?'연결이 느려서 못 읽었어요 — 다시 해 주세요':(e.message||'실패했어요');
-const dropImage=id=>{ if(id)api({action:'write',ops:[{op:'delete',col:'images',id}]}).catch(()=>{}); };
+const dropImage=id=>{ if(id)api({action:'write',ops:[{op:'delete',col:'images',id},{op:'delete',col:'images',id:id+'.t'}]}).catch(()=>{}); };
 /* 하단 바 "영수증": 찍으면 바로 지출 등록 + 되돌리기 */
 async function scanReceipt(){
   if(scanning)return;
@@ -740,7 +753,7 @@ function openExpense(e,opts={}){
   const itemRows=()=>d.items.map((it,i)=>`<div class="lgit ${it.sel?'':'lgitoff'} ${(+it.qty||1)>1?'':'lgq1'}" data-i="${i}"><button type="button" class="lgitck" aria-pressed="${it.sel}" aria-label="이 품목 포함">${it.sel?'✓':''}</button><input type="text" class="lgitname" value="${esc(it.nameKo||it.name)}" placeholder="품목 이름" maxlength="60" ${itEdit?'':'readonly tabindex="-1"'}${it.nameKo&&it.name&&it.nameKo!==it.name?` title="${esc(it.name)}"`:''}><span class="lgitx">×</span><input type="text" inputmode="numeric" class="lgitqty" value="${esc(+it.qty||1)}" aria-label="수량" ${itEdit?'':'readonly tabindex="-1"'}><input type="text" inputmode="decimal" class="lgitprice" value="${itEdit?esc(it.price||''):esc(fmt(it.price,d.cur))}" placeholder="0" aria-label="가격" ${itEdit?'':'readonly tabindex="-1"'}><button type="button" class="lgitdel" aria-label="품목 삭제">×</button></div>`).join('');
   const rcHtml=()=>{
     const has=d.receipt||d.items.length;
-    const thumb=d.receipt?`<span class="lgthumb lgthumb-rc2" aria-label="사진 크게 보기">${imgTag(d.receipt)}</span>`:'';
+    const thumb=d.receipt?`<span class="lgthumb lgthumb-rc2" aria-label="사진 크게 보기">${thumbTag(d.receipt)}</span>`:'';
     const list=d.items.length?`<div class="lgitlist ${itEdit?'lgediting':''}" id="fItems">${itemRows()}</div>`:'';
     const head=has?`<div class="lgithead"><label>${d.items.length?'영수증':'사진'}${d.items.length?` <span class="lgsub" id="fItSum">${itSumText()}</span>`:''}</label>${d.items.length?`<button type="button" class="lglink" id="fItEdit">${itEdit?'완료':'수정'}</button>`:''}</div>`:'';
     const body=has?`<div class="lgrc">${thumb}${list}</div>`:'';
@@ -753,18 +766,30 @@ function openExpense(e,opts={}){
     if(R.imgId){ d.receipt=R.imgId; newImgs.add(R.imgId); }
     if(R.items.length){ d.items=R.items; }
     d.rcTotal=F.amount||d.rcTotal;
-    if(F.amount>0&&(!touched.has('amount')||!amt())){ g('#fAmt').value=String(F.amount); }
-    if(F.title&&(!touched.has('title')||!g('#fTitle').value.trim())) g('#fTitle').value=F.title;
-    if(!touched.has('#fCur')) clickChip('#fCur','c',F.cur);
-    if(F.day&&!touched.has('#fDay')) clickChip('#fDay','d',F.day);
-    if(F.cat&&!touched.has('#fCat')) clickChip('#fCat','c',F.cat);
+    // 금액·제목은 비어 있을 때만 채움 (이미 쓴 값·기존 지출은 그대로. 영수증 합계는 품목 줄에 보임)
+    if(F.amount>0&&!amt()){ g('#fAmt').value=String(F.amount); }
+    if(F.title&&!g('#fTitle').value.trim()) g('#fTitle').value=F.title;
+    const fresh=isNew&&!touched.has('amount');
+    if(F.cur&&fresh&&!touched.has('#fCur')) clickChip('#fCur','c',F.cur);
+    if(F.day&&isNew&&!touched.has('#fDay')) clickChip('#fDay','d',F.day);
+    if(F.cat&&isNew&&!touched.has('#fCat')) clickChip('#fCat','c',F.cat);
     paintRc(); partsHint(); customHint(); };
-  const attach=async camera=>{ const f=await pickPhoto(camera); if(!f)return; const btn=g('#fRcCam'); if(btn){btn.disabled=true;btn.classList.add('lgbusy')} toast('사진 올리는 중…');
-    try{ const R=await readReceiptFile(f); if(!g('#fRc'))return; applyReceipt(R); toast(R.rc.isReceipt===false?'사진을 붙였어요':R.ok?(R.items.length?`영수증 품목 ${R.items.length}개를 읽었어요`:'영수증을 읽었어요'):'합계를 못 읽었어요. 금액은 직접 넣어주세요'); }
-    catch(e){ if(e.imgId){ applyReceipt({imgId:e.imgId,rc:{isReceipt:false},fields:{},items:[]}); toast(e.code==='no_key'||e.code==='auth'?receiptErr(e):'사진은 붙였어요 (내용은 못 읽음)'); } else toast(receiptErr(e)); }
-    finally{ const b=g('#fRcCam'); if(b){b.disabled=false;b.classList.remove('lgbusy')} } };
+  let busy=null;   // 사진 올리기·영수증 읽기 진행 중이면 저장이 기다림
+  const setBusy=on=>{ const b=g('#fRcCam'); if(b){b.disabled=on;b.classList.toggle('lgbusy',on)} const sv=g('#fSave'); if(sv){ sv.classList.toggle('lgbusy',on); sv.textContent=on?'사진 처리 중…':(isNew?'저장':'수정 저장'); } };
+  const attach=async camera=>{ const f=await pickPhoto(camera); if(!f)return;
+    let done; busy=new Promise(r=>done=r); setBusy(true); toast('사진 올리는 중…');
+    try{
+      let P; try{ P=await uploadPhoto(f); }catch(e){ toast(e.code==='auth'?receiptErr(e):'사진을 못 올렸어요: '+(e.message||e)); return; }
+      applyReceipt({imgId:P.imgId,rc:{isReceipt:false},fields:{},items:[]});   // 사진은 바로 붙임
+      if(closed)return;
+      toast('사진을 붙였어요 · 영수증인지 읽는 중…');
+      try{ const R=await readReceiptData(P.data); if(closed)return;
+        if(R.rc.isReceipt===false){ toast('사진을 붙였어요'); return; }
+        applyReceipt({imgId:P.imgId,...R}); toast(R.ok?(R.items.length?`영수증 품목 ${R.items.length}개를 읽었어요`:'영수증을 읽었어요'):'합계를 못 읽었어요. 금액은 직접 넣어주세요'); }
+      catch(e){ if(!closed) toast(e.code==='no_key'||e.code==='auth'?receiptErr(e):'사진은 붙였어요 (영수증 내용은 못 읽음)'); }
+    }finally{ busy=null; done(); if(!closed)setBusy(false); } };
   const paintRc=()=>{ const box=g('#fRc'); box.innerHTML=rcHtml(); fillImages(box);
-    box.querySelectorAll('.lgthumb').forEach(t=>t.onclick=ev=>{ev.preventDefault();const im=t.querySelector('img');if(im&&im.src)openImg(im.src)});
+    box.querySelectorAll('.lgthumb').forEach(t=>t.onclick=ev=>{ev.preventDefault();openThumb(t)});
     g('#fRcCam').onclick=()=>attach(true); g('#fRcPick').onclick=()=>attach(false);
     const del=g('#fRcDel'); if(del)del.onclick=()=>{ if(newImgs.has(d.receipt)){dropImage(d.receipt);newImgs.delete(d.receipt)} d.receipt=''; paintRc(); };
     const clean=()=>{ d.items=d.items.filter(x=>(x.nameKo||x.name||'').trim()||+x.price); };
@@ -779,9 +804,10 @@ function openExpense(e,opts={}){
     const ap=g('#fItApply'); if(ap)ap.onclick=()=>{ const t=itTotal(); if(!(t>0))return; g('#fAmt').value=String(Math.round(t)); touched.add('amount'); partsHint(); customHint(); toast('선택 품목 합계로 바꿨어요'); };
   };
   paintRc();
-  sheetCloseHook=()=>{ if(!saved) newImgs.forEach(dropImage); };
+  let closed=false; sheetCloseHook=()=>{ closed=true; if(!saved) newImgs.forEach(dropImage); };
   partsHint(); sum(); if(d.custom)customBox(); wireExpLinks(sh); sh.querySelector('#fLinks').addEventListener('input',sum); const al=g('#fAddLink'); const al0=al.onclick; al.onclick=()=>{al0();sum()};
   g('#expForm').onsubmit=async ev=>{ev.preventDefault();
+    if(busy){ toast('사진 처리 끝나면 저장할게요'); await busy; if(closed)return; }
     const a=amt(); if(!(a>0)){toast('금액을 넣어주세요');g('#fAmt').focus();return}
     let body;
     const links=readExpLinks(sh);

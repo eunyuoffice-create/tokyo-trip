@@ -697,3 +697,4 @@ body.body-edit .ev,body.body-edit .card{-webkit-user-select:none;user-select:non
 .lg .lgbal{grid-template-columns:minmax(0,1fr) auto}
 .lg .lgbal .bv{font-family:var(--mono);text-align:right;white-space:nowrap}
 
+.lg .lgbtn.lgbusy{opacity:.6}
