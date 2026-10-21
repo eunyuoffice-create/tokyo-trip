@@ -67,7 +67,7 @@ main{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px
 .wx-day .wp{font-size:11px;color:#2F5FB3}
 .wx-note{font-size:11px;color:var(--muted);white-space:nowrap;padding-left:4px}
 @media (min-width:900px){.wx{flex:1 1 auto;margin-inline:0;padding-inline:0}.wx-day{height:36px;font-size:13.5px;padding:0 12px}.wx-note{font-size:12.5px}}
-.btn.tool{background:var(--surface);border-color:var(--line);font-weight:600;padding:7px 12px}
+.btn.tool{background:var(--surface);border-color:var(--line);font-weight:600;padding:5px 10px;font-size:11.5px;color:var(--muted)}
 #infobox{position:fixed;inset:0;z-index:60}
 #infobox[hidden]{display:none}
 #infobox .ib-scrim{position:absolute;inset:0;background:rgba(23,28,40,.45)}
@@ -774,75 +774,6 @@ const PLACES = [
 ];
 
 
-/* 일본 다녀오면 다들 사 오는 것들 — 체크해서 쓰기 */
-const SHOP = {
- '돈키호테 (동구역앞점 24시간 · 5,000엔 이상 면세)':[
-  '곤약젤리 (오리히로 짜먹는 것만 1~2봉지 · 캐리어에) · 코로로 젤리 · 알포트 초콜릿 · 푸치 시리즈 — 컵형 곤약젤리는 한국 반입 금지',
-  '킷캣 한정맛 (말차·호지차·딸기) · 로이스 생초콜릿 (냉장 코너)',
-  '자가비 · 자가리코 · 포키 한정맛 · 도쿄 한정 과자',
-  '호로요이 · 산토리 생맥주 캔 · 츄하이 (주류는 면세 포장)',
-  '이치란 봉지라멘 · 마루짱 세이멘 · 고형 카레 루 (고쿠마로·자와카레) — 고기 성분(豚·牛·鶏·肉エキス) 들어간 건 한국 반입 금지라 성분표 확인',
-  '휴족시간 · 메구리즘 스팀 아이마스크 · 동전파스 (로이히츠보코) · 샤론파스',
-  '카베진 (위장) · 오타이산 (소화) · 이브 (진통) · 파브론 (감기) · 무히 (벌레)',
-  '아이봉 (눈 세정) · 로토 안약 · 비오레 UV 아쿠아리치 선크림 · 센카 퍼펙트 휩',
-  '키스미 히로인메이크 마스카라 · 캔메이크 · 세잔느 · 데자뷰 아이라이너 · 니베아 립',
-  '캐릭터 콜라보 간식 (치이카와·산리오 묶음은 돈키가 다양)'
- ],
- '드럭스토어 (마츠모토키요시 · 선드러그 · 코코카라파인, 역 주변 다수)':[
-  '같은 의약품이 돈키보다 싼 경우 많음 → 약은 여기서 비교',
-  '5,000엔 이상 면세, 여권 지참. 소모품은 밀봉 포장 (일본 안에서 뜯으면 안 됨)',
-  '비오레 · 하다라보 토너 · 큐어 필링젤 · 멘소래담 립 · 사카무케아 (손거스러미)'
- ],
- '다이소 (도부백화점 6F 10:00~20:00 도쿄 최대급 · 라군점 동구 3분 10:00~21:00)':[
-  '캐릭터 콜라보 문구 · 스티커 · 마스킹테이프 · 클리어파일',
-  '도시락 용품 · 젓가락 · 실리콘 조리도구 · 오니기리 틀',
-  '메이크업 스펀지 · 헤어 집게핀 · 여행용 소분 용기',
-  '도부 6F는 다이소 + 스탠다드 프로덕츠(300엔~ 무인양품 느낌) + 쓰리피 같이 있음'
- ],
- '면세 참고':[
-  '이번 여행(10/24~28)은 매장에서 바로 세금 빼 주는 방식. 11월 1일부터는 세금 내고 공항에서 환급받는 방식으로 바뀜 → 우리는 해당 없음',
-  '면세는 한 매장 하루 합계 5,000엔(세전) 이상, 여권 원본 제시. Visit Japan Web QR 있으면 빠름',
-  '돈키호테는 앱 쿠폰 (5% 등) 받고 계산대에서 같이 제시'
- ]
-};
-
-/* 도쿄역 선물 간식 — 2026.10.16 조사. [안]=JR 개찰 안 그란스타, [밖]=개찰 밖 */
-const GIFT = {
- '도쿄역 선물 Top 8':[
-  {img:'img/gift/banana.jpg', t:'① 도쿄바나나 8개 1,296엔 — [밖] 一番街 B1 東京ばな奈s (9:00~21:00) · 기프트팔레트 · [안] 그란스타. 어디서나 있어 줄 없음. 피카츄 도쿄바나나는 기프트팔레트 전문점 (8개 1,512엔)\n다른 지점: 이케부쿠로·하라주쿠 상설 매장 없음 (이케부쿠로역은 팝업 때만). 하네다 3터미널엔 있음'},
-  {img:'img/gift/cocoris.jpg', t:'② 코코리스 헤이즐넛&라즈베리 샌드 6개 1,620엔 — [안] 그란스타 1F 중앙통로. 7년 연속 그란스타 1위, 도쿄역에만 있음, 오후 품절 잦음\n다른 지점: 없음 (도쿄역 단독)'},
-  {img:'img/gift/nycsand.jpg', t:'③ N.Y.C.SAND 뉴욕 캐러멜 샌드 8개 1,512엔 — [밖] 다이마루 도쿄 1F 단독 (10:00~20:00). 상시 줄 (주말 20~30분), 저녁 품절 → 개점 직후나 낮에\n다른 지점: 상설은 다이마루 도쿄뿐. 이케부쿠로 세이부엔 가끔 팝업만'},
-  {img:'img/gift/pbs.jpg', t:'④ 프레스 버터 샌드 5개 약 1,200엔 — [안] 그란스타 B1 銀の鈴 10주년 한정점 (10/22 오픈, 생버터샌드 432엔) · [안] 남통로 팝업 7:00~22:00 · [밖] 다이마루 B1. 10/22~28 3,000엔 이상 토트백 증정 (1일 100개)\n이케부쿠로에도 있음: JR 이케부쿠로역 중앙통로 (개찰 밖) 9:00~22:00 · 세이부 이케부쿠로 B1 10:00~20:00 → 호텔 가는 길에 사도 됨. 하라주쿠 없음'},
-  {img:'img/gift/maple.jpg', t:'⑤ 더 메이플 매니아 메이플 버터 쿠키 9매 약 1,100엔 · 도쿄역 한정 캔 2,500엔 — [안] 그란스타 1F 吹き抜け. 평일 오전 줄 없음\n다른 지점: 이케부쿠로·하라주쿠 없음 (도쿄역 · 하네다)'},
-  {img:'img/gift/sbt.jpg', t:'⑥ 슈가 버터의 나무 7개 약 700엔 — [안][밖] 매장 많아 줄 없음. 스누피 콜라보 팝업 그란스타 10/12~\n이케부쿠로에도 있음: 세이부 이케부쿠로 식품관 B1 (BUTTER STATE\'s 매장에서 취급, 10/1~ 스누피 콜라보도). 하라주쿠 없음'},
-  {img:'img/gift/butler.jpg', t:'⑦ 버터 버틀러 피낭시에 4개 1,080엔 · 버터 밀푀유 5개 1,620엔 (기프트팔레트 한정) — [밖] 기프트팔레트 1F (야에스 북쪽 개찰 바로 밖)\n다른 지점: 이케부쿠로·하라주쿠 없음'},
-  {img:'img/gift/goma.jpg', t:'⑧ 고마타마고 12개 1,620엔 — [밖] 다이마루 1F · 一番街 B1 도쿄미야게센터. 줄 없음\n다른 지점: 이케부쿠로 매장 확인 안 됨 (도쿄역·하네다에서)'}
- ],
- '더 사볼 만한 것':[
-  {img:'img/gift/audrey.jpg', t:'오드리 그레이시아 딸기 부케 쿠키 12개 2,224엔 — [안] 그란스타 B1 銀の鈴. 오전부터 줄, 선물 인기 최상위\n이케부쿠로에도 있음: 세이부 이케부쿠로 식품관 B1 (월~토 10:00~21:00 · 일 ~20:00) → 도쿄역 줄 길면 여기서'},
-  {img:'img/gift/jaga.jpg', t:'자가볼다 (가루비+×도쿄바나나) 감자칩 4봉 1,047엔 — [안] 그란스타 1F. 짭짤한 선물 1순위\n다른 지점: 없음 (그란스타 단독)'},
-  {img:'img/gift/dros.jpg', t:'더 드로스 마스카포네 샌드 9매 1,404엔 (유통기한 12개월) · 누에보 메이플 카스텔라 6개 1,296엔 — [안] 그란스타\n다른 지점: 없음 (도쿄역 단독)'},
-  {img:'img/gift/tmcf.jpg', t:'도쿄 밀크치즈 공장 체다치즈 파이샌드 6개 1,944엔 (그란스타 한정) — [안] 그란스타 1F 게이요 스트리트\n다른 지점: 이케부쿠로·하라주쿠 없음 (브랜드 매장은 신주쿠 루미네·시부야 등, 파이샌드는 도쿄역 한정)'},
-  {img:'img/gift/neko.jpg', t:'네코셰프 발바닥 치즈 피낭시에 5개 1,296엔 · 긴자 센비키야 후르츠 샌드 4개 1,250엔 · 피스타&도쿄 — [밖] 기프트팔레트 1F\n다른 지점: 네코셰프는 도쿄역 기프트팔레트 단독'},
-  {img:'img/gift/gumi.jpg', t:'히토츠부 칸로 구미첼 — [안] 그란스타 B1. LINE 디지털 정리권 없으면 구매 불가\n하라주쿠에도 있음: 하라카도 1F 히토츠부 칸로 하라주쿠점 11:00~21:00. 16시까지는 온라인 정리권 입장, 16시 이후는 정리권 없이 (2024 오픈 기준, 재확인). 구미첼 1개 단위 판매 → 3일차 하라주쿠에서 사는 게 편함'},
-  {img:'img/gift/nypc.jpg', t:'뉴욕 퍼펙트 치즈 5개 약 1,100엔 — [안] JR 1F 남통로 (N.Y.C.SAND와 다른 브랜드). 오후 품절\n이케부쿠로에도 있음: 도부백화점 이케부쿠로 B1 10:00~20:00'},
-  '캐러멜 고스트 하우스·로이스는 도쿄역에 매장 없음 (캐러멜 고스트 하우스는 신주쿠 뉴우먼, 로이스는 하네다 공항)'
- ],
- '이케부쿠로에서 살 만한 것 (호텔 근처)':[
-  '세이부 이케부쿠로 식품관 B1 (월~토 10:00~21:00 · 일 ~20:00) · 도부백화점 B1 (10:00~20:00) · JR 이케부쿠로역 중앙통로 — 세이부는 2026년 리뉴얼 중이라 매장 위치가 바뀔 수 있음. 숙소에서 걸어서 5~10분',
-  '가마쿠라 베니야 쿠루밋코 5개 891엔 — 세이부 B1. 호두 캐러멜 바, 한국인 선물 인기 최상위. 품절 잦아 오전·이른 저녁 추천',
-  {img:'img/gift/audrey.jpg', t:'오드리 그레이시아 — 세이부 B1. 도쿄역 줄 피해서 여기서 (위 참고)'},
-  {img:'img/gift/pbs.jpg', t:'프레스 버터 샌드 — JR 이케부쿠로역 중앙통로 9:00~22:00. 밤 늦게까지 여는 유일한 선물 가게 · 세이부 B1에도'},
-  {img:'img/gift/nypc.jpg', t:'뉴욕 퍼펙트 치즈 — 도부 B1 10:00~20:00. 도쿄역에서 품절이면 여기서'},
-  '케이신도(桂新堂) 이케후쿠로 새우 센베이 — 세이부 이케부쿠로 한정. 부엉이 그림 센베이, 가벼워서 선물용',
-  '후지야 긴자 포켓 쇼트케이크 540엔 — 세이부 한정. 손바닥 크기 쇼트케이크 (당일 소비, 호텔 간식용)',
-  '에쉬레 봉브 에쉬레 540~648엔 — 세이부 한정 (나튀르·피스타치오·몽블랑). 당일 소비',
-  '클럽 하리에 바움쿠헨 mini 4개 2,117엔 — 도부 이케부쿠로 한정 "이케후쿠로" 부엉이 패키지 (현재 판매 여부 매장 확인)',
-  '타르틴 딸기 타르틴 — 도부 B1. 딸기 모양 콘 과자, 포장 예쁨',
-  '핫텐도 크림빵 — JR 이케부쿠로 중앙개찰 바로 앞. 당일 먹는 호텔 간식용',
-  '스즈메야 도라야키 1개 약 250엔 — 히가시이케부쿠로. 목·금·토 11:00~18:00만 영업, 매진 시 종료 → 우리 일정에선 10/24 토요일만 가능'
- ]
-};
 
 /* ---------- STATE ---------- */
 /* 일정·맛집·갈 곳: content.js 가 서버에서 받아오면 이 자리로 들어온다 (없으면 위의 정적 데이터) */
@@ -887,7 +818,7 @@ function renderChips(){
  else if(state.tab==='food'){ const base=getFood().filter(f=>(state.ftype==='전체'||foodType(f)===state.ftype)&&tagMatch(f)); list=['전체',...FOOD_AREAS].map(a=>({id:a,label:a,sub:a==='전체'?base.length:base.filter(f=>f.a===a).length,on:a===state.farea})); }
  else if(state.tab==='place') list=['전체',...PLACE_CHIPS].map(a=>({id:a,label:a,sub:getPlaces().filter(p=>placeMatch(p,a)).length,on:a===state.pgroup}));
  else if(state.tab==='ledger') list=[];
- else list=[{id:'mine',label:'내 메모'},{id:'flight',label:'항공'},{id:'hotel',label:'숙소·이동'},{id:'studio',label:'스튜디오'},{id:'gift',label:'도쿄역·선물'},{id:'shop',label:'쇼핑'}];
+ else { const ms=(window.Ledger&&Ledger.state&&Ledger.state.screen==='main')?Ledger.state.memos.filter(m=>m.cat==='info').sort((a,b)=>(b.order||b.ts||0)-(a.order||a.ts||0)):[]; list=[{id:'mine',label:'내 메모'},...ms.map(m=>({id:'memo:'+m.id,label:(m.title||'제목 없음').slice(0,14)}))]; }
  if(!list.length){box.style.display='none';return} box.style.display='';
  list.forEach(c=>{
   const b=document.createElement('button'); b.className='chip'; b.setAttribute('aria-pressed',String(!!c.on));
@@ -895,7 +826,7 @@ function renderChips(){
   b.onclick=()=>{
    if(state.tab==='plan') state.day=c.id; else if(state.tab==='food') state.farea=c.id; else if(state.tab==='place') state.pgroup=c.id;
    else if(c.id==='mine'){ window.scrollTo({top:0,behavior:'smooth'}); return; }
-   else { const ids=c.id==='hotel'?['hotel','move']:[c.id]; ids.forEach(id=>{const el=document.getElementById('m-'+id); if(el){ el.open=true; }}); document.getElementById('m-'+ids[0])?.scrollIntoView({behavior:'smooth',block:'start'}); return; }
+   else if(c.id.startsWith('memo:')){ if(window.Ledger)Ledger.scrollToMemo(c.id.slice(5)); return; }
    save(); render();
   };
   box.appendChild(b);
@@ -1004,7 +935,7 @@ function routeHtml(r){
 function renderPlan(){
  const box=document.getElementById('p-plan');
  const days=getDays(); const day=days.find(d=>d.date===state.day)||days[0];
- box.innerHTML=`<div class="toolrow"><button type="button" class="btn tool" id="outfit-btn">🌡 기온별 옷차림</button><button type="button" class="btn tool" id="restrict-btn">✈ 기내 반입 제한물품</button><button type="button" class="btn tool" id="kcustoms-btn">🛍 한국 반입 주의</button><button type="button" class="btn tool" id="esim-btn">📱 eSIM 설치 가이드</button><div class="wx" id="wx-strip"></div></div><div class="sec-h"><h2>${day.n}일차 · ${day.date.slice(5).replace('-','월 ')}일 ${day.w}요일</h2><span class="cnt">${day.items.length}개</span></div><div class="tl"></div>`;
+ box.innerHTML=`<div class="toolrow"><button type="button" class="btn tool" id="outfit-btn">기온별 옷차림</button><button type="button" class="btn tool" id="restrict-btn">기내 반입 제한물품</button><button type="button" class="btn tool" id="kcustoms-btn">한국 반입 주의</button><button type="button" class="btn tool" id="esim-btn">eSIM 설치 가이드</button><div class="wx" id="wx-strip"></div></div><div class="sec-h"><h2>${day.n}일차 · ${day.date.slice(5).replace('-','월 ')}일 ${day.w}요일</h2><span class="cnt">${day.items.length}개</span></div><div class="tl"></div>`;
  box.querySelector('#outfit-btn').onclick=()=>openLightbox('img/outfit.png','기온별 옷차림');
  box.querySelector('#restrict-btn').onclick=()=>openInfo('기내 반입 제한물품',RESTRICTED_HTML);
  box.querySelector('#kcustoms-btn').onclick=()=>{openInfo('일본에서 사 올 때 주의 (한국 반입)',kcHtml()); bindKc(document.getElementById('infobox'));};
@@ -1020,6 +951,7 @@ function renderPlan(){
     <div class="title">${esc(it.title)}</div>
     ${routeHtml(it.r)}
     ${linksHtml(it.links)?`<div class="acts">${linksHtml(it.links)}</div>`:''}
+    ${Array.isArray(it.images)&&it.images.length?`<div class="evimgs">${it.images.map(id=>`<span class="lgthumb">${window.Ledger?Ledger.imgTag(id):''}</span>`).join('')}</div>`:''}
     ${it.d&&it.d.length?`<button class="more" aria-expanded="${open}">자세히</button><div class="det" ${open?'':'hidden'}>${detHtml(it.d)}</div>`:''}
    </div>`;
   const btn=el.querySelector('.more');
@@ -1124,155 +1056,9 @@ function renderPlace(){
 }
 
 /* ---------- RENDER: memo ---------- */
-function renderMemo(){
- const box=document.getElementById('memo-body');
- const clHtml=(obj,pre)=>Object.entries(obj).map(([cat,items])=>`<div class="sub-h">${esc(cat)}</div><div class="cl">${items.map((it,i)=>{const o=typeof it==='string'?{t:it}:it;const t=o.t;const id=pre+':'+cat+':'+i;const [tt,rest]=t.split(' — ');return `<label><input type="checkbox" id="${esc(id)}" data-pk="${esc(id)}" ${state.pack[id]?'checked':''}>${o.img?`<img class="thumb" src="${esc(o.img)}" loading="lazy" alt="">`:''}<span>${rest?`<b>${esc(tt)}</b>${nl(rest)}`:nl(t)}</span></label>`}).join('')}</div>`).join('');
- const giftHtml=clHtml(GIFT,'gf');
- const shopHtml=Object.entries(SHOP).map(([cat,items])=>`<div class="sub-h">${esc(cat)}</div><div class="cl">${items.map((t,i)=>{const id='sh:'+cat+':'+i;return `<label><input type="checkbox" id="${esc(id)}" data-pk="${esc(id)}" ${state.pack[id]?'checked':''}><span>${esc(t)}</span></label>`}).join('')}</div>`).join('');
- box.innerHTML=`
- <div class="memo" id="m-flight">
-  <h3>항공편 <span class="pill acc">대한항공</span></h3>
-  <div class="flight"><div><div class="ap">GMP</div><div class="tm">09:00</div><div class="sm">10.24 토 · 김포 1터미널</div></div><div class="arrow">KE2101<br>→</div><div class="r"><div class="ap">HND</div><div class="tm">11:20</div><div class="sm">하네다 3터미널</div></div></div>
-  <div class="flight"><div><div class="ap">HND</div><div class="tm">09:45</div><div class="sm">10.28 수 · 하네다 3터미널</div></div><div class="arrow">KE2101<br>→</div><div class="r"><div class="ap">GMP</div><div class="tm">12:25</div><div class="sm">김포</div></div></div>
-  <p style="margin-top:10px">예약번호는 공개 페이지라 넣지 않았어요 (시트 참고).</p>
-  <p>Visit Japan Web 전자신고: <a href="https://services.digital.go.jp/ko/visit-japan-web/" target="_blank" rel="noopener">services.digital.go.jp ↗</a>
-출발 전 작성 후 QR 캡처 또는 PDF 저장 (인터넷 안 될 때 대비).</p>
-  <p>여권 번호와 유효기간은 <a href="https://docs.google.com/spreadsheets/d/1h36cMTdIyAdIvJV_-pj9I4K8hbc1XBPzqYX0jAkimk0/edit" target="_blank" rel="noopener">원본 시트 ↗</a> 체크사항 탭에 있어요.</p>
- </div>
+/* 예전의 정적 메모 카드(항공편·숙소·이동·스튜디오·선물·쇼핑)는 공용 메모로 옮겨져서(notes-seed.js) 여기선 그릴 게 없다 */
+function renderMemo(){ const box=document.getElementById('memo-body'); if(box)box.innerHTML=''; }
 
- <div class="memo" id="m-hotel">
-  <h3>숙소</h3>
-  <dl class="kv"><dt>호텔</dt><dd>호텔 레솔 이케부쿠로 (Hotel Resol Ikebukuro)</dd><dt>위치</dt><dd>이케부쿠로역 동쪽 출구 도보권</dd></dl>
-  <p style="margin-top:8px"><a class="btn map" href="${mapUrl('ホテルリソル池袋')}" target="_blank" rel="noopener">지도 열기 ↗</a></p>
- </div>
-
- <div class="memo" id="m-move">
-  <h3>공항 ↔ 이케부쿠로</h3>
-  <div class="sub-h">리무진 버스 · 1,400엔</div>
-  <p>하네다 → 선샤인시티 프린스호텔 약 1시간 35분, 이후 호텔까지 도보 10분. 예약 가능.
-귀국: 10/28 06:25 선샤인시티 프린스호텔 → 07:35 하네다 (첫차, 꼭 예약).</p>
-  <p><a href="https://www.limousinebus.co.jp/ja/" target="_blank" rel="noopener">limousinebus.co.jp ↗</a></p>
-  <div class="sub-h">전철 · 668엔 · 55~65분</div>
-  <p>게이큐선 시나가와 방면 → 시나가와 JR 환승 개찰구 → 야마노테선 (시부야·신주쿠 방면) → 이케부쿠로 동쪽 출구. 역에서 호텔까지 도보 15~20분.</p>
-  <div class="sub-h">아이폰에 스이카 등록</div>
-  <ol class="steps"><li>지갑 앱 → 오른쪽 위 ＋ → 교통카드 → Suica</li><li>새로운 카드 추가 → 약관 동의 → 충전 금액 선택</li><li>애플페이에 등록된 카드로 결제하면 발급 완료</li></ol>
- </div>
-
- <div class="memo" id="m-studio">
-  <h3>스튜디오 투어 체크 <span class="pill warn">10/25 · 10/27</span></h3>
-  <div class="sub-h">입장 순서</div>
-  <p>건물 입장 → 보안검사 (금속탐지) → 탈의실 → 코인로커 → 투어 입장. 입장은 예약 1시간 전부터 가능 (재확인).</p>
-  <div class="sub-h">탈의실</div>
-  <p>보안검색 후 로비 큰 스크린 방향으로 가는 길 오른쪽, 화장실 통로에 있음. 디지털 가이드 대여 카운터 맞은편 '화장실 1' 구역. 여성용은 오른쪽 더 안쪽, Changing Room (Female). 현장 구매자 전용 아님, 가져온 의상으로 갈아입어도 됨.</p>
-  <p><a href="https://mahoukai.com/article/harry-potter-studio-tour-changing-room-1606202311091.html" target="_blank" rel="noopener">탈의실 후기 ↗</a></p>
-  <div class="sub-h">코인로커</div>
-  <p>보안검색 통과 직후 오른쪽. 탈의실과 같은 입구 구역.
-S 300엔 · M 500엔 · L 700엔 · XL 1,000엔. 현금·카드 가능.
-영수증 QR이 열쇠라 꼭 보관. 중간에 열면 재결제.</p>
-  <p><a href="https://mahoukai.com/article/coin-operated-lockers-wbtourtokyo-161220232203301.html" target="_blank" rel="noopener">로커 안내 ↗</a></p>
-  <div class="sub-h">반입 주의</div>
-  <p>외부 음식 반입 불가 (뚜껑 있는 음료는 가능).
-눈썹칼, 미용가위 등 날붙이 반입 불가.
-셀카봉·짐벌은 가장 짧게 접고 머리보다 높이 들지 않으면 사용 가능.</p>
-  <div class="sub-h">클룩 바우처 (10/25)</div>
-  <p>레스토랑·카페 500엔 바우처. 2,000엔 이상 단일 결제, 셀프 계산대 불가, 클룩 앱 필요.</p>
- </div>
-
- <div class="memo" id="m-gift">
-  <h3>도쿄역 · 선물 <span class="pill acc">10/26</span></h3>
-  <div class="sub-h">도쿄 캐릭터 스트리트 · 10:00~20:30</div>
-  <p>東京駅一番街 B1, JR 야에스 지하 중앙 개찰구 바로 앞 (개찰 밖).
-마루노우치선으로 오면 야에스 쪽으로 지하 통로 따라 이동.
-약 80m 통로 양쪽에 35개 안팎.
-<b>덕질 메인</b> 치이카와 랜드 · 마호도코로 (해리포터) · 점프숍 · 원피스 무기와라 스토어
-<b>1F</b> 포켓몬스토어 · 산리오 (2025.11 신규) · 드래곤볼 스토어 (신규)
-<b>캐릭터</b> 동구리 공화국 (지브리) · GBL (지브리 어패럴) · 모후산드 · 스누피타운 · 미피스타일 · 코우펜짱 · 리락쿠마 & 스미코구라시 (10/20 통합 리뉴얼) · 더 푸 숍 (10/14 오픈) · 니시무라 유지 숍 · 커비 카페 프티
-<b>애니 · 특촬</b> 명탐정 코난 플라자 (~1/11) · 짱구 · 가면라이더 · 울트라맨 · 프리큐어 · 홀로라이브
-<b>장난감</b> 토미카 · 플라레일 · 가샤폰 반다이 · 레고
-<b>방송국</b> NHK · 닛테레 · TBS · 후지TV · TV아사히 · TV도쿄
-10/26 진행 팝업: 산리오 もこもこ (いちばんプラザ ~10/29), 뿌요뿌요×하피단부이 (10/23~11/5), 프라가리아 메모리즈 (캐라코레 ~10/28).
-프리즘스톤은 8/31 폐점.</p>
-  <div class="sub-h">같은 층 먹을 것</div>
-  <p><b>라멘스트리트 (一番街 B1)</b>
-로쿠린샤 츠케멘 (아침 7:30~) · 이카루가 · 소라노이로 · 히루가오 등 11곳
-<b>오카시랜드 9:00~21:00</b>
-가루비 플러스 (갓 튀긴 감자칩) · 글리코 · 모리나가 · 超해피턴 · 베이비스타 팝업 ~10/27</p>
-  <div class="sub-h">개찰 안 / 밖 요령</div>
-  <p>그란스타는 JR 개찰 안이라 입장권 150엔이 필요하지만, 3일차에 도쿄역 → 유라쿠초 JR 1정거장을 타니 그 때 개찰 들어가서 그란스타를 돌고 유라쿠초로 가면 됨.
-그란스타 월~토 8:00~22:00.
-기프트팔레트(야에스 북쪽 개찰 밖, 9:30~20:30)와 다이마루 1F(10:00~20:00)는 개찰 밖.
-상한 쉬운 생과자는 마지막 날이 아니면 피하기.</p>
-  ${giftHtml}
-  <div class="sub-h">하네다 3터미널 출국 (10/28 · 07:35 도착 → 09:45 출발)</div>
-  <p><b>타임라인</b>: 07:35 3F 출발층 하차 → 07:40~08:00 대한항공 체크인 (출발 60분 전 08:45 마감) → 08:00~08:25 보안검색 <b>전</b> 쇼핑 → 08:25~08:50 보안·출국심사 → 08:50~09:15 면세점 → 09:15 게이트.</p>
-  <p><b>보안검색 전</b>
-<b>4F 에도코지 '江戸食賓館' 06:30~</b>
-도라야 공항 한정 양갱, 하늘 나는 도쿄바나나 くまッス, 로이스, Tax Free
-<b>3F ANA FESTA 로비 기프트점 06:00~</b>
-전국 과자, 로이스
-치이카와 굿즈 'HAIKARA'는 9시 오픈이라 시간상 어려움.</p>
-  <p><b>출국심사 후</b>
-<b>TIAT 듀티프리 센트럴 24시간</b>
-시로이코이비토 · 자가포쿠루 · 요쿠모쿠 · 도쿄 히요코 · 고마타마고 · 도쿄 밀크치즈 공장 · 슈가 버터의 나무 · 르타오 등 식품 137종. 금액 제한 없이 면세가
-<b>SOUTH 06:00~</b>
-로이스 · 도쿄바나나 · 시로이코이비토 · 킷캣 · 가루비
-냉장이 필요한 로이스 생초콜릿은 여기서 마지막에.</p>
-  <p><b>N.Y.
-캐러멜 샌드는 3터미널 매장이 없음</b> (1·2터미널 국내선 쪽에만 있고 셔틀 왕복 40~50분이라 불가).
-대신 ① 도쿄역 다이마루 1F에서 3일차에 사 두거나 ② TIAT 듀티프리 사전예약 (duty-free-japan.jp/haneda/ko) 에 "하네다 한정 어소트 20개입 4,400엔"이 있어 출발 3일 전~24시간 전 (10/25~26) 예약하면 출국 후 픽업 카운터에서 5% 추가 할인으로 받음.</p>
-  <p><b>3터미널에 없는 것</b>: 프레스 버터 샌드, 버터 버틀러, 메이플 매니아, 넨린야, 시세이도 파라 → 도쿄역에서 사기.
-10/24 도착 때 2F 도착 면세점은 주류·담배뿐이고, 입국 후 4F·3F 가게는 이용 가능.</p>
-  <p><a href="https://duty-free-japan.jp/haneda/ko/" target="_blank" rel="noopener">TIAT 듀티프리 사전예약 ↗</a></p>
- </div>
-
- <div class="memo" id="m-shop">
-  <h3>쇼핑 리스트 <span class="pill acc">사 올 것</span></h3>
-  <p>일본 다녀오면 다들 사 오는 정석 아이템. 산 건 체크.</p>
-  ${shopHtml}
- </div>
-
-`;
- box.querySelectorAll('[data-pk]').forEach(cb=>cb.onchange=()=>{ state.pack[cb.dataset.pk]=cb.checked; if(!cb.checked) delete state.pack[cb.dataset.pk]; save(); });
- /* 문장 끝 줄바꿈 (메모 문단 전체) */
- box.querySelectorAll('p').forEach(pp=>{ const w=document.createTreeWalker(pp,NodeFilter.SHOW_TEXT); let n; while((n=w.nextNode())){ n.nodeValue=n.nodeValue.replace(/(?<=[가-힣\)\]])\. (?=\S)/g,'.\n'); } });
- /* 가게명·시간·가격·목록 강조 */
- (function decorate(root){
-  const rx=/(\d{1,2}:\d{2}(?:\s*~\s*\d{1,2}:\d{2})?|~\s?\d{1,2}:\d{2}|\d{1,3}(?:,\d{3})+엔|\d+엔)/g;
-  const tm=str=>{ const out=[]; let last=0; str.replace(rx,(m,_g,i)=>{ if(i>last) out.push(document.createTextNode(str.slice(last,i))); const e=document.createElement('span'); e.className='tm'; e.textContent=m; out.push(e); last=i+m.length; return m; }); if(last<str.length) out.push(document.createTextNode(str.slice(last))); return out; };
-  root.querySelectorAll('p, .cl label span').forEach(el=>{
-   const w=document.createTreeWalker(el,NodeFilter.SHOW_TEXT); const nodes=[]; let n; while((n=w.nextNode())) nodes.push(n);
-   nodes.forEach(t=>{
-    if(t.parentNode.closest('a,b,.tm,.ch')) return;
-    const frag=document.createDocumentFragment();
-    t.nodeValue.split('\n').forEach((line,li)=>{
-     if(li) frag.appendChild(document.createTextNode('\n'));
-     const segs=line.split(' · ');
-     if(segs.length>=3){ segs.forEach(sg=>{ sg=sg.trim(); if(!sg) return; const c=document.createElement('span'); c.className='ch'; tm(sg).forEach(x=>c.appendChild(x)); frag.appendChild(c); }); }
-     else tm(line).forEach(x=>frag.appendChild(x));
-    });
-    t.replaceWith(frag);
-   });
-  });
- })(box);
- /* 아코디언: 각 메모를 details로 감싸고 펼침 상태 기억 */
- state.mo=state.mo||{};
- box.querySelectorAll('div.memo').forEach(div=>{
-  const d=document.createElement('details'); d.className='memo'; if(div.id){ d.id=div.id; div.removeAttribute('id'); }
-  const h=div.querySelector('h3'); const sum=document.createElement('summary'); if(h) sum.appendChild(h); d.appendChild(sum);
-  while(div.firstChild) d.appendChild(div.firstChild);
-  d.open=!!state.mo[d.id];
-  d.addEventListener('toggle',()=>{ if(d.open) state.mo[d.id]=true; else delete state.mo[d.id]; save(); });
-  div.replaceWith(d);
- });
- box.querySelectorAll('[data-copy]').forEach(b=>b.onclick=async()=>{
-  const v=b.dataset.copy; const sm=b.querySelector('small');
-  try{ await navigator.clipboard.writeText(v); sm.textContent='복사됨'; }
-  catch(e){ const r=document.createRange(); r.selectNodeContents(b.firstChild); const s=getSelection(); s.removeAllRanges(); s.addRange(r); sm.textContent='선택됨'; }
-  setTimeout(()=>sm.textContent='복사',1500);
- });
-}
-
-/* ---------- TABS ---------- */
 function render(){
  document.querySelectorAll('.panel').forEach(p=>p.hidden=p.id!=='p-'+state.tab);
  document.querySelectorAll('.tabs [role=tab]').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.tab===state.tab)));
@@ -1283,7 +1069,7 @@ function render(){
  else if(state.tab==='memo') renderMemo();
  if(window.Content&&Content.decorate)Content.decorate();
 }
-window.TripSite={state,render,setContent:c=>{DB=c||{};render()},DAYS,FOOD,FOOD_EXTRA,PLACES,FOOD_AREAS,FOOD_TYPES,PLACE_GROUPS,PLACE_CHIPS,esc,nl,mapUrl,save};
+window.TripSite={state,render,renderChips,setContent:c=>{DB=c||{};render()},DAYS,FOOD,FOOD_EXTRA,PLACES,FOOD_AREAS,FOOD_TYPES,PLACE_GROUPS,PLACE_CHIPS,esc,nl,mapUrl,save};
 document.querySelectorAll('.tabs [role=tab]').forEach(b=>b.onclick=()=>{ state.tab=b.dataset.tab; save(); render(); window.scrollTo({top:0}); });
 /* 일정 탭: 좌우로 쓸면 전날/다음날로 (예보·날짜 칩도 같이 바뀜). 예보 줄·가로 스크롤 영역 위에서는 제외 */
 (function(){
@@ -1304,6 +1090,7 @@ document.getElementById('q-place').addEventListener('input',renderPlace);
 })();
 render();
 </script>
+<script src="notes-seed.js" defer></script>
 <script src="ledger.js" defer></script>
 <script src="content.js" defer></script>
 </body>

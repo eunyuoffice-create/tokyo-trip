@@ -15,7 +15,7 @@ const CATS=['식비','교통','덕질','쇼핑','입장','숙소','기타'];
 const CUR={JPY:{sym:'¥'},KRW:{sym:'₩'}};
 
 const S={screen:'loading',token:'',me:null,people:[],rate:8.4,rateInfo:{mode:'auto',auto:null},expenses:[],transfers:[],memos:[],
-  scope:'mine',err:'',saving:0,pending:false,loginIdx:null,loaded:false,openMemos:new Set()};
+  scope:'mine',err:'',saving:0,pending:false,loginIdx:null,loaded:false,openMemos:new Set(),meta:{},secOpen:(()=>{try{return JSON.parse(localStorage.getItem('tl_sec')||'{"mine":true,"shared":true}')}catch(e){return {mine:true,shared:true}}})()};
 const ls={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}},del:k=>{try{localStorage.removeItem(k)}catch(e){}}};
 let root,view,memoRoot,memoView,userEl,ov,toastT,pollT;
 const roots=()=>[root,memoRoot].filter(Boolean);
@@ -67,7 +67,7 @@ function applyList(j){
 let loading=false;
 async function load(){
   if(!S.token||loading)return; loading=true;
-  try{ const j=await api({action:'list'}); applyList(j); S.screen='main'; S.err=''; render(); }
+  try{ const j=await api({action:'list'}); applyList(j); S.screen='main'; S.err=''; render(); seedNotes(); }
   catch(e){
     if(e.code==='auth'){logout(false);await boot();}
     else if(e.code==='not_setup'){logout(false);await boot();}
@@ -202,7 +202,7 @@ function render(){
   view.innerHTML=h; bind(view);
   if(userEl){ userEl.innerHTML=userHtml(); bind(userEl); }
   if(window.Content&&Content.onAuth)Content.onAuth();
-  if(memoView){ memoView.innerHTML=S.screen==='main'?viewMemo():viewMemoLocked(); bind(memoView); }
+  if(memoView){ memoView.innerHTML=S.screen==='main'?viewMemo():viewMemoLocked(); bind(memoView); fillImages(memoView); if(window.TripSite&&TripSite.renderChips&&TripSite.state.tab==='memo')TripSite.renderChips(); }
 }
 function userHtml(){
   if(S.screen==='main') return `<span class="lguser lguser-name">${svgUser}<span>${esc(pname(S.me))}</span></span><button class="lguser lguser-gear" data-act="settings" aria-label="설정">${svgGear}</button><button class="lguser lguser-gear lguser-out" data-act="logout" aria-label="로그아웃" title="로그아웃">${svgOut}</button>`;
@@ -337,7 +337,8 @@ const svgList='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke
 const svgText='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17v3z"/><path d="M13.5 6.5l3 3"/><path d="M4 4h7"/></svg>';
 function viewMemo(){
   let h='';
-  const secs=[{title:'내 메모',sub:`${pname(S.me)}만 봄`,list:S.memos.filter(m=>ownerOf(m)===S.me)},{title:'공용 메모',sub:'둘 다 보고 체크',list:S.memos.filter(isShared)}];
+  const isInfo=m=>m.cat==='info';
+  const secs=[{k:'mine',title:'내 메모',sub:`${pname(S.me)}만 봄`,list:S.memos.filter(m=>ownerOf(m)===S.me&&!isInfo(m))},{k:'shared',title:'공용 메모',sub:'둘 다 보고 체크',list:S.memos.filter(m=>isShared(m)&&!isInfo(m))},{k:'info',title:'여행 정보',sub:'항공·숙소·쇼핑 같은 안내 글',list:S.memos.filter(isInfo)}];
   secs.forEach(sec=>{
     if(!sec.list.length)return;
     const list=sec.list.slice().sort((a,b)=>(memoDone(a)?1:0)-(memoDone(b)?1:0)||(b.order||b.ts||0)-(a.order||a.ts||0));
@@ -350,20 +351,21 @@ function viewMemo(){
 }
 function memoRow(m){
   // 아코디언: 머리글을 누르면 쓴 내용이 펼쳐지고, 체크는 바로, 나머지 수정은 "수정" 팝업에서
-  const list=m.type!=='text'; const items=m.items||[]; const done=items.filter(i=>i.done).length; const priv=!isShared(m);
+  const list=m.type!=='text'&&m.type!=='flight'; const items=m.items||[]; const done=items.filter(i=>i.done).length; const priv=!isShared(m);
   const body=String(m.body||'');
   const title=m.title||(list?'제목 없는 리스트':(body.replace(/\s+/g,' ').trim().slice(0,30)||'제목 없는 글'));
-  const open=S.openMemos.has(m.id); const mdone=memoDone(m);
+  const open=S.openMemos.has(m.id); const mdone=memoDone(m); const info=m.cat==='info';
   let inner;
   if(list){
-    const li=it=>`<div class="lgli ${it.done?'lgdone':''}"><button type="button" class="lgbox" data-tgl-m="${esc(m.id)}|${esc(it.id)}" aria-label="완료">${svgCheck}</button><span class="lgtx">${linkify(it.text)}</span></div>`;
+    const li=it=>`<div class="lgli ${it.done?'lgdone':''}"><button type="button" class="lgbox" data-tgl-m="${esc(m.id)}|${esc(it.id)}" aria-label="완료">${svgCheck}</button>${it.img?`<span class="lgthumb" data-img="${esc(it.img)}">${imgTag(it.img,'lgimg lgimg-sm')}</span>`:''}<span class="lgtx">${mdLinks(it.text)}</span></div>`;
     if(!items.length) inner=`<div class="lghint" style="margin:0 0 6px">아직 항목이 없어요.</div>`;
     else if(priv) inner=items.map(li).join('');
     else{
       // 공용 체크리스트: 담당자별로 묶어서 (나 → 다른 멤버 → 담당 없음)
       const groups=[]; const order=[S.me,...S.people.map((p,i)=>i).filter(i=>i!==S.me),null];
       order.forEach(w=>{const sub=items.filter(it=>whoOf(it)===w); if(sub.length)groups.push({w,sub})});
-      inner=groups.map(g=>`<div class="lgwgrp"><div class="lgwgrp-h"><span class="lgwho ${g.w===null?'lgwho-none':g.w===S.me?'lgwho-me':''}">${g.w===null?'담당 없음':esc(pname(g.w))}</span><span class="lgsub">${g.sub.filter(i=>i.done).length}/${g.sub.length}</span></div>${g.sub.map(li).join('')}</div>`).join('');
+      if(groups.length===1&&groups[0].w===null) inner=groups[0].sub.map(li).join('');
+      else inner=groups.map(g=>`<div class="lgwgrp"><div class="lgwgrp-h"><span class="lgwho ${g.w===null?'lgwho-none':g.w===S.me?'lgwho-me':''}">${g.w===null?'담당 없음':esc(pname(g.w))}</span><span class="lgsub">${g.sub.filter(i=>i.done).length}/${g.sub.length}</span></div>${g.sub.map(li).join('')}</div>`).join('');
     }
   }else inner=body.trim()?`<div class="lgmemobody">${bodyHtml(body)}</div>`:`<div class="lghint" style="margin:0 0 6px">내용이 없어요.</div>`;
   if(m.images&&m.images.length){ if(list) inner=`<div class="lgcover"><span class="lgthumb lgthumb-cover" data-img="${esc(m.images[0])}">${imgTag(m.images[0])}</span></div>`+inner; else inner+=`<div class="lgimgs">${m.images.map(id=>`<span class="lgthumb" data-img="${esc(id)}">${imgTag(id)}</span>`).join('')}</div>`; }
@@ -480,7 +482,8 @@ function openInfoEditor(m,type){
 }
 function openMemoEditor(m,opts={}){
   const isNew=!m; const me=S.me;
-  const d={id:m?.id,type:m?(m.type==='text'?'text':'list'):(opts.type||'list'),title:m?.title||'',owner:m?ownerOf(m):(opts.owner===undefined?null:opts.owner),body:m?.body||'',items:memoItems(m),addWho:null};
+  const d={id:m?.id,type:m?(['text','flight'].includes(m.type)?m.type:'list'):(opts.type||'list'),legs:(m&&Array.isArray(m.legs))?m.legs.map(x=>({...x})):[],title:m?.title||'',owner:m?ownerOf(m):(opts.owner===undefined?null:opts.owner),body:m?.body||'',items:memoItems(m),images:(m&&Array.isArray(m.images))?m.images.slice():[],addWho:null,cat:m?(m.cat||''):(opts.cat||''),tag:m?.tag||''};
+  const info=d.cat==='info';
   const shared=()=>d.owner===null;
   const whoBtn=(who,attr)=>`<button type="button" class="lgwho ${who===null?'lgwho-none':who===me?'lgwho-me':''}" ${attr}>${who===null?'담당':esc(pname(who))}</button>`;
   const itemsHtml=()=>d.items.length?d.items.map(it=>{const who=whoOf(it); return `<div class="lgli ${it.done?'lgdone':''}"><button type="button" class="lgbox" data-tgl="${esc(it.id)}" aria-label="완료">${svgCheck}</button>${it.img?`<span class="lgthumb lgthumb-xs" data-iimg="${esc(it.id)}" title="사진 바꾸기">${imgTag(it.img,'lgimg')}</span>`:`<button type="button" class="lgcam" data-iimg="${esc(it.id)}" aria-label="사진 추가">📷</button>`}<input type="text" class="lgtxin" data-txt="${esc(it.id)}" value="${esc(it.text)}" maxlength="200">${shared()?whoBtn(who,`data-who="${esc(it.id)}"`):''}<button type="button" class="lgx" data-del="${esc(it.id)}" aria-label="삭제">${svgX}</button></div>`}).join(''):`<div class="lghint" style="margin:2px 0 8px">아직 항목이 없어요. 아래에 쓰고 "입력"을 눌러요.</div>`;
@@ -493,7 +496,8 @@ function openMemoEditor(m,opts={}){
     <div class="lgf" id="mListBox" ${d.type==='list'?'':'hidden'}><div id="mItems">${itemsHtml()}</div>
       <div class="lgaddli"><span class="lgplus">${svgPlus}</span><input type="text" id="mAdd" placeholder="항목 추가" maxlength="200"><span id="mAddWho">${shared()?whoBtn(null,'id="mAddWhoBtn"'):''}</span><button type="button" class="lgaddbtn" id="mAddBtn">입력</button></div>
       <div class="lghint" id="mItemsHint">${isNew?'':'체크·추가·삭제는 바로 저장돼요. 글자를 고치면 칸을 벗어날 때 저장돼요.'}</div></div>
-    <div class="lgf"><label>누가 보나</label><div class="lgchips" id="mOwner"><button type="button" class="lgchip" data-o="mine" aria-pressed="${!shared()}">개인 · 나만</button><button type="button" class="lgchip" data-o="shared" aria-pressed="${shared()}">공용 · 모두</button></div></div>
+    <div class="lgf"><label id="mImgLabel">${d.type==='list'?'대표 사진 (1장)':'사진 (여러 장)'}</label><div class="lgimgs lgimgs-edit" id="mImgs"></div><button type="button" class="lglink" id="mAddImg">+ 사진 추가</button></div>
+    <div class="lgf" ${info?'hidden':''}><label>누가 보나</label><div class="lgchips" id="mOwner"><button type="button" class="lgchip" data-o="mine" aria-pressed="${!shared()}">개인 · 나만</button><button type="button" class="lgchip" data-o="shared" aria-pressed="${shared()}">공용 · 모두</button></div></div>
     <div class="lgactions">${isNew?'':'<button type="button" class="lgbtn lgdanger" id="mDel">삭제</button>'}<button type="submit" class="lgbtn lgprimary">${isNew?'저장':'저장하고 닫기'}</button></div></form>`);
   const sh=q('.lgsheet',ov); const g=sel=>q(sel,sh);
   const persistItems=()=>{ if(isNew)return; write([{op:'update',col:'memos',id:d.id,data:{items:d.items}}]); };
@@ -502,18 +506,22 @@ function openMemoEditor(m,opts={}){
     qa('[data-tgl]',sh).forEach(b=>b.onclick=()=>{d.items=d.items.map(it=>it.id===b.dataset.tgl?{...it,done:!it.done,doneBy:!it.done?me:null}:it);paintItems();persistItems()});
     qa('[data-del]',sh).forEach(b=>b.onclick=()=>{d.items=d.items.filter(it=>it.id!==b.dataset.del);paintItems();persistItems()});
     qa('[data-who]',sh).forEach(b=>b.onclick=()=>{d.items=d.items.map(it=>it.id===b.dataset.who?{...it,who:nextWho(whoOf(it))}:it);paintItems();persistItems()});
+    qa('[data-iimg]',sh).forEach(b=>b.onclick=async()=>{ const iid=b.dataset.iimg; const cur=d.items.find(x=>x.id===iid); if(cur&&cur.img&&!confirmReplace(b))return; const ids=await pickImages(1); if(!ids.length)return; d.items=d.items.map(it=>it.id===iid?{...it,img:ids[0]}:it); paintItems(); fillImages(sh); persistItems(); });
     qa('[data-txt]',sh).forEach(inp=>{inp.onchange=()=>{const t=inp.value.trim(); d.items=t?d.items.map(it=>it.id===inp.dataset.txt?{...it,text:t}:it):d.items.filter(it=>it.id!==inp.dataset.txt); if(!t)paintItems(); persistItems()}; inp.onkeydown=ev=>{if(ev.key==='Enter'){ev.preventDefault();inp.blur()}}});
     const wb=g('#mAddWhoBtn'); if(wb)wb.onclick=()=>{d.addWho=nextWho(d.addWho); g('#mAddWho').innerHTML=whoBtn(d.addWho,'id="mAddWhoBtn"'); wireItems();};
   };
   const addItem=()=>{const inp=g('#mAdd'); const t=inp.value.trim(); if(!t)return; d.items=[...d.items,{id:uid(),text:t,done:false,who:shared()?d.addWho:null,ts:Date.now()}]; inp.value=''; paintItems(); persistItems(); inp.focus();};
   g('#mAddBtn').onclick=addItem; g('#mAdd').onkeydown=ev=>{if(ev.key==='Enter'){ev.preventDefault();addItem()}};
-  qa('#mType .lgchip',sh).forEach(b=>b.onclick=()=>{d.type=b.dataset.t;qa('#mType .lgchip',sh).forEach(x=>x.setAttribute('aria-pressed',x===b));g('#mBodyBox').hidden=d.type!=='text';g('#mListBox').hidden=d.type!=='list';});
+  qa('#mType .lgchip',sh).forEach(b=>b.onclick=()=>{d.type=b.dataset.t;qa('#mType .lgchip',sh).forEach(x=>x.setAttribute('aria-pressed',x===b));g('#mBodyBox').hidden=d.type!=='text';g('#mListBox').hidden=d.type!=='list'; g('#mImgLabel').textContent=d.type==='list'?'대표 사진 (1장)':'사진 (여러 장)'; if(d.type==='list'&&d.images.length>1){d.images=[d.images[0]];paintImgs();}});
   qa('#mOwner .lgchip',sh).forEach(b=>b.onclick=()=>{d.owner=b.dataset.o==='shared'?null:me;qa('#mOwner .lgchip',sh).forEach(x=>x.setAttribute('aria-pressed',x===b));if(isNew)g('#mHead').textContent=shared()?'공용 메모 쓰기':'내 메모 쓰기';paintItems();});
+  const paintImgs=()=>{ g('#mImgs').innerHTML=d.images.map(id=>`<span class="lgthumb" data-rm="${esc(id)}">${imgTag(id)}<b>×</b></span>`).join(''); fillImages(g('#mImgs')); qa('#mImgs [data-rm]',sh).forEach(t=>t.onclick=()=>{d.images=d.images.filter(x=>x!==t.dataset.rm); paintImgs();}); };
+  if(d.type==='flight'){ const wireLegs=()=>{ qa('#mLegs [data-delleg]',sh).forEach(b=>b.onclick=()=>b.closest('.lgleg').remove()); }; wireLegs(); g('#mAddLeg').onclick=()=>{ g('#mLegs').insertAdjacentHTML('beforeend',legRow()); wireLegs(); }; }
+  paintImgs(); g('#mAddImg').onclick=async()=>{ const one=d.type==='list'; const ids=await pickImages(one?1:10); if(ids.length){ d.images=one?[ids[0]]:[...d.images,...ids]; paintImgs(); toast(one?'대표 사진을 넣었어요':`사진 ${ids.length}장 추가`);} };
   wireItems();
   g('#memoForm').onsubmit=async ev=>{ev.preventDefault();
     const pending=g('#mAdd').value.trim(); if(pending&&d.type==='list')addItem();
-    const data={type:d.type,owner:d.owner,title:g('#mTitle').value.trim(),body:d.type==='text'?g('#mBody').value:'',items:d.type==='list'?d.items:[]};
-    if(isNew&&!data.title&&!data.body.trim()&&!data.items.length){toast('내용을 써주세요');return}
+    const data={type:d.type,owner:info?null:d.owner,title:g('#mTitle').value.trim(),body:(d.type==='text'||d.type==='flight')?g('#mBody').value:'',items:d.type==='list'?d.items:[],images:d.images}; if(d.type==='flight')data.legs=readLegs(sh); if(info){data.cat='info'; data.tag=(g('#mTag')?.value||'').trim();}
+    if(isNew&&!data.title&&!data.body.trim()&&!data.items.length&&!(data.legs&&data.legs.length)){toast('내용을 써주세요');return}
     closeSheet();
     if(isNew){const now=Date.now(); await write([{op:'set',col:'memos',id:uid(),data:{...data,ts:now,order:now}}],'저장했어요')}
     else await write([{op:'update',col:'memos',id:d.id,data}],'저장했어요');
@@ -762,7 +770,8 @@ function mount(el,memoEl){
   clearInterval(pollT); pollT=setInterval(()=>{if(document.visibilityState==='visible'&&S.screen==='main'&&!S.saving&&visible())load()},POLL_MS);
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&S.screen==='main')load()});
 }
-window.Ledger={mount,state:S,reload:load,openExpense,openSettle,openLogin,API,api,openSheet,closeSheet,toast,arm};
+function scrollToMemo(id){ const d=q(`details[data-accm="${id}"]`); if(!d)return; const sec=d.closest('details.lgsecacc'); if(sec&&!sec.open){sec.open=true;} d.open=true; S.openMemos.add(id); setTimeout(()=>d.scrollIntoView({behavior:'smooth',block:'start'}),50); }
+window.Ledger={mount,state:S,reload:load,openExpense,openSettle,openLogin,API,api,openSheet,closeSheet,toast,arm,pickImages,imgSrc,fillImages,imgTag,scrollToMemo,bodyHtml};
 const auto=document.getElementById('ledger-root');
 if(auto){ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>mount(auto)); else mount(auto); }
 })();
