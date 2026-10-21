@@ -724,4 +724,8 @@ body.body-edit .ev,body.body-edit .card{-webkit-user-select:none;user-select:non
 .lg .lgtoast-undo .lgut small{font-size:12px;font-weight:500;opacity:.75;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lg .lgtoast-undo .lgundo{margin-left:0;flex:none;height:34px;padding:0 12px}
 .lg .lgtoast:not(.lgshow){pointer-events:none}
+/* 품목 자동 합산 체크 */
+.lg .lgauto{display:flex;align-items:flex-start;gap:8px;margin-top:8px;font-size:13px;font-weight:600;cursor:pointer}
+.lg .lgauto input{width:18px;height:18px;margin:1px 0 0;flex:none;accent-color:var(--accent)}
+.lg .lgauto .lgsub{display:block;font-weight:500}
 

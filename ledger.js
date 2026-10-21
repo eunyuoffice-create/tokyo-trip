@@ -740,7 +740,7 @@ async function scanReceipt(){
   try{
     showLoading('영수증 읽는 중…');
     const R=await readReceiptFile(f); const F=R.fields;
-    const base={title:F.title||'영수증',amount:F.amount,cur:F.cur,day:F.day||todayKey(),cat:F.cat||'기타',memo:F.memo,links:[],ts:Date.now(),receipt:R.imgId||null,items:R.items.length?R.items:null,rcTotal:F.amount||null};
+    const base={title:F.title||'영수증',amount:F.amount,cur:F.cur,day:F.day||todayKey(),cat:F.cat||'기타',memo:F.memo,links:[],ts:Date.now(),receipt:R.imgId||null,items:R.items.length?R.items:null,rcTotal:F.amount||null,autoSum:true};
     if(!R.ok){
       toast(R.rc.isReceipt===false?'영수증 사진이 아닌 것 같아요. 직접 넣어주세요':'합계를 못 읽었어요. 금액만 넣어주세요');
       openExpense(null,{priv,newImg:R.imgId,prefill:{title:base.title,amount:base.amount||'',cur:base.cur,day:base.day,cat:base.cat,memo:base.memo,receipt:R.imgId,items:R.items,rcTotal:base.rcTotal}});
@@ -756,13 +756,18 @@ async function scanReceipt(){
     if(e.imgId){ if(e.queued)toast('연결 안 됨 — 사진만 붙였어요. 금액을 넣어 저장하세요'); else if(e.code==='quota')toast('자동 읽기 한도 초과 — 사진만 붙였어요. 금액을 넣어 저장하세요'); openExpense(null,{priv,newImg:e.imgId,prefill:{receipt:e.imgId}}); }
   }finally{ hideLoading(); scanning=false; const b=q('[data-act="receipt"]'); if(b){b.disabled=false;b.classList.remove('lgbusy')} }
 }
+/* 품목 자동 합산: 고른 품목 합계. 영수증 합계(세금 포함·쿠폰 반영)를 알면 그 비율로 맞춤
+   (품목이 세전가거나 전체 쿠폰이 있어도 전부 고르면 영수증 합계와 같고, 일부만 고르면 비율대로 나눔) */
+function autoCalc(items,rcTotal){ const sel=items.filter(x=>x.sel!==false).reduce((a,x)=>a+(+x.price||0),0); const all=items.reduce((a,x)=>a+(+x.price||0),0);
+  if(+rcTotal>0&&all>0){ const r=rcTotal/all; if(r>0.5&&r<1.5)return sel*r; } return sel; }
 function openExpense(e,opts={}){
   const isNew=!e; const n=S.people.length; const today=todayKey();
   const d={id:e?.id,title:e?.title||'',amount:e?.amount||'',cur:e?.cur||'JPY',day:e?.day||today,cat:e?.cat||'식비',
     priv:e?!isShared(e):!!opts.priv,payer:e?e.payer:S.me,parts:e?(e.parts&&e.parts.length?e.parts.slice():[...Array(n).keys()]):[...Array(n).keys()],custom:e?.custom?{...e.custom}:null,memo:e?.memo||'',settled:!!(e&&e.settled),
-    receipt:e?.receipt||'',items:Array.isArray(e?.items)?e.items.map(it=>({...it})):[],rcTotal:e?.rcTotal||0};
+    receipt:e?.receipt||'',items:Array.isArray(e?.items)?e.items.map(it=>({...it})):[],rcTotal:e?.rcTotal||0,autoSum:e?e.autoSum:true};
   if(opts.prefill)Object.assign(d,opts.prefill);
   d.items=(d.items||[]).map(it=>({name:it.name||'',nameKo:it.nameKo||'',qty:+it.qty||1,price:+it.price||0,sel:it.sel!==false}));
+  if(d.autoSum===undefined||d.autoSum===null) d.autoSum=!d.items.length||Math.round(autoCalc(d.items,d.rcTotal))===Math.round(+d.amount||0);   // 예전 지출: 금액이 품목 합계와 같으면 자동 합산으로 간주
   const newImgs=new Set(opts.newImg?[opts.newImg]:[]); let saved=false;   // 이 폼에서 새로 올린 영수증 사진: 저장 안 하고 닫으면 지움
   let itEdit=false;   // 영수증 품목: 보기(기본) ↔ 수정
   const moreOpen=!isNew&&(!!d.custom||(!d.priv&&d.parts.length!==n)||!!d.memo||d.settled||(Array.isArray(e?.links)&&e.links.length>0));
@@ -802,10 +807,10 @@ function openExpense(e,opts={}){
   qa('#fParts button',sh).forEach(b=>b.onclick=()=>{const i=+b.dataset.i;d.parts=d.parts.includes(i)?d.parts.filter(x=>x!==i):[...d.parts,i].sort();b.setAttribute('aria-pressed',d.parts.includes(i));partsHint();sum();if(g('#fCustom').checked)customBox()});
   g('#fCustom').onchange=()=>{g('#fCustomBox').hidden=!g('#fCustom').checked;if(g('#fCustom').checked)customBox();sum()};
   /* 영수증 사진 줄 + 품목 편집 */
-  const touched=new Set(); g('#fAmt').addEventListener('input',()=>touched.add('amount')); g('#fTitle').addEventListener('input',()=>touched.add('title'));
+  const touched=new Set(); g('#fAmt').addEventListener('input',()=>{ touched.add('amount'); if(d.autoSum&&d.items.length){ d.autoSum=false; const au=g('#fAuto'); if(au)au.checked=false; toast('금액을 직접 넣어서 자동 합산을 껐어요'); } }); g('#fTitle').addEventListener('input',()=>touched.add('title'));
   ['#fCur','#fDay','#fCat'].forEach(id=>g(id).addEventListener('click',()=>touched.add(id)));
   const itTotal=()=>d.items.filter(x=>x.sel).reduce((a,x)=>a+(+x.price||0),0);
-  const itSumText=()=>{ const sel=d.items.filter(x=>x.sel).length; return d.items.length?`${sel===d.items.length?`품목 ${sel}개`:`품목 ${sel}/${d.items.length}개`} · 합계 ${fmt(itTotal(),d.cur)}${d.rcTotal&&Math.round(d.rcTotal)!==Math.round(itTotal())?` <span class="lgsub">(영수증 ${fmt(d.rcTotal,d.cur)})</span>`:''}`:''; };
+  const itSumText=()=>{ const sel=d.items.filter(x=>x.sel).length; if(!d.items.length)return ''; const v=autoCalc(d.items,d.rcTotal); return `${sel===d.items.length?`품목 ${sel}개`:`품목 ${sel}/${d.items.length}개`} · 합계 ${fmt(v,d.cur)}${d.rcTotal&&sel<d.items.length?` <span class="lgsub">(영수증 ${fmt(d.rcTotal,d.cur)})</span>`:''}`; };
   // 품목: 한 목록. 평소엔 잠긴 입력칸(글자처럼 보임), "수정"이면 그 자리에서 입력
   // 할인 줄: 가격이 마이너스. 상품 바로 아래 붙은 할인은 그 상품 몫(같이 넣고 뺌), 쿠폰·포인트 같은 전체 할인은 따로
   const WIDE=/クーポン|coupon|쿠폰|ポイント|포인트|会計|合計|総額|全品|전체|まとめ/i;
@@ -818,12 +823,15 @@ function openExpense(e,opts={}){
     const list=d.items.length?`<div class="lgitlist ${itEdit?'lgediting':''}" id="fItems">${itemRows()}</div>`:'';
     const head=has?`<div class="lgithead"><label>${d.items.length?'영수증':'사진'}${d.items.length?` <span class="lgsub" id="fItSum">${itSumText()}</span>`:''}</label>${d.items.length?`<button type="button" class="lglink" id="fItEdit">${itEdit?'완료':'수정'}</button>`:''}</div>`:'';
     const body=has?`<div class="lgrc">${thumb}${list}</div>`:'';
-    const links=`<div class="lgrcbtns"><button type="button" class="lglink" id="fRcCam">${svgCam}${d.receipt?'다시 찍기':'사진 찍기'}</button><button type="button" class="lglink" id="fRcPick">앨범</button><button type="button" class="lglink" id="fAddItem">+ 품목</button>${itEdit&&d.items.some(x=>x.sel&&+x.price)?'<button type="button" class="lglink" id="fItApply">선택 합계→금액</button>':''}${d.receipt&&!itEdit?'<button type="button" class="lglink lgdim" id="fRcDel">사진 빼기</button>':''}</div>`;
+    const auto=d.items.length?`<label class="lgauto"><input type="checkbox" id="fAuto" ${d.autoSum?'checked':''}><span>품목 합계로 금액 자동 입력${d.autoSum&&ratioNote()?` <span class="lgsub">${ratioNote()}</span>`:''}</span></label>`:'';
+    const links=`<div class="lgrcbtns"><button type="button" class="lglink" id="fRcCam">${svgCam}${d.receipt?'다시 찍기':'사진 찍기'}</button><button type="button" class="lglink" id="fRcPick">앨범</button><button type="button" class="lglink" id="fAddItem">+ 품목</button>${d.receipt&&!itEdit?'<button type="button" class="lglink lgdim" id="fRcDel">사진 빼기</button>':''}</div>`;
     const u=rcUse();
     const note=rcQuota()?`<div class="lgrcalert" role="alert"><b>오늘 영수증 자동 읽기 한도를 다 썼어요.</b> 사진 첨부와 직접 입력은 그대로 돼요. <b>${rcReset()}</b>에 다시 돼요.</div>`
       :`<div class="lgrcdesc">영수증 자동 읽기${u?` · 오늘 ${u.n}회`:''} · 매일 ${rcReset()} 초기화 (구글 무료 한도)</div>`;
-    return `<div class="lgf lgrcbox">${head}${body}${links}${note}</div>`; };
-  const refreshSum=()=>{ const el=g('#fItSum'); if(el)el.innerHTML=itSumText(); sum(); };
+    return `<div class="lgf lgrcbox">${head}${body}${auto}${links}${note}</div>`; };
+  const ratioNote=()=>{ const all=d.items.reduce((a,x)=>a+(+x.price||0),0); if(!(d.rcTotal>0&&all>0))return ''; const r=d.rcTotal/all; return Math.abs(r-1)>0.005&&r>0.5&&r<1.5?'(세금·쿠폰 포함해 영수증 합계에 맞춤)':''; };
+  const applyAuto=()=>{ if(!d.autoSum||!d.items.length)return; const v=Math.round(autoCalc(d.items,d.rcTotal)); g('#fAmt').value=v?String(v):''; partsHint(); customHint(); };
+  const refreshSum=()=>{ applyAuto(); const el=g('#fItSum'); if(el)el.innerHTML=itSumText(); sum(); };
   const clickChip=(box,attr,val)=>{ const b=qa(`${box} button`,sh).find(x=>x.dataset[attr]===val); if(b)b.click(); };
   const applyReceipt=R=>{ const F=R.rc&&R.rc.isReceipt===false?{}:(R.fields||{});
     if(d.receipt&&newImgs.has(d.receipt)&&d.receipt!==R.imgId){ dropImage(d.receipt); newImgs.delete(d.receipt); }
@@ -831,7 +839,7 @@ function openExpense(e,opts={}){
     if(R.items.length){ d.items=R.items; }
     d.rcTotal=F.amount||d.rcTotal;
     // 금액·제목은 비어 있을 때만 채움 (이미 쓴 값·기존 지출은 그대로. 영수증 합계는 품목 줄에 보임)
-    if(F.amount>0&&!amt()){ g('#fAmt').value=String(F.amount); }
+    if(F.amount>0&&!amt()&&!(d.autoSum&&d.items.length)){ g('#fAmt').value=String(F.amount); }
     if(F.title&&!g('#fTitle').value.trim()) g('#fTitle').value=F.title;
     const fresh=isNew&&!touched.has('amount');
     if(F.cur&&fresh&&!touched.has('#fCur')) clickChip('#fCur','c',F.cur);
@@ -866,7 +874,8 @@ function openExpense(e,opts={}){
       row.querySelector('.lgitqty').oninput=ev=>{it.qty=parseNum(ev.target.value)||1};
       row.querySelector('.lgitprice').oninput=ev=>{it.price=parseNum(ev.target.value); refreshSum()};
       row.querySelector('.lgitdel').onclick=()=>{ d.items.splice(+row.dataset.i,1); paintRc(); }; });
-    const ap=g('#fItApply'); if(ap)ap.onclick=()=>{ const t=itTotal(); if(!(t>0))return; g('#fAmt').value=String(Math.round(t)); touched.add('amount'); partsHint(); customHint(); toast('선택 품목 합계로 바꿨어요'); };
+    applyAuto();
+    const au=g('#fAuto'); if(au)au.onchange=()=>{ d.autoSum=au.checked; if(d.autoSum)applyAuto(); paintRc(); };
   };
   paintRc(); refreshUsage().then(()=>{ if(!closed&&g('#fRc'))paintRc(); });
   let closed=false; sheetCloseHook=()=>{ closed=true; if(!saved) newImgs.forEach(dropImage); };
@@ -877,7 +886,7 @@ function openExpense(e,opts={}){
     let body;
     const links=readExpLinks(sh);
     const its=d.items.filter(x=>(x.nameKo||x.name||'').trim()||+x.price).map(x=>({name:(x.name||x.nameKo).trim(),nameKo:(x.nameKo||'').trim(),qty:+x.qty||1,price:+x.price||0,sel:!!x.sel}));
-    const extra={receipt:d.receipt||null,items:its.length?its:null,rcTotal:d.rcTotal||null};
+    const extra={receipt:d.receipt||null,items:its.length?its:null,rcTotal:d.rcTotal||null,autoSum:its.length?!!d.autoSum:null};
     if(d.priv) body={owner:S.me,title:g('#fTitle').value.trim(),amount:a,cur:d.cur,day:d.day,cat:d.cat,payer:S.me,parts:[S.me],custom:null,memo:g('#fMemo').value.trim(),links,ts:e?.ts||Date.now(),...extra};
     else{ if(!d.parts.length){toast('나눌 사람을 골라주세요');g('#fMore').open=true;return}
       const useCustom=g('#fCustom').checked; const custom=useCustom?Object.fromEntries(d.parts.map(i=>[i,+(d.custom&&d.custom[i])||0])):null;
