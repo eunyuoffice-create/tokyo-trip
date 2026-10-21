@@ -688,6 +688,12 @@ function toastUndo(msg,fn){ const t=q('.lgtoast',ov); if(!t)return; t.innerHTML=
   t.querySelector('.lgundo').onclick=()=>{ t.classList.remove('lgshow'); t.textContent=''; fn(); };
   undoT=setTimeout(()=>{ t.classList.remove('lgshow'); setTimeout(()=>{ if(!t.classList.contains('lgshow'))t.textContent=''; },300); },7000); }
 let scanning=false;
+/* 사진 올리기·영수증 읽기 중: 화면을 어둡게 덮고 로딩 표시. 오래 걸리면 "기다리지 않고 입력하기"로 덮개만 걷음(작업은 계속) */
+let loadT=null;
+function showLoading(msg,{skippable=false}={}){ let el=q('.lgload',ov); if(!el){ el=document.createElement('div'); el.className='lgload'; el.setAttribute('role','status'); el.setAttribute('aria-live','polite'); el.innerHTML='<div class="lgloadbox"><div class="lgspin" aria-hidden="true"></div><div class="lgloadmsg"></div><button type="button" class="lglink lgloadskip" hidden>기다리지 않고 입력하기</button></div>'; ov.appendChild(el); el.querySelector('.lgloadskip').onclick=hideLoading; }
+  el.querySelector('.lgloadmsg').textContent=msg; const sk=el.querySelector('.lgloadskip'); clearTimeout(loadT); sk.hidden=true; if(skippable)loadT=setTimeout(()=>{sk.hidden=false},6000);
+  el.classList.add('lgshow'); }
+function hideLoading(){ clearTimeout(loadT); const el=q('.lgload',ov); if(el)el.classList.remove('lgshow'); }
 /* 사진 고르기 (camera=true 면 카메라 바로) */
 function pickPhoto(camera){ return new Promise(res=>{ const inp=document.createElement('input'); inp.type='file'; inp.accept='image/*'; if(camera)inp.setAttribute('capture','environment'); inp.style.display='none'; document.body.appendChild(inp);
   inp.onchange=()=>{ const f=inp.files&&inp.files[0]; inp.remove(); res(f||null); }; inp.click(); }); }
@@ -732,7 +738,7 @@ async function scanReceipt(){
   scanning=true; const bar=q('[data-act="receipt"]'); if(bar){bar.disabled=true;bar.classList.add('lgbusy')}
   const priv=S.scope==='mine';   // 개인 탭이면 내 지출, 공용·전체면 공용
   try{
-    toast('영수증 읽는 중…');
+    showLoading('영수증 읽는 중…');
     const R=await readReceiptFile(f); const F=R.fields;
     const base={title:F.title||'영수증',amount:F.amount,cur:F.cur,day:F.day||todayKey(),cat:F.cat||'기타',memo:F.memo,links:[],ts:Date.now(),receipt:R.imgId||null,items:R.items.length?R.items:null,rcTotal:F.amount||null};
     if(!R.ok){
@@ -748,7 +754,7 @@ async function scanReceipt(){
   }catch(e){
     toast(receiptErr(e));
     if(e.imgId){ if(e.queued)toast('연결 안 됨 — 사진만 붙였어요. 금액을 넣어 저장하세요'); else if(e.code==='quota')toast('자동 읽기 한도 초과 — 사진만 붙였어요. 금액을 넣어 저장하세요'); openExpense(null,{priv,newImg:e.imgId,prefill:{receipt:e.imgId}}); }
-  }finally{ scanning=false; const b=q('[data-act="receipt"]'); if(b){b.disabled=false;b.classList.remove('lgbusy')} }
+  }finally{ hideLoading(); scanning=false; const b=q('[data-act="receipt"]'); if(b){b.disabled=false;b.classList.remove('lgbusy')} }
 }
 function openExpense(e,opts={}){
   const isNew=!e; const n=S.people.length; const today=todayKey();
@@ -831,18 +837,18 @@ function openExpense(e,opts={}){
   let busy=null;   // 사진 올리기·영수증 읽기 진행 중이면 저장이 기다림
   const setBusy=on=>{ const b=g('#fRcCam'); if(b){b.disabled=on;b.classList.toggle('lgbusy',on)} const sv=g('#fSave'); if(sv){ sv.classList.toggle('lgbusy',on); sv.textContent=on?'사진 처리 중…':(isNew?'저장':'수정 저장'); } };
   const attach=async camera=>{ const f=await pickPhoto(camera); if(!f)return;
-    let done; busy=new Promise(r=>done=r); setBusy(true); toast('사진 올리는 중…');
+    let done; busy=new Promise(r=>done=r); setBusy(true); showLoading('사진 올리는 중…');
     try{
       let P; try{ P=await uploadPhoto(f); }catch(e){ toast(e.code==='auth'?receiptErr(e):'사진을 못 올렸어요: '+(e.message||e)); return; }
       applyReceipt({imgId:P.imgId,rc:{isReceipt:false},fields:{},items:[]});   // 사진은 바로 붙임
       if(closed)return;
       if(P.queued){ toast('연결 안 됨 — 사진은 연결되면 올라가요 (영수증 읽기는 못 함)'); return; }
-      toast('사진을 붙였어요 · 영수증인지 읽는 중…');
+      showLoading('사진을 붙였어요 · 영수증인지 읽는 중…',{skippable:true});
       try{ const R=await readReceiptData(P.data); if(closed)return;
         if(R.rc.isReceipt===false){ toast('사진을 붙였어요'); return; }
         applyReceipt({imgId:P.imgId,...R}); toast(R.ok?(R.items.length?`영수증 품목 ${R.items.length}개를 읽었어요`:'영수증을 읽었어요'):'합계를 못 읽었어요. 금액은 직접 넣어주세요'); }
       catch(e){ if(!closed){ if(e.code==='quota'){ toast('사진은 붙였어요 · '+receiptErr(e)); paintRc(); } else toast(e.code==='no_key'||e.code==='auth'?receiptErr(e):'사진은 붙였어요 (영수증 내용은 못 읽음)'); } }
-    }finally{ busy=null; done(); if(!closed)setBusy(false); } };
+    }finally{ hideLoading(); busy=null; done(); if(!closed)setBusy(false); } };
   const paintRc=()=>{ const box=g('#fRc'); box.innerHTML=rcHtml(); fillImages(box);
     box.querySelectorAll('.lgthumb').forEach(t=>t.onclick=ev=>{ev.preventDefault();openThumb(t)});
     g('#fRcCam').onclick=()=>attach(true); g('#fRcPick').onclick=()=>attach(false);

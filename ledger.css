@@ -705,4 +705,13 @@ body.body-edit .ev,body.body-edit .card{-webkit-user-select:none;user-select:non
 .lg .lgrcdesc{font-size:11.5px;color:var(--muted);margin-top:4px}
 .lg .lgrcalert{margin-top:8px;padding:10px 12px;border-radius:10px;background:var(--accent-soft,#FBE9E6);color:var(--fg);font-size:13px;line-height:1.5;border:1px solid var(--accent)}
 .lg .lgrcalert b{color:var(--accent)}
+/* 사진·영수증 처리 중 로딩 덮개 */
+.lg .lgload{position:fixed;inset:0;z-index:45;background:rgba(10,12,18,.5);display:none;place-items:center;padding:24px}
+.lg .lgload.lgshow{display:grid}
+.lg .lgloadbox{background:var(--surface);color:var(--fg);border-radius:16px;padding:20px 22px;min-width:220px;max-width:300px;display:flex;flex-direction:column;align-items:center;gap:12px;box-shadow:0 10px 30px rgba(0,0,0,.25);text-align:center}
+.lg .lgspin{width:34px;height:34px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--accent);animation:lgspin .8s linear infinite}
+.lg .lgloadmsg{font-size:14px;font-weight:600;line-height:1.45}
+.lg .lgloadskip{font-size:13px}
+@keyframes lgspin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.lg .lgspin{animation-duration:2.4s}}
 
