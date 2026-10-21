@@ -61,7 +61,7 @@ function applyList(j){
   S.expenses=Object.entries(j.expenses||{}).map(([id,e])=>({id,...e,amount:+e.amount||0,payer:+e.payer||0,parts:Array.isArray(e.parts)?e.parts.map(Number):[]}));
   S.transfers=Object.entries(j.transfers||{}).map(([id,t])=>({id,...t,amount:+t.amount||0,from:+t.from||0,to:+t.to||0}));
   S.memos=Object.entries(j.memos||{}).map(([id,m])=>({id,...m,items:Array.isArray(m.items)?m.items:[],images:Array.isArray(m.images)?m.images:[]}));
-  S.meta=j.meta||{};
+  S.meta=j.meta||{}; S.metaKnown=j.meta!==undefined;   // 옛 서버(meta 없음)에서는 시드·보정을 돌리지 않는다
   S.loaded=true;
 }
 let loading=false;
@@ -173,7 +173,7 @@ function pickImages(max=10){ return new Promise(res=>{ const inp=document.create
 /* ---------- 예전 하드코딩 메모 카드 → 공용 메모로 한 번 옮기기 ---------- */
 let seedingNotes=false;
 async function seedNotes(){
-  if(seedingNotes||!window.NOTE_SEED||S.screen!=='main')return;
+  if(seedingNotes||!window.NOTE_SEED||S.screen!=='main'||!S.metaKnown)return;
   if(S.meta.notes&&S.meta.notes.seeded){ const fx=S.memos.find(m=>m.id==='note-flight'&&m.type!=='flight'); if(fx&&!seedingNotes){ seedingNotes=true; try{ const sd=NOTE_SEED.find(x=>x.id==='note-flight'); await api({action:'write',ops:[{op:'update',col:'memos',id:'note-flight',data:{type:'flight',legs:sd.legs,body:sd.body}}]}); await load(); }catch(e){} finally{seedingNotes=false} return; }
     const split=S.memos.filter(m=>m.cat==='info'&&m.type==='doc'&&m.body&&m.body.trim()); if(split.length&&!seedingNotes){ seedingNotes=true; try{ const ops=split.map(m=>{const pre=bodyToBlocks(m.body); if(pre.length&&(m.cover||(m.links||[]).length)){pre[0].img=pre[0].img||m.cover||''; pre[0].links=[...pre[0].links,...(m.links||[])];} return {op:'update',col:'memos',id:m.id,data:{body:'',cover:'',links:[],blocks:[...pre,...(m.blocks||[])]}}}); for(let i=0;i<ops.length;i+=10) await api({action:'write',ops:ops.slice(i,i+10)}); await load(); }catch(e){} finally{seedingNotes=false} return; }
     // 한 단락 안에 '## 소제목'이 여러 개 들어가 있으면 단락으로 쪼갠다
