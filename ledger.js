@@ -675,6 +675,9 @@ function arm(btn,fn){ if(!btn)return; btn.onclick=()=>{ if(btn.dataset.arm!=='1'
 
 /* ---------- 시트 ---------- */
 let sheetCloseHook=null; const runSheetHook=()=>{const f=sheetCloseHook; sheetCloseHook=null; if(f)try{f()}catch(_){}};
+/* 입력 중 엔터(휴대폰 키보드의 '완료·이동' 포함)로 폼이 저장되며 닫히던 문제: 긴 편집 폼은 저장 버튼으로만 저장 */
+const NO_ENTER_SUBMIT=new Set(['expForm','infoForm','memoForm','cForm','stForm','setForm']);
+function guardEnter(e){ if(e.key!=='Enter'||e.isComposing||e.keyCode===229)return; const t=e.target; if(!t||!t.matches||!t.matches('input')||/^(checkbox|radio|button|submit)$/.test(t.type))return; const f=t.closest('form'); if(f&&NO_ENTER_SUBMIT.has(f.id)){ e.preventDefault(); t.blur(); } }
 function openSheet(html){ runSheetHook(); q('.lgsheet .lgin',ov).innerHTML=`<div class="lggrab"></div>`+html; q('.lgsheet',ov).classList.add('lgopen'); q('.lgscrim',ov).classList.add('lgopen'); document.body.style.overflow='hidden'; qa('[data-close]',ov).forEach(b=>b.onclick=closeSheet); q('.lgsheet',ov).scrollTop=0; }
 function closeSheet(){ runSheetHook(); q('.lgsheet').classList.remove('lgopen'); q('.lgscrim').classList.remove('lgopen'); document.body.style.overflow=''; }
 
@@ -777,12 +780,12 @@ function openExpense(e,opts={}){
     <div class="lgf"><label>금액 <span class="lgreq" aria-label="필수">*</span></label><div class="lgamtview" id="fAmtView"></div><div class="lgamount"><input type="text" inputmode="decimal" id="fAmt" placeholder="0" value="${d.amount?esc(d.amount):''}" aria-label="금액"><div class="lgseg" id="fCur"><button type="button" data-c="JPY" aria-pressed="${d.cur==='JPY'}">¥</button><button type="button" data-c="KRW" aria-pressed="${d.cur==='KRW'}">₩</button></div></div></div>
     <div class="lgf lgtitlef"><input type="text" id="fTitle" placeholder="무엇에 썼어요? 예: 모츠나베, 리무진 버스" value="${esc(d.title)}" maxlength="80" aria-label="내용"><textarea id="fMemo" class="lgdesc" rows="1" placeholder="설명 (선택) · 누구 거 샀는지, 메모 등" maxlength="300" aria-label="설명">${esc(d.memo)}</textarea></div>
     <div class="lgvsum" id="fVSum"></div>
+      <div class="lgf lgeditrow"><label>날짜</label><div class="lgchips" id="fDay">${ALLDAYS.map(x=>`<button type="button" class="lgchip lgsm" data-d="${x.d}" aria-pressed="${d.day===x.d}">${x.d==='pre'?'출발 전':`D${x.n} ${x.s} ${x.w}`}</button>`).join('')}</div></div>
+      <div class="lgf lgeditrow"><label>카테고리</label><div class="lgchips" id="fCat">${CATS.map(c=>`<button type="button" class="lgchip lgsm" data-c="${c}" aria-pressed="${d.cat===c}">${c}</button>`).join('')}</div></div>
     <div id="fRc"></div>
     <div class="lgf" id="fPayerBox" ${d.priv?'hidden':''}><label>누가 냈어요?</label><div class="lgbig2" id="fPayer">${S.people.map((p,i)=>`<button type="button" data-i="${i}" aria-pressed="${d.payer===i}">${esc(pname(i))}${i===S.me?' <small>나</small>':''}</button>`).join('')}</div><div class="lghint" id="fPartsHint"></div></div>
     <details class="lgmore" id="fMore" ${moreOpen||viewing?'open':''}><summary><span>자세히</span><span class="lgsub" id="fMoreSum"></span></summary>
       <div class="lgf"><label>구분</label><div class="lgchips" id="fScope"><button type="button" class="lgchip" data-s="mine" aria-pressed="${d.priv}">개인 · 나만 봄</button><button type="button" class="lgchip" data-s="shared" aria-pressed="${!d.priv}">공용 · 같이 나눔</button></div></div>
-      <div class="lgf"><label>날짜</label><div class="lgchips" id="fDay">${ALLDAYS.map(x=>`<button type="button" class="lgchip lgsm" data-d="${x.d}" aria-pressed="${d.day===x.d}">${x.d==='pre'?'출발 전':`D${x.n} ${x.s} ${x.w}`}</button>`).join('')}</div></div>
-      <div class="lgf"><label>카테고리</label><div class="lgchips" id="fCat">${CATS.map(c=>`<button type="button" class="lgchip lgsm" data-c="${c}" aria-pressed="${d.cat===c}">${c}</button>`).join('')}</div></div>
       <div id="fSharedBox" ${d.priv?'hidden':''}>
         <div class="lgf"><label>누구 몫으로 나눌까</label><div class="lgchips" id="fParts">${S.people.map((p,i)=>`<button type="button" class="lgchip" data-i="${i}" aria-pressed="${d.parts.includes(i)}">${esc(pname(i))}</button>`).join('')}</div></div>
         <div class="lgf"><div class="lgtoggle"><span>금액 직접 나누기</span><input type="checkbox" id="fCustom" ${d.custom?'checked':''}></div><div id="fCustomBox" ${d.custom?'':'hidden'}><div class="lgpamts" id="fCustomAmts"></div><div class="lghint" id="fCustomHint"></div></div></div>
@@ -793,7 +796,7 @@ function openExpense(e,opts={}){
     <div class="lgactions">${isNew?'':'<button type="button" class="lgbtn lgprimary lgviewonly" id="fEditBig">수정하기</button><button type="button" class="lgbtn lgdanger lgeditonly" id="fDel">삭제</button>'}<button type="submit" class="lgbtn lgprimary lgeditonly" id="fSave">${isNew?'저장':'수정 저장'}</button></div></form>`);
   const sh=q('.lgsheet',ov); const g=s=>q(s,sh);
   const amt=()=>parseNum(g('#fAmt').value);
-  const sum=()=>{const bits=[dayShort(d.day),d.cat]; if(!d.priv){ if(d.parts.length!==n)bits.push(d.parts.map(pname).join('·')+' 몫'); if(g('#fCustom').checked)bits.push('직접 나눔'); } {const sel=d.items.filter(x=>x.sel).length; if(d.items.length)bits.push(sel===d.items.length?`품목 ${sel}`:`품목 ${sel}/${d.items.length}`);}  const nl=g('#fLinks')?g('#fLinks').querySelectorAll('.lgclink').length:0; if(nl)bits.push(`링크 ${nl}`); g('#fMoreSum').textContent=bits.join(' · ')};
+  const sum=()=>{const bits=[]; if(!d.priv){ if(d.parts.length!==n)bits.push(d.parts.map(pname).join('·')+' 몫'); if(g('#fCustom').checked)bits.push('직접 나눔'); } {const sel=d.items.filter(x=>x.sel).length; if(d.items.length)bits.push(sel===d.items.length?`품목 ${sel}`:`품목 ${sel}/${d.items.length}`);}  const nl=g('#fLinks')?g('#fLinks').querySelectorAll('.lgclink').length:0; if(nl)bits.push(`링크 ${nl}`); g('#fMoreSum').textContent=bits.join(' · ')};
   const partsHint=()=>{const a=amt(),k=d.parts.length; const el=g('#fPartsHint'); if(d.priv){el.textContent='';return} el.textContent=k===0?'나눌 사람을 "자세히"에서 골라주세요':k===1?(d.parts[0]===d.payer?`${pname(d.payer)} 혼자 몫 — 나눔 없음`:`${pname(d.parts[0])} 몫 전액 → ${pname(d.payer)}에게 ${fmt(a,d.cur)}`):(a>0?`${k}명이 1인 ${fmt(a/k,d.cur)}씩`:`${k}명이 똑같이 나눠요`)};
   const customHint=()=>{if(!g('#fCustom').checked)return;const s=d.parts.reduce((t,i)=>t+(d.custom&&+d.custom[i]||0),0);const rest=amt()-s;const el=g('#fCustomHint');el.className='lghint'+(Math.abs(rest)>0.5?' bad':'');el.textContent=Math.abs(rest)>0.5?`합계 ${fmt(s,d.cur)} · 남는 ${fmt(rest,d.cur)}은 ${pname(d.parts[0]??d.payer)}에게 붙어요`:'합계가 딱 맞아요'};
   const customBox=()=>{const box=g('#fCustomAmts'); box.innerHTML=d.parts.map(i=>`<label>${esc(pname(i))}<input type="text" inputmode="decimal" data-ci="${i}" value="${d.custom&&d.custom[i]?esc(d.custom[i]):''}" placeholder="0"></label>`).join(''); box.querySelectorAll('input').forEach(inp=>inp.oninput=()=>{d.custom=d.custom||{};d.custom[inp.dataset.ci]=parseNum(inp.value);customHint()}); customHint()};
@@ -820,7 +823,7 @@ function openExpense(e,opts={}){
   const WIDE=/クーポン|coupon|쿠폰|ポイント|포인트|会計|合計|総額|全品|전체|まとめ/i;
   const isDisc=it=>(+it.price||0)<0;
   const attached=i=>{ const out=[]; if(isDisc(d.items[i]))return out; for(let k=i+1;k<d.items.length&&isDisc(d.items[k])&&!WIDE.test((d.items[k].name||'')+' '+(d.items[k].nameKo||''));k++)out.push(k); return out; };
-  const itemRows=()=>d.items.map((it,i)=>`<div class="lgit ${isDisc(it)?'lgitdisc':''} ${it.sel?'':'lgitoff'} ${(+it.qty||1)>1?'':'lgq1'}" data-i="${i}"><button type="button" class="lgitck" aria-pressed="${it.sel}" aria-label="이 품목 포함">${it.sel?'✓':''}</button><input type="text" class="lgitname" value="${esc(it.nameKo||it.name)}" placeholder="품목 이름" maxlength="60" ${itEdit?'':'readonly tabindex="-1"'}${it.nameKo&&it.name&&it.nameKo!==it.name?` title="${esc(it.name)}"`:''}><span class="lgitx">×</span><input type="text" inputmode="numeric" class="lgitqty" value="${esc(+it.qty||1)}" aria-label="수량" ${itEdit?'':'readonly tabindex="-1"'}><input type="text" inputmode="decimal" class="lgitprice" value="${itEdit?esc(it.price||''):esc(fmt(it.price,d.cur))}" placeholder="0" aria-label="가격" ${itEdit?'':'readonly tabindex="-1"'}><button type="button" class="lgitdel" aria-label="품목 삭제">×</button></div>`).join('');
+  const itemRows=()=>d.items.map((it,i)=>`<div class="lgit ${isDisc(it)?'lgitdisc':''} ${it.sel?'':'lgitoff'} ${(+it.qty||1)>1?'':'lgq1'}" data-i="${i}"><button type="button" class="lgitck" aria-pressed="${it.sel}" aria-label="이 품목 포함">${it.sel?'✓':''}</button><input type="text" class="lgitname" value="${esc(it.nameKo||it.name)}" placeholder="품목 이름" maxlength="60" ${itEdit?'':'readonly tabindex="-1"'}${it.nameKo&&it.name&&it.nameKo!==it.name?` title="${esc(it.name)}"`:''}><span class="lgqty"><span class="lgitx">×</span><button type="button" class="lgqm" aria-label="수량 하나 빼기">−</button><input type="text" inputmode="numeric" class="lgitqty" value="${esc(+it.qty||1)}" aria-label="수량" ${itEdit?'':'readonly tabindex="-1"'}><button type="button" class="lgqp" aria-label="수량 하나 더하기">+</button></span><input type="text" inputmode="decimal" class="lgitprice" value="${itEdit?esc(it.price||''):esc(fmt(it.price,d.cur))}" placeholder="0" aria-label="가격" ${itEdit?'':'readonly tabindex="-1"'}><button type="button" class="lgitdel" aria-label="품목 삭제">×</button></div>`).join('');
   const rcHtml=()=>{
     const has=d.receipt||d.items.length;
     const thumb=d.receipt?`<span class="lgthumb lgthumb-rc2" aria-label="사진 크게 보기">${thumbTag(d.receipt)}</span>`:'';
@@ -832,7 +835,8 @@ function openExpense(e,opts={}){
     const u=rcUse();
     const note=rcQuota()?`<div class="lgrcalert" role="alert"><b>오늘 영수증 자동 읽기 한도를 다 썼어요.</b> 사진 첨부와 직접 입력은 그대로 돼요. <b>${rcReset()}</b>에 다시 돼요.</div>`
       :`<div class="lgrcdesc">영수증 자동 읽기${u?` · 오늘 ${u.n}회`:''} · 매일 ${rcReset()} 초기화 (구글 무료 한도)</div>`;
-    return `<div class="lgf lgrcbox">${head}${body}${auto}${links}${note}</div>`; };
+    const rd=reading?`<div class="lgrcreading" role="status"><span class="lgspin lgspin-sm" aria-hidden="true"></span>영수증인지 읽는 중… 그동안 입력해도 돼요</div>`:'';
+    return `<div class="lgf lgrcbox">${head}${body}${rd}${auto}${links}${note}</div>`; };
   const ratioNote=()=>{ const all=d.items.reduce((a,x)=>a+(+x.price||0),0); if(!(d.rcTotal>0&&all>0))return ''; const r=d.rcTotal/all; return Math.abs(r-1)>0.005&&r>0.5&&r<1.5?'(세금·쿠폰 포함해 영수증 합계에 맞춤)':''; };
   const applyAuto=()=>{ if(!d.autoSum||!d.items.length)return; const v=Math.round(autoCalc(d.items,d.rcTotal)); g('#fAmt').value=v?String(v):''; partsHint(); customHint(); };
   const refreshSum=()=>{ applyAuto(); const el=g('#fItSum'); if(el)el.innerHTML=itSumText(); sum(); };
@@ -850,8 +854,8 @@ function openExpense(e,opts={}){
     if(F.day&&isNew&&!touched.has('#fDay')) clickChip('#fDay','d',F.day);
     if(F.cat&&isNew&&!touched.has('#fCat')) clickChip('#fCat','c',F.cat);
     paintRc(); partsHint(); customHint(); };
-  let busy=null;   // 사진 올리기·영수증 읽기 진행 중이면 저장이 기다림
-  const setBusy=on=>{ const b=g('#fRcCam'); if(b){b.disabled=on;b.classList.toggle('lgbusy',on)} const sv=g('#fSave'); if(sv){ sv.classList.toggle('lgbusy',on); sv.textContent=on?'사진 처리 중…':(isNew?'저장':'수정 저장'); } };
+  let busy=null, reading=false;   // 사진 올리기·영수증 읽기 진행 중이면 저장이 기다림
+  const setBusy=on=>{ const b=g('#fRcCam'); if(b){b.disabled=on;b.classList.toggle('lgbusy',on)} const sv=g('#fSave'); if(sv){ sv.classList.toggle('lgbusy',on); sv.textContent=on?'영수증 읽는 중…':(isNew?'저장':'수정 저장'); } };
   const attach=async camera=>{ const f=await pickPhoto(camera); if(!f)return;
     let done; busy=new Promise(r=>done=r); setBusy(true); showLoading('사진 올리는 중…');
     try{
@@ -859,12 +863,12 @@ function openExpense(e,opts={}){
       applyReceipt({imgId:P.imgId,rc:{isReceipt:false},fields:{},items:[]});   // 사진은 바로 붙임
       if(closed)return;
       if(P.queued){ toast('연결 안 됨 — 사진은 연결되면 올라가요 (영수증 읽기는 못 함)'); return; }
-      showLoading('사진을 붙였어요 · 영수증인지 읽는 중…',{skippable:true});
+      hideLoading(); reading=true; paintRc();   // 사진은 바로 보이고, 읽는 동안에도 입력 가능 (가리지 않음)
       try{ const R=await readReceiptData(P.data); if(closed)return;
         if(R.rc.isReceipt===false){ toast('사진을 붙였어요'); return; }
         applyReceipt({imgId:P.imgId,...R}); toast(R.ok?(R.items.length?`영수증 품목 ${R.items.length}개를 읽었어요`:'영수증을 읽었어요'):'합계를 못 읽었어요. 금액은 직접 넣어주세요'); }
       catch(e){ if(!closed){ if(e.code==='quota'){ toast('사진은 붙였어요 · '+receiptErr(e)); paintRc(); } else toast(e.code==='no_key'||e.code==='auth'?receiptErr(e):'사진은 붙였어요 (영수증 내용은 못 읽음)'); } }
-    }finally{ hideLoading(); busy=null; done(); if(!closed)setBusy(false); } };
+    }finally{ hideLoading(); reading=false; busy=null; done(); if(!closed){ setBusy(false); paintRc(); } } };
   const paintRc=()=>{ const box=g('#fRc'); box.innerHTML=rcHtml(); fillImages(box);
     box.querySelectorAll('.lgthumb').forEach(t=>t.onclick=ev=>{ev.preventDefault();openThumb(t)});
     g('#fRcCam').onclick=()=>attach(true); g('#fRcPick').onclick=()=>attach(false);
@@ -875,7 +879,11 @@ function openExpense(e,opts={}){
     box.querySelectorAll('.lgit').forEach(row=>{ const it=d.items[+row.dataset.i];
       row.querySelector('.lgitck').onclick=()=>{ const i=+row.dataset.i; it.sel=!it.sel; const linked=attached(i); linked.forEach(k=>{d.items[k].sel=it.sel}); [i,...linked].forEach(k=>{ const r=box.querySelector(`.lgit[data-i="${k}"]`); if(!r)return; r.classList.toggle('lgitoff',!d.items[k].sel); const b=r.querySelector('.lgitck'); b.setAttribute('aria-pressed',d.items[k].sel); b.textContent=d.items[k].sel?'✓':''; }); refreshSum(); if(linked.length&&!it.sel)toast(`붙어 있던 할인 ${linked.length}줄도 같이 뺐어요`); };
       row.querySelector('.lgitname').oninput=ev=>{it.nameKo=ev.target.value; if(!it.name)it.name=ev.target.value};
-      row.querySelector('.lgitqty').oninput=ev=>{it.qty=parseNum(ev.target.value)||1};
+      // 수량: −/+ 버튼(직접 입력도 됨). 가격은 그 줄 합계라서 수량이 바뀌면 개당 가격 기준으로 같이 바뀜
+      const setQty=q=>{ q=Math.max(1,Math.min(999,Math.round(q)||1)); const old=+it.qty||1; if(q===old)return; if(+it.price){ it.price=Math.round(it.price/old*q); const pi=row.querySelector('.lgitprice'); if(pi)pi.value=String(it.price); } it.qty=q; row.querySelector('.lgitqty').value=String(q); row.classList.toggle('lgq1',q<=1); refreshSum(); };
+      row.querySelector('.lgitqty').onchange=ev=>setQty(parseNum(ev.target.value));
+      row.querySelector('.lgqm').onclick=()=>setQty((+it.qty||1)-1);
+      row.querySelector('.lgqp').onclick=()=>setQty((+it.qty||1)+1);
       row.querySelector('.lgitprice').oninput=ev=>{it.price=parseNum(ev.target.value); refreshSum()};
       row.querySelector('.lgitdel').onclick=()=>{ d.items.splice(+row.dataset.i,1); paintRc(); }; });
     applyAuto();
@@ -1000,7 +1008,7 @@ function openSettings(){
 /* ---------- mount ---------- */
 function mount(el,memoEl){
   root=el; root.classList.add('lg'); root.innerHTML=`<div class="lg-view"></div>`; view=q('.lg-view',root);
-  if(!ov){ ov=document.createElement('div'); ov.className='lg lgov'; ov.innerHTML=`<div class="lgscrim"></div><div class="lgsheet" role="dialog" aria-modal="true"><div class="lgin"></div></div><div class="lgtoast"></div>`; document.body.appendChild(ov); q('.lgscrim',ov).onclick=closeSheet; }
+  if(!ov){ ov=document.createElement('div'); ov.className='lg lgov'; ov.addEventListener('keydown',guardEnter); ov.innerHTML=`<div class="lgscrim"></div><div class="lgsheet" role="dialog" aria-modal="true"><div class="lgin"></div></div><div class="lgtoast"></div>`; document.body.appendChild(ov); q('.lgscrim',ov).onclick=closeSheet; }
   memoRoot=memoEl||document.getElementById('ledger-memo-root')||null;
   userEl=document.getElementById('ledger-user')||null; if(userEl)userEl.classList.add('lgslot');
   if(memoRoot){ memoRoot.classList.add('lg'); memoRoot.innerHTML=`<div class="lg-view"></div>`; memoView=q('.lg-view',memoRoot); }

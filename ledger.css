@@ -782,4 +782,21 @@ body.body-edit .ev,body.body-edit .card{-webkit-user-select:none;user-select:non
 .lg form.lgviewmode .lgf>label{display:none}
 .lg form.lgviewmode .lgrcbox>.lgithead label{display:block}
 @media (min-width:900px){ .lg .lgkv2 dt,.lg .lgkv2 dd{font-size:15px} }
-
+/* 품목 수량: 보기는 "× 2", 수정은 [− 2 +] 버튼. 수정 중에는 사진을 위로 올려 품목 줄을 넓게 */
+.lg .lgit .lgqty{display:flex;align-items:center;gap:2px}
+.lg .lgit .lgqm,.lg .lgit .lgqp{display:none;width:26px;height:26px;border-radius:7px;border:1px solid var(--line);background:var(--surface);color:var(--fg);font-size:16px;font-weight:700;line-height:1;padding:0;place-items:center}
+.lg .lgit{grid-template-columns:18px minmax(0,1fr) auto 64px 0}
+.lg .lgitlist:not(.lgediting) .lgit.lgq1{grid-template-columns:18px minmax(0,1fr) 64px 0}
+.lg .lgitlist:not(.lgediting) .lgit.lgq1 .lgqty{display:none}
+.lg .lgitlist.lgediting .lgit{grid-template-columns:18px minmax(0,1fr) auto 72px 22px;gap:4px;padding:3px 0}
+.lg .lgitlist.lgediting .lgit .lgitx{display:none}
+.lg .lgitlist.lgediting .lgit .lgqm,.lg .lgitlist.lgediting .lgit .lgqp{display:grid}
+.lg .lgitlist.lgediting .lgit .lgqty .lgitqty{display:block}
+.lg .lgrc:has(.lgitlist.lgediting){flex-direction:column}
+.lg .lgrc:has(.lgitlist.lgediting) .lgthumb-rc2{width:64px;height:64px}
+.lg .lgrc:has(.lgitlist.lgediting) .lgitlist{width:100%}
+/* 영수증 읽는 중 (폼 안, 화면 안 가림) */
+.lg .lgrcreading{display:flex;align-items:center;gap:8px;margin-top:8px;padding:8px 10px;border-radius:10px;background:var(--bg);font-size:13px;font-weight:600;color:var(--fg)}
+.lg .lgspin.lgspin-sm{width:16px;height:16px;border-width:2px;flex:none}
+/* 날짜·카테고리는 위쪽(수정할 때만, 보기에서는 요약 표에 나옴) */
+.lg form.lgviewmode .lgeditrow{display:none}
