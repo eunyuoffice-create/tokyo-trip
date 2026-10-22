@@ -586,6 +586,9 @@ body.body-edit .ev,body.body-edit .card{-webkit-user-select:none;user-select:non
 .lg .lginfo-b .kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:14px;margin:4px 0 8px} .lg .lginfo-b .kv dt{color:var(--muted);font-size:12.5px;padding-top:2px} .lg .lginfo-b .kv dd{margin:0;overflow-wrap:anywhere}
 .lg .lginfo-b .lgthumb-sec{margin:4px 0 8px}
 .lg .lginfo-b .cl label span b{display:block;margin-bottom:1px;color:var(--fg)}
+.lg .lginfo-b .cl .lgcldesc{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.lg .lginfo-b .cl .lgcldesc.lgopen{display:block;-webkit-line-clamp:unset;overflow:visible}
+.lg .lginfo-b .cl .lgclmore{font:inherit;font-size:12.5px;font-weight:600;color:var(--accent);background:none;border:0;padding:4px 0 0;cursor:pointer;display:block;text-decoration:none}
 .lg .lginfo-b .cl input:checked + span b,.lg .lginfo-b .cl input:checked + .lgthumb + span b{color:var(--muted)}
 .lg .lginfo-b .cl .lgthumb-xs{width:64px;height:64px;border-radius:8px;flex:none}
 .lg .lginfo-il{display:inline-block;margin-top:3px;color:#2F5FB3;font-size:12.5px;font-weight:600;text-decoration:none}
