@@ -441,7 +441,7 @@ function infoCardHtml(m0,open){
     body=coverHtml(m.cover)+legs.map(x=>`<div class="flight"><div><div class="ap">${esc(x.f)}</div><div class="tm">${esc(x.ft)}</div><div class="sm">${esc([x.d,x.fs].filter(Boolean).join(' · '))}</div></div><div class="arrow">${esc(x.no||'')}<br>→</div><div class="r"><div class="ap">${esc(x.t)}</div><div class="tm">${esc(x.tt)}</div><div class="sm">${esc(x.ts||'')}</div></div></div>`).join('')+(String(m.body||'').trim()?`<div style="margin-top:10px">${infoSub(m.body)}</div>`:'')+linksBtns(m.links); }
   else if(m.type==='hotel'){ const h=m.hotel||{}; const mapq=h.q||h.addr||m.title;
     body=coverHtml(m.cover)+`<dl class="kv">${h.addr?`<dt>주소</dt><dd>${esc(h.addr)}</dd>`:''}${(h.cin||h.cout)?`<dt>체크인·아웃</dt><dd>${esc([h.cin&&'체크인 '+h.cin,h.cout&&'체크아웃 '+h.cout].filter(Boolean).join(' · '))}</dd>`:''}${h.tel?`<dt>전화</dt><dd><a href="tel:${esc(h.tel)}">${esc(h.tel)}</a></dd>`:''}</dl>`+(String(m.body||'').trim()?`<div style="margin-top:10px">${infoSub(m.body)}</div>`:'')+`<div class="lginfo-links">${mapq?`<a class="btn map" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapq)}" target="_blank" rel="noopener">지도 열기 ↗</a>`:''}${(m.links||[]).filter(x=>x&&x.u).map(x=>`<a class="btn link" href="${esc(x.u)}" target="_blank" rel="noopener">${esc(x.l||x.u)} ↗</a>`).join('')}</div>`; }
-  else { const blocks=Array.isArray(m.blocks)?m.blocks:[]; let items=[]; const flush=()=>{ if(!items.length)return ''; const h=`<div class="cl">${items.map(it=>`<label><input type="checkbox" data-blk="${esc(m.id)}|${esc(it.id)}" ${it.done?'checked':''}>${it.img?`<span class="lgthumb lgthumb-xs" data-img="${esc(it.img)}">${imgTag(it.img,'thumb')}</span>`:''}<span><b>${esc(it.title||'')}</b>${it.desc?mdLinks(it.desc):''}${it.link&&it.link.u?`<a class="lginfo-il" href="${esc(it.link.u)}" target="_blank" rel="noopener">${esc(it.link.l||'링크')} ↗</a>`:''}</span></label>`).join('')}</div>`; items=[]; return h; };
+  else { const blocks=Array.isArray(m.blocks)?m.blocks:[]; let items=[]; const flush=()=>{ if(!items.length)return ''; const h=`<div class="cl">${items.map(it=>`<label><input type="checkbox" data-blk="${esc(m.id)}|${esc(it.id)}" ${it.done?'checked':''}>${it.img?`<span class="lgthumb lgthumb-xs" data-img="${esc(it.img)}">${imgTag(it.img,'thumb')}</span>`:''}<span><b>${esc(it.title||'')}</b>${it.desc?mdLinks(it.desc):''}${it.link&&it.link.u?`<a class="lginfo-il" href="${esc(it.link.u)}" target="_blank" rel="noopener">${esc(it.link.l||'링크')} ↗</a>`:''}</span>${items.length>1?`<span class="lgclgrip" data-clgrip aria-label="끌어서 순서 바꾸기">⋮⋮</span>`:''}</label>`).join('')}</div>`; items=[]; return h; };
     body=coverHtml(m.cover)+(String(m.body||'').trim()?infoSub(m.body):'')+linksBtns(m.links);
     blocks.forEach(b=>{ if(b.k==='item'){items.push(b);return} body+=flush(); body+=`<div class="sub-h">${esc(b.title||'')}</div>`+(b.img?`<span class="lgthumb lgthumb-cover lgthumb-sec" data-img="${esc(b.img)}">${imgTag(b.img)}</span>`:'')+(b.body?infoSub(b.body):'')+linksBtns(b.links); });
     body+=flush(); const its=blocks.filter(b=>b.k==='item'); if(its.length)body+=`<div class="lgsub" style="text-align:right">${its.filter(i=>i.done).length}/${its.length} 완료</div>`; }
@@ -617,6 +617,24 @@ function startDrag(ev,handle){
   document.addEventListener('touchmove',stopTouch,{passive:false}); window.addEventListener('touchend',end,{once:true});
 }
 /* 머리글을 350ms 길게 누르면 드래그 시작. 그 전에 움직이면 스크롤, 그 전에 떼면 펼치기(기본 동작) */
+/* 메모 체크 항목: 오른쪽 ⋮⋮ 를 끌어서 같은 묶음 안에서 순서 바꾸기 */
+function clDrag(ev,h){ if(ev.button&&ev.button!==0)return; ev.preventDefault(); ev.stopPropagation(); try{h.setPointerCapture(ev.pointerId)}catch(e){}
+  const row=h.closest('label'), list=row.parentElement; const rows=[...list.children]; const from=rows.indexOf(row); if(rows.length<2)return;
+  const se=document.scrollingElement||document.documentElement; const sy=()=>se.scrollTop;
+  const rects=rows.map(r=>{const b=r.getBoundingClientRect();return {top:b.top+sy(),h:b.height,mid:b.top+sy()+b.height/2}}); const gap=Math.max(0,rects[1].top-(rects[0].top+rects[0].h)); const step=rects[from].h+gap;
+  const startPage=ev.clientY+sy(); let to=from, moved=false, lastY=ev.clientY, alive=true; row.classList.add('lgdragging'); document.body.classList.add('lgnoselect'); window.__dragActive=true;
+  const paint=()=>{ const dy=(lastY+sy())-startPage; row.style.transform=`translateY(${dy}px)`; const center=rects[from].mid+dy; let n=0; rows.forEach((r,j)=>{if(j!==from&&rects[j].mid<center)n++}); to=n; rows.forEach((r,j)=>{ if(j===from)return; let d2=0; if(j<from&&j>=to)d2=step; else if(j>from&&j<=to)d2=-step; r.style.transform=d2?`translateY(${d2}px)`:''; }); };
+  const tick=()=>{ if(!alive)return; const H=window.innerHeight; let v=0; if(lastY<80)v=-Math.min(18,(80-lastY)/4+3); else if(lastY>H-100)v=Math.min(18,(lastY-(H-100))/4+3); if(v&&moved){ const b=sy(); se.scrollTop+=v; if(sy()!==b)paint(); } requestAnimationFrame(tick); }; requestAnimationFrame(tick);
+  const move=e=>{ if(e.pointerId!==ev.pointerId)return; lastY=e.clientY; moved=moved||Math.abs(lastY-ev.clientY)>4; paint(); };
+  const stopTouch=e=>e.preventDefault();
+  const end=e=>{ if(e&&e.pointerId!==undefined&&e.pointerId!==ev.pointerId)return; alive=false; window.removeEventListener('pointermove',move,true); window.removeEventListener('pointerup',end,true); window.removeEventListener('pointercancel',end,true); document.removeEventListener('touchmove',stopTouch);
+    rows.forEach(r=>r.style.transform=''); row.classList.remove('lgdragging'); document.body.classList.remove('lgnoselect'); setTimeout(()=>{window.__dragActive=false},0); if(!moved||to===from)return;
+    const ids=rows.map(r=>r.querySelector('[data-blk]').dataset.blk.split('|')); const mid=ids[0][0]; const order=ids.map(x=>x[1]); const [x]=order.splice(from,1); order.splice(to,0,x);
+    if(to>from)list.insertBefore(row,rows[to].nextSibling); else list.insertBefore(row,rows[to]);
+    const m=S.memos.find(y=>y.id===mid); if(!m)return; const d=infoDocOf(m); const byId=new Map(d.blocks.map(b=>[b.id,b])); const set=new Set(order); let k=0;
+    const blocks=d.blocks.map(b=>set.has(b.id)?byId.get(order[k++]):b);
+    write([{op:'update',col:'memos',id:mid,data:{type:'doc',blocks,cover:d.cover||'',links:d.links||[],items:[]}}]); };
+  window.addEventListener('pointermove',move,true); window.addEventListener('pointerup',end,true); window.addEventListener('pointercancel',end,true); document.addEventListener('touchmove',stopTouch,{passive:false}); }
 function pressToDrag(ev,sm){
   if(ev.target.closest('[data-mdone]'))return; if(ev.button&&ev.button!==0)return;
   const x0=ev.clientX,y0=ev.clientY; let fired=false;
@@ -645,6 +663,7 @@ function bind(c){
   qa('.lginfo-il',c).forEach(a=>a.onclick=ev=>ev.stopPropagation());
   qa('details[data-accm] > summary',c).forEach(sm=>{sm.onpointerdown=ev=>pressToDrag(ev,sm); sm.oncontextmenu=ev=>ev.preventDefault(); sm.onclick=ev=>{if(sm.dataset.suppress){ev.preventDefault();ev.stopPropagation()}}});
   qa('[data-accm]',c).forEach(d=>d.ontoggle=()=>{if(d.open)S.openMemos.add(d.dataset.accm);else S.openMemos.delete(d.dataset.accm)});
+  qa('[data-clgrip]',c).forEach(h=>{ h.onclick=ev=>{ev.preventDefault();ev.stopPropagation()}; h.onpointerdown=ev=>clDrag(ev,h); });
   qa('[data-blk]',c).forEach(cb=>cb.onchange=()=>{const [mid,bid]=cb.dataset.blk.split('|'); const m=S.memos.find(x=>x.id===mid); if(!m)return; const d=infoDocOf(m); const blocks=d.blocks.map(b=>b.id===bid?{...b,done:!b.done}:b); write([{op:'update',col:'memos',id:mid,data:{type:'doc',blocks,cover:d.cover||'',links:d.links||[],items:[]}}]);});
   qa('[data-tgl-m]',c).forEach(b=>b[b.tagName==='INPUT'?'onchange':'onclick']=()=>{const [mid,iid]=b.dataset.tglM.split('|');const m=S.memos.find(x=>x.id===mid);if(!m)return;const items=memoItems(m).map(it=>it.id===iid?{...it,done:!it.done,doneBy:!it.done?S.me:null}:it);write([{op:'update',col:'memos',id:mid,data:{items}}])});
   // setup / login (정산 탭 쪽에만 있다)
