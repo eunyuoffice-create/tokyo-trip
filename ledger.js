@@ -385,10 +385,11 @@ function rowHtml(e){
 const svgDrag='<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.8"/><circle cx="15" cy="6" r="1.8"/><circle cx="9" cy="12" r="1.8"/><circle cx="15" cy="12" r="1.8"/><circle cx="9" cy="18" r="1.8"/><circle cx="15" cy="18" r="1.8"/></svg>';
 const svgList='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="7" height="7" rx="1.5"/><path d="M5 7.5l1.5 1.5L9 6"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 7.5h7M14 17.5h7"/></svg>';
 const svgText='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17v3z"/><path d="M13.5 6.5l3 3"/><path d="M4 4h7"/></svg>';
+const isTripDoc=m=>m.type==='flight'||m.type==='hotel';   // 항공편·숙소는 메모 탭에 안 보이고 헤더 '항공·숙소' 시트에서만
 function viewMemo(){
   let h=`<div class="lgsync-slot">${syncHtml()}</div>`;
   const isInfo=m=>m.cat==='info';
-  const secs=[{k:'mine',title:'내 메모',sub:`${pname(S.me)}만 봄`,list:S.memos.filter(m=>ownerOf(m)===S.me&&!isInfo(m))},{k:'shared',title:'공용 메모',sub:'둘 다 보고 체크',list:S.memos.filter(m=>isShared(m)&&!isInfo(m))},{k:'info',title:'여행 정보',sub:'항공·숙소·쇼핑 같은 안내 글',list:S.memos.filter(isInfo)}];
+  const secs=[{k:'mine',title:'내 메모',sub:`${pname(S.me)}만 봄`,list:S.memos.filter(m=>ownerOf(m)===S.me&&!isInfo(m))},{k:'shared',title:'공용 메모',sub:'둘 다 보고 체크',list:S.memos.filter(m=>isShared(m)&&!isInfo(m))},{k:'info',title:'여행 정보',sub:'쇼핑·준비물 같은 안내 글',list:S.memos.filter(m=>isInfo(m)&&!isTripDoc(m))}];
   secs.forEach(sec=>{
     if(!sec.list.length)return;
     const list=sec.list.slice().sort((a,b)=>(memoDone(a)?1:0)-(memoDone(b)?1:0)||(b.order||b.ts||0)-(a.order||a.ts||0));
