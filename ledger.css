@@ -846,3 +846,25 @@ body.body-edit .ev,body.body-edit .card{-webkit-user-select:none;user-select:non
 .lg .lgsetme .lgbtn{flex:none;width:auto;padding:0 18px;height:40px;background:var(--accent-soft);color:var(--accent)}
 .lg .lgconfirm{font-size:15px;line-height:1.6;margin:4px 0 6px}
 
+/* 공용·내 메모 항목 칸: input → 늘어나는 textarea (2026-10-22, 길게 쓰면 잘려 보여서) */
+.lg .lgsheet .lgli textarea.lgtxin,.lg .lgaddli textarea{flex:1;min-width:0;height:auto;min-height:34px;resize:none;overflow:hidden;line-height:1.45;padding:6px 2px;border:0;border-bottom:1px solid transparent;background:none;font:inherit;font-size:14.5px;border-radius:0;overflow-wrap:anywhere;display:block}
+.lg .lgaddli textarea{border-bottom-color:var(--line)}
+.lg .lgsheet .lgli textarea.lgtxin:focus,.lg .lgaddli textarea:focus{outline:none;border-bottom-color:var(--accent)}
+.lg .lgsheet .lgli{align-items:flex-start}
+
+
+/* 여행 정보 시트 (헤더 항공·숙소 버튼, ledger.js openTripInfo) */
+.lg .lgtiseg{margin:0 0 12px}
+.lg .lgtiwrap .lginfo > summary{cursor:default;list-style:none}
+.lg .lgtiwrap .lginfo > summary::-webkit-details-marker{display:none}
+.lg .lgtiwrap .lginfo > summary .lgchevbtn,.lg .lgtiwrap .lginfo > summary::after{display:none}
+/* 숙소 카드 복사용 값: 모바일은 접어두고 버튼으로 펼침, PC는 항상 펼침 (ledger.js infoCardHtml) */
+.lg .lgcpwrap{margin-top:12px}
+.lg .lgcptoggle{width:100%;height:40px;border-radius:12px;background:var(--chip);font-size:13.5px;font-weight:600;color:var(--fg)}
+.lg .lgcpwrap:not(.lgopen) > .lgcpl{display:none}
+.lg .lgcpwrap.lgopen > .lgcptoggle{margin-bottom:8px}
+@media (min-width:900px){ .lg .lgcptoggle{display:none} .lg .lgcpwrap:not(.lgopen) > .lgcpl{display:flex} }
+/* 헤더 이름 = 설정 버튼. 이름 옆 아주 작은 톱니 */
+.lgslot .lguser.lguser-name{gap:4px}
+.lgslot .lguser .lgminigear{display:inline-flex;margin-left:1px;color:var(--muted)}
+.lgslot .lguser .lgminigear svg{width:11px;height:11px}

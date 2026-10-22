@@ -351,20 +351,84 @@ window.NOTE_V2={ver:2,docs:{
 → 묶음(멀티팩)이 낱개보다 싼 게 많음 · 액체류는 캐리어에`}
 ]},
 
-'note-shop-drug':{v:3,blocks:[
+'note-shop-drug':{v:4,blocks:[
 {k:'sec',title:'요령',body:
-`- 마츠키요 · 선드러그 · 코코카라파인
+`- 마츠키요 · 선드러그 · 코코카라파인 (마츠키요는 앱 쿠폰 + 면세 중복)
 - 같은 의약품이 돈키보다 싼 경우 많음 → 약은 여기서 비교
-- 5,000엔 이상 면세, 여권 지참. 소모품은 밀봉 포장 (일본 안에서 뜯으면 안 됨)`},
-{k:'item',img:'',title:'스킨케어 · 요즘 핫한 것 (2026)',desc:
-`**화장수** d 프로그램 모이스트 케어 로션 EX (@cosme 2026 상반기 총합 대상) · 엘릭시르 브라이트닝 로션 しっとり (미들프라이스 화장수 1위) · 하다라보 고쿠준 로션
-**에센스** 메라노 CC 프리미엄 에센스 20ml 1,480엔 (한국 직구가의 절반쯤) · 소피나 iP 베이스 케어 (하반기 화제)
-**UV** 엘릭시르 톤업 UV 유액 (10월 신규) · 아넷사 퍼펙트 UV 60ml 약 2,780엔
-**마츠키요 PB** !!matsukiyo 레티놀 바디밀크 400ml 657엔 (2026 대란템, 품절 잦음)!! · matsukiyo 클렌징 오일 250ml 547엔
-**기타** 비오레 · 큐어 필링젤 · 멘소래담 립 · 사카무케아 (손거스러미) · 큐렐 딥 배리어 세럼 4,950엔 (민감 건조)
-→ 마츠키요는 앱 쿠폰 + 면세 중복`},
-{k:'item',img:'',title:'상비약 (돈키와 가격 비교)',desc:
-`카베진 · 오타이산 · 이브 · 파브론 · 무히 · 동전파스 · 휴족시간`}
+- 5,000엔 이상 면세, 여권 지참. 소모품은 밀봉 포장 (일본 안에서 뜯으면 안 됨)
+- 가격은 일본 드럭스토어 온라인(세임스 등) 기준 세금 포함 · 매장마다 다름`},
+{k:'sec',title:'화장수',body:
+``},
+{k:'item',img:'img/drug/dprogram.jpg',title:'d프로그램 모이스트 케어 로션 EX · ｄプログラム モイストケア ローション EX',desc:
+`125mL 3,300엔
+**메모** @cosme 2026 상반기 총합 대상 · 민감 피부용`},
+{k:'item',img:'img/drug/elixir-lotion.jpg',title:'엘릭시르 브라이트닝 로션 · エリクシール ブライトニング ローション しっとり ca',desc:
+`170mL 약 3,740엔 · 2026.2 리뉴얼 (구 WT II)
+**메모** 미들프라이스 화장수 1위`},
+{k:'item',img:'img/drug/hadalabo.jpg',title:'하다라보 고쿠준 로션 · 肌ラボ 極潤ヒアルロン液',desc:
+`170mL 약 800엔
+**메모** 가성비 보습 기본템`},
+{k:'sec',title:'에센스 · 세럼',body:
+``},
+{k:'item',img:'img/drug/melanocc.jpg',title:'메라노 CC 프리미엄 에센스 · メラノCC 薬用しみ集中対策 プレミアム美容液',desc:
+`20mL 약 1,480엔
+**메모** 한국 직구가의 절반쯤 · 비타민C 기미 집중`},
+{k:'item',img:'img/drug/sofina.jpg',title:'소피나 iP 베이스 케어 세럼 · ソフィーナ iP ベースケア セラム',desc:
+`90g 5,500엔
+**메모** 세안 후 첫 단계에 바르는 토대 미용액 · 하반기 화제`},
+{k:'item',img:'img/drug/curel.jpg',title:'큐렐 각층 심부 배리어 미용액 · キュレル 潤浸保湿 角層深部バリア美容液',desc:
+`30mL 4,950엔 · 2026.3 출시
+**메모** 민감 · 건조 피부용`},
+{k:'sec',title:'선크림',body:
+``},
+{k:'item',img:'img/drug/elixir-uv.jpg',title:'엘릭시르 데이케어 레볼루션 톤업 · デーケアレボリューション トーンアップ',desc:
+`35g 약 3,410엔 · 베이비핑크 / 퓨어베이지 2색
+**메모** 퓨어베이지는 MAQUIA 2026 톤업 UV 수상`},
+{k:'item',img:'img/drug/anessa.jpg',title:'아넷사 퍼펙트 UV 스킨케어 밀크 · アネッサ パーフェクトUV スキンケアミルク',desc:
+`60mL 약 3,058엔
+**메모** 금색 병 · 워터프루프 대표템`},
+{k:'sec',title:'마츠키요 자체 상품 (마츠키요에만)',body:
+``},
+{k:'item',img:'img/drug/mk-bodymilk.jpg',title:'matsukiyo 폴리배리어 바디밀크 톤 브라이트닝 · ポリュバリア ボディミルク',desc:
+`400mL 약 2,178엔 · 2026.4 출시 · 레티놀 함유
+**메모** 2026 대란템 · !!품절 잦음!!`},
+{k:'item',img:'img/drug/mk-cleansing.jpg',title:'matsukiyo 클렌징 오일 · クレンジングオイル',desc:
+`250mL 547~767엔
+**메모** 가성비 클렌징`},
+{k:'sec',title:'기타',body:
+``},
+{k:'item',img:'img/drug/cure.jpg',title:'큐어 내추럴 아쿠아 젤 · Cure ナチュラルアクアジェル',desc:
+`250g 약 2,750엔
+**메모** 각질 필링젤`},
+{k:'item',img:'img/drug/mentholatum.jpg',title:'멘소래담 약용 립스틱 XD · 薬用リップスティックXD',desc:
+`4g 약 108엔
+**메모** 싸고 가벼운 선물 · 2개입도 있음`},
+{k:'item',img:'img/drug/sakamukea.jpg',title:'사카무케아 · サカムケアａ',desc:
+`10g 약 979엔
+**메모** 손거스러미 · 갈라진 곳에 바르는 액체 반창고`},
+{k:'sec',title:'상비약 (돈키와 가격 비교)',body:
+`- 약은 1인 구매 수량 제한이 있을 수 있음 · 한국 반입은 개인 사용량만`},
+{k:'item',img:'img/drug/cabagin.jpg',title:'카베진 · キャベジンコーワαプラス',desc:
+`300정 약 2,398엔 (작은 통도 있음)
+**메모** 위장약`},
+{k:'item',img:'img/drug/ohta.jpg',title:'오타이산 · 太田胃散〈分包〉S',desc:
+`50포 약 1,848엔 (16포도 있음)
+**메모** 소화 · 과식`},
+{k:'item',img:'img/drug/eve.jpg',title:'이브 A정 · イブA錠',desc:
+`60정 약 877엔
+**메모** 진통 · 두통 · 생리통`},
+{k:'item',img:'img/drug/pabron.jpg',title:'파브론 골드 A · パブロンゴールドA〈錠〉',desc:
+`210정 약 2,068엔
+**메모** 종합감기약`},
+{k:'item',img:'img/drug/muhi.jpg',title:'무히 S · ムヒＳ',desc:
+`20g 약 657엔
+**메모** 벌레 물린 데 가려움`},
+{k:'item',img:'img/drug/roihi.jpg',title:'동전파스 · ロイヒつぼ膏',desc:
+`156매 약 1,042엔
+**메모** 어깨 · 허리 결림`},
+{k:'item',img:'img/drug/kyusoku.jpg',title:'휴족시간 · 休足時間',desc:
+`18매 약 968엔
+**메모** 많이 걸은 날 밤에 다리에`}
 ]},
 
 'note-shop-daiso':{blocks:[

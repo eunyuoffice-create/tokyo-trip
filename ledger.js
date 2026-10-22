@@ -253,7 +253,7 @@ function render(){
   if(memoView){ memoView.innerHTML=S.screen==='main'?viewMemo():viewMemoLocked(); bind(memoView); fillImages(memoView); if(window.TripSite&&TripSite.renderChips&&TripSite.state.tab==='memo')TripSite.renderChips(); }
 }
 function userHtml(){
-  if(S.screen==='main') return `<span class="lguser lguser-name">${svgUser}<span>${esc(pname(S.me))}</span></span><button class="lguser lguser-gear" data-act="settings" aria-label="설정">${svgGear}</button>`;
+  if(S.screen==='main') return `<button type="button" class="lguser lguser-name" data-act="settings" aria-label="설정">${svgUser}<span>${esc(pname(S.me))}</span><span class="lgminigear" aria-hidden="true">${svgGear}</span></button>`;   // 이름을 누르면 설정, 옆에 작은 톱니
   if(S.screen==='login'||S.screen==='setup') return `<button class="lguser lguser-off" data-act="login" aria-label="${S.screen==='setup'?'정산 노트 시작':'로그인'}" title="${S.screen==='setup'?'시작하기':'로그인'}">${svgIn}</button>`;
   return '';
 }
@@ -449,7 +449,9 @@ function infoCardHtml(m0,open){
   if(m.type==='flight'){ const legs=Array.isArray(m.legs)?m.legs:[];
     body=coverHtml(m.cover)+legs.map(x=>`<div class="flight"><div><div class="ap">${esc(x.f)}</div><div class="tm">${esc(x.ft)}</div><div class="sm">${esc([x.d,x.fs].filter(Boolean).join(' · '))}</div></div><div class="arrow">${x.no?`<button type="button" class="lgcpno" data-copy="${esc(x.no)}" aria-label="편명 복사">${esc(x.no)}</button>`:''}<br>→</div><div class="r"><div class="ap">${esc(x.t)}</div><div class="tm">${esc(x.tt)}</div><div class="sm">${esc(x.ts||'')}</div></div></div>`).join('')+(legs.length?`<div class="lgcpbar"><button type="button" class="lgcpbtn" data-copy="${esc(flightText(m))}">항공편 정보 전체 복사</button></div>`:'')+(String(m.body||'').trim()?`<div style="margin-top:10px">${infoSub(m.body)}</div>`:'')+linksBtns(m.links); }
   else if(m.type==='hotel'){ const h=m.hotel||{}; const mapq=h.q||h.addrJa||h.addr||m.title;
-    body=coverHtml(m.cover)+`<div class="lgcpl">${cpRow('호텔 이름 · 현지',h.nameJa)}${cpRow('호텔 이름 · 영어',h.nameEn)}${cpRow('우편번호',h.zip)}${cpRow('주소 · 현지',h.addrJa)}${cpRow('주소 · 영어',h.addrEn)}${cpRow('전화',h.tel,h.tel?`<a class="lgcpbtn" href="tel:${esc(h.tel)}">전화</a>`:'')}</div><dl class="kv">${h.addr?`<dt>위치</dt><dd>${esc(h.addr)}</dd>`:''}${(h.cin||h.cout)?`<dt>체크인·아웃</dt><dd>${esc([h.cin&&'체크인 '+h.cin,h.cout&&'체크아웃 '+h.cout].filter(Boolean).join(' · '))}</dd>`:''}</dl>`+(String(m.body||'').trim()?`<div style="margin-top:10px">${infoSub(m.body)}</div>`:'')+`<div class="lginfo-links">${mapq?`<a class="btn map" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapq)}" target="_blank" rel="noopener">지도 열기 ↗</a>`:''}${(m.links||[]).filter(x=>x&&x.u).map(x=>`<a class="btn link" href="${esc(x.u)}" target="_blank" rel="noopener">${esc(x.l||x.u)} ↗</a>`).join('')}</div>`; }
+    // 위치·체크인아웃·메모·지도가 먼저, 복사용 값은 맨 아래 (모바일은 '자세히 보기'로 펼침, PC는 항상 펼침)
+    const cps=`${cpRow('호텔 이름 · 현지',h.nameJa)}${cpRow('호텔 이름 · 영어',h.nameEn)}${cpRow('우편번호',h.zip)}${cpRow('주소 · 현지',h.addrJa)}${cpRow('주소 · 영어',h.addrEn)}${cpRow('전화',h.tel,h.tel?`<a class="lgcpbtn" href="tel:${esc(h.tel)}">전화</a>`:'')}`;
+    body=coverHtml(m.cover)+`<dl class="kv">${h.addr?`<dt>위치</dt><dd>${esc(h.addr)}</dd>`:''}${(h.cin||h.cout)?`<dt>체크인·아웃</dt><dd>${esc([h.cin&&'체크인 '+h.cin,h.cout&&'체크아웃 '+h.cout].filter(Boolean).join(' · '))}</dd>`:''}</dl>`+(String(m.body||'').trim()?`<div style="margin-top:10px">${infoSub(m.body)}</div>`:'')+`<div class="lginfo-links">${mapq?`<a class="btn map" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapq)}" target="_blank" rel="noopener">지도 열기 ↗</a>`:''}${(m.links||[]).filter(x=>x&&x.u).map(x=>`<a class="btn link" href="${esc(x.u)}" target="_blank" rel="noopener">${esc(x.l||x.u)} ↗</a>`).join('')}</div>`+(cps?`<div class="lgcpwrap"><button type="button" class="lgcptoggle" data-cptoggle>복사용 정보 자세히 보기</button><div class="lgcpl">${cps}</div></div>`:''); }
   else { const blocks=Array.isArray(m.blocks)?m.blocks:[]; let items=[]; const flush=()=>{ if(!items.length)return ''; const h=`<div class="cl">${items.map(it=>`<label><input type="checkbox" data-blk="${esc(m.id)}|${esc(it.id)}" ${it.done?'checked':''}>${it.img?`<span class="lgthumb lgthumb-xs" data-img="${esc(it.img)}">${imgTag(it.img,'thumb')}</span>`:''}<span><b>${esc(it.title||'')}</b>${it.desc?`<span class="lgcldesc">${mdLinks(it.desc)}</span>`:''}${it.link&&it.link.u?`<a class="lginfo-il" href="${esc(it.link.u)}" target="_blank" rel="noopener">${esc(it.link.l||'링크')} ↗</a>`:''}</span><span class="lgclgrip" data-clgrip aria-label="끌어서 순서 바꾸기">⋮⋮</span></label>`).join('')}</div>`; items=[]; return h; };
     body=coverHtml(m.cover)+(String(m.body||'').trim()?infoSub(m.body):'')+linksBtns(m.links);
     blocks.forEach(b=>{ if(b.k==='item'){items.push(b);return} body+=flush(); body+=`<div class="sub-h">${esc(b.title||'')}</div>`+(b.img?`<span class="lgthumb lgthumb-cover lgthumb-sec" data-img="${esc(b.img)}">${imgTag(b.img)}</span>`:'')+(b.body?infoSub(b.body):'')+linksBtns(b.links); });
@@ -469,13 +471,8 @@ const FORMAT_HELP=`<details class="lghelp"><summary>글씨 꾸미기 · 서식 �
 <div class="lghelp-row"><code>- 항목</code><span>→ 줄 맨 앞에 쓰면 점 목록</span></div>
 <div class="lghelp-row"><code>[이름](https://…)</code><span>→ 이름 ↗ 링크 버튼. 주소만 써도 자동 링크</span></div>
 <div class="lghelp-row"><code>빈 줄</code><span>→ 문단 나누기. 그 외 특수문자(→ # &lt; &gt; 등)는 그대로 보여요</span></div></div></details>`;
-function chooseInfo(){
-  openSheet(`<h2>여행 정보 쓰기<button type="button" data-close>닫기</button></h2><div class="lgopts">
-    <button type="button" data-mk="doc"><span class="lgic">${svgText}</span><div><b>글쓰기</b><span>제목·라벨·대표 사진·메모·링크. 아래에 단락(소제목+메모+링크)과 체크 항목을 계속 추가.</span></div></button>
-    <button type="button" data-mk="flight"><span class="lgic">✈</span><div><b>항공편</b><span>출발·도착 공항과 시간, 편명을 넣으면 항공편 카드로.</span></div></button>
-    <button type="button" data-mk="hotel"><span class="lgic">🏨</span><div><b>숙소</b><span>호텔 이름·주소·체크인/아웃·지도.</span></div></button></div>`);
-  qa('[data-mk]',q('.lgsheet',ov)).forEach(b=>b.onclick=()=>{closeSheet(); setTimeout(()=>openInfoEditor(null,b.dataset.mk),200)});
-}
+/* 정보 추가는 바로 글쓰기. 항공편·숙소는 헤더의 항공·숙소 버튼(여행 정보 시트)에서 추가·수정 */
+const chooseInfo=()=>openInfoEditor(null,'doc');
 const legRow=(x={})=>`<div class="crow lgleg"><div class="ckind"><span class="lgsub">구간</span><button type="button" class="lgx" data-delleg aria-label="삭제">×</button></div>
   <div class="lgrow2"><input type="text" class="lg-d" placeholder="날짜 (예: 10.24 토)" value="${esc(x.d||'')}"><input type="text" class="lg-no" placeholder="편명 (예: KE2101)" value="${esc(x.no||'')}"></div>
   <div class="lgrow3"><input type="text" class="lg-f" placeholder="출발 (GMP)" value="${esc(x.f||'')}" maxlength="6"><input type="text" class="lg-ft" placeholder="09:00" value="${esc(x.ft||'')}" maxlength="5"><input type="text" class="lg-fs" placeholder="김포 1터미널" value="${esc(x.fs||'')}"></div>
@@ -543,7 +540,7 @@ function openMemoEditor(m,opts={}){
   const info=d.cat==='info';
   const shared=()=>d.owner===null;
   const whoBtn=(who,attr)=>`<button type="button" class="lgwho ${who===null?'lgwho-none':who===me?'lgwho-me':''}" ${attr}>${who===null?'담당':esc(pname(who))}</button>`;
-  const itemsHtml=()=>d.items.length?d.items.map(it=>{const who=whoOf(it); return `<div class="lgli ${it.done?'lgdone':''}"><button type="button" class="lgbox" data-tgl="${esc(it.id)}" aria-label="완료">${svgCheck}</button>${it.img?`<span class="lgthumb lgthumb-xs" data-iimg="${esc(it.id)}" title="사진 바꾸기">${imgTag(it.img,'lgimg')}</span>`:`<button type="button" class="lgcam" data-iimg="${esc(it.id)}" aria-label="사진 추가">📷</button>`}<input type="text" class="lgtxin" data-txt="${esc(it.id)}" value="${esc(it.text)}" maxlength="200">${shared()?whoBtn(who,`data-who="${esc(it.id)}"`):''}<button type="button" class="lgx" data-del="${esc(it.id)}" aria-label="삭제">${svgX}</button><span class="lgclgrip" data-mgrip aria-label="끌어서 순서 바꾸기">⋮⋮</span></div>`}).join(''):`<div class="lghint" style="margin:2px 0 8px">아직 항목이 없어요. 아래에 쓰고 "입력"을 눌러요.</div>`;
+  const itemsHtml=()=>d.items.length?d.items.map(it=>{const who=whoOf(it); return `<div class="lgli ${it.done?'lgdone':''}"><button type="button" class="lgbox" data-tgl="${esc(it.id)}" aria-label="완료">${svgCheck}</button>${it.img?`<span class="lgthumb lgthumb-xs" data-iimg="${esc(it.id)}" title="사진 바꾸기">${imgTag(it.img,'lgimg')}</span>`:`<button type="button" class="lgcam" data-iimg="${esc(it.id)}" aria-label="사진 추가">📷</button>`}<textarea class="lgtxin" data-txt="${esc(it.id)}" rows="1" maxlength="200">${esc(it.text)}</textarea>${shared()?whoBtn(who,`data-who="${esc(it.id)}"`):''}<button type="button" class="lgx" data-del="${esc(it.id)}" aria-label="삭제">${svgX}</button><span class="lgclgrip" data-mgrip aria-label="끌어서 순서 바꾸기">⋮⋮</span></div>`}).join(''):`<div class="lghint" style="margin:2px 0 8px">아직 항목이 없어요. 아래에 쓰고 "입력"을 눌러요.</div>`;
   openSheet(`<h2><span id="mHead">${info?(isNew?'여행 정보 쓰기':'여행 정보'):isNew?(shared()?'공용 메모 쓰기':'내 메모 쓰기'):(shared()?'공용 메모':'내 메모')}</span><button type="button" data-close>닫기</button></h2><form id="memoForm" autocomplete="off">
     ${isNew&&!info?`<div class="lgf"><div class="lgchips" id="mType"><button type="button" class="lgchip" data-t="list" aria-pressed="${d.type==='list'}">${svgList} 체크 리스트</button><button type="button" class="lgchip" data-t="text" aria-pressed="${d.type==='text'}">${svgText} 글</button></div></div>`:''}
     <div class="lgf"><input type="text" id="mTitle" placeholder="제목" value="${esc(d.title)}" maxlength="60"></div>
@@ -551,7 +548,7 @@ function openMemoEditor(m,opts={}){
     ${d.type==='flight'?`<div class="lgf" id="mLegsBox"><label>구간</label><div class="crows" id="mLegs">${(d.legs.length?d.legs:[{}]).map(legRow).join('')}</div><button type="button" class="lglink" id="mAddLeg">+ 구간 추가</button></div>`:''}
     <div class="lgf" id="mBodyBox" ${(d.type==='text'||d.type==='flight')?'':'hidden'}>${d.type==='flight'?'<label>메모</label>':''}<textarea id="mBody" rows="${d.type==='flight'?4:7}" placeholder="${d.type==='flight'?'예약번호 안내, 전자신고 링크 등':'여기에 그냥 써요. 줄바꿈 그대로 남아요.'}">${esc(d.body)}</textarea>${FORMAT_HELP}</div>
     <div class="lgf" id="mListBox" ${d.type==='list'?'':'hidden'}><div id="mItems">${itemsHtml()}</div>
-      <div class="lgaddli"><span class="lgplus">${svgPlus}</span><input type="text" id="mAdd" placeholder="항목 추가" maxlength="200"><span id="mAddWho">${shared()?whoBtn(null,'id="mAddWhoBtn"'):''}</span><button type="button" class="lgaddbtn" id="mAddBtn">입력</button></div>
+      <div class="lgaddli"><span class="lgplus">${svgPlus}</span><textarea id="mAdd" rows="1" placeholder="항목 추가" maxlength="200"></textarea><span id="mAddWho">${shared()?whoBtn(null,'id="mAddWhoBtn"'):''}</span><button type="button" class="lgaddbtn" id="mAddBtn">입력</button></div>
       <div class="lghint" id="mItemsHint">${isNew?'':'체크·추가·삭제는 바로 저장돼요. 글자를 고치면 칸을 벗어날 때 저장돼요.'}</div></div>
     <div class="lgf"><label id="mImgLabel">${d.type==='list'?'대표 사진 (1장)':'사진 (여러 장)'}</label><div class="lgimgs lgimgs-edit" id="mImgs"></div><button type="button" class="lglink" id="mAddImg">+ 사진 추가</button></div>
     <div class="lgf" ${info?'hidden':''}><label>누가 보나</label><div class="lgchips" id="mOwner"><button type="button" class="lgchip" data-o="mine" aria-pressed="${!shared()}">개인 · 나만</button><button type="button" class="lgchip" data-o="shared" aria-pressed="${shared()}">공용 · 모두</button></div></div>
@@ -564,12 +561,12 @@ function openMemoEditor(m,opts={}){
     qa('[data-del]',sh).forEach(b=>b.onclick=()=>{d.items=d.items.filter(it=>it.id!==b.dataset.del);paintItems();persistItems()});
     qa('[data-who]',sh).forEach(b=>b.onclick=()=>{d.items=d.items.map(it=>it.id===b.dataset.who?{...it,who:nextWho(whoOf(it))}:it);paintItems();persistItems()});
     qa('[data-iimg]',sh).forEach(b=>b.onclick=async()=>{ const iid=b.dataset.iimg; const cur=d.items.find(x=>x.id===iid); if(cur&&cur.img&&!confirmReplace(b))return; const ids=await pickImages(1); if(!ids.length)return; d.items=d.items.map(it=>it.id===iid?{...it,img:ids[0]}:it); paintItems(); fillImages(sh); persistItems(); });
-    qa('[data-txt]',sh).forEach(inp=>{inp.onchange=()=>{const t=inp.value.trim(); d.items=t?d.items.map(it=>it.id===inp.dataset.txt?{...it,text:t}:it):d.items.filter(it=>it.id!==inp.dataset.txt); if(!t)paintItems(); persistItems()}; inp.onkeydown=ev=>{if(ev.key==='Enter'){ev.preventDefault();inp.blur()}}});
+    qa('[data-txt]',sh).forEach(inp=>{fitTa(inp); inp.oninput=()=>fitTa(inp); inp.onchange=()=>{const t=inp.value.replace(/\s*\n+\s*/g,' ').trim(); d.items=t?d.items.map(it=>it.id===inp.dataset.txt?{...it,text:t}:it):d.items.filter(it=>it.id!==inp.dataset.txt); if(!t)paintItems(); persistItems()}; inp.onkeydown=ev=>{if(ev.key==='Enter'&&!ev.isComposing&&ev.keyCode!==229){ev.preventDefault();inp.blur()}}});
     qa('[data-mgrip]',sh).forEach(h=>h.onpointerdown=ev=>rowDrag(ev,h,{scroller:sh,onDrop:(rows,row,from,to)=>{ const [x]=d.items.splice(from,1); d.items.splice(to,0,x); paintItems(); persistItems(); }}));
     const wb=g('#mAddWhoBtn'); if(wb)wb.onclick=()=>{d.addWho=nextWho(d.addWho); g('#mAddWho').innerHTML=whoBtn(d.addWho,'id="mAddWhoBtn"'); wireItems();};
   };
-  const addItem=()=>{const inp=g('#mAdd'); const t=inp.value.trim(); if(!t)return; d.items=[...d.items,{id:uid(),text:t,done:false,who:shared()?d.addWho:null,ts:Date.now()}]; inp.value=''; paintItems(); persistItems(); inp.focus();};
-  g('#mAddBtn').onclick=addItem; g('#mAdd').onkeydown=ev=>{if(ev.key==='Enter'){ev.preventDefault();addItem()}};
+  const addItem=()=>{const inp=g('#mAdd'); const t=inp.value.replace(/\s*\n+\s*/g,' ').trim(); if(!t)return; d.items=[...d.items,{id:uid(),text:t,done:false,who:shared()?d.addWho:null,ts:Date.now()}]; inp.value=''; fitTa(inp); paintItems(); persistItems(); inp.focus();};
+  g('#mAddBtn').onclick=addItem; g('#mAdd').onkeydown=ev=>{if(ev.key==='Enter'&&!ev.isComposing&&ev.keyCode!==229){ev.preventDefault();addItem()}}; g('#mAdd').oninput=()=>fitTa(g('#mAdd'));
   qa('#mType .lgchip',sh).forEach(b=>b.onclick=()=>{d.type=b.dataset.t;qa('#mType .lgchip',sh).forEach(x=>x.setAttribute('aria-pressed',x===b));g('#mBodyBox').hidden=d.type!=='text';g('#mListBox').hidden=d.type!=='list'; g('#mImgLabel').textContent=d.type==='list'?'대표 사진 (1장)':'사진 (여러 장)'; if(d.type==='list'&&d.images.length>1){d.images=[d.images[0]];paintImgs();}});
   qa('#mOwner .lgchip',sh).forEach(b=>b.onclick=()=>{d.owner=b.dataset.o==='shared'?null:me;qa('#mOwner .lgchip',sh).forEach(x=>x.setAttribute('aria-pressed',x===b));if(isNew)g('#mHead').textContent=shared()?'공용 메모 쓰기':'내 메모 쓰기';paintItems();});
   const paintImgs=()=>{ g('#mImgs').innerHTML=d.images.map(id=>`<span class="lgthumb" data-rm="${esc(id)}">${imgTag(id)}<b>×</b></span>`).join(''); fillImages(g('#mImgs')); qa('#mImgs [data-rm]',sh).forEach(t=>t.onclick=()=>{d.images=d.images.filter(x=>x!==t.dataset.rm); paintImgs();}); };
@@ -715,6 +712,7 @@ let sheetCloseHook=null; const runSheetHook=()=>{const f=sheetCloseHook; sheetCl
 /* 입력 중 엔터(휴대폰 키보드의 '완료·이동' 포함)로 폼이 저장되며 닫히던 문제: 긴 편집 폼은 저장 버튼으로만 저장 */
 const NO_ENTER_SUBMIT=new Set(['expForm','infoForm','memoForm','cForm','stForm','setForm']);
 function guardEnter(e){ if(e.key!=='Enter'||e.isComposing||e.keyCode===229)return; const t=e.target; if(!t||!t.matches||!t.matches('input')||/^(checkbox|radio|button|submit)$/.test(t.type))return; const f=t.closest('form'); if(f&&NO_ENTER_SUBMIT.has(f.id)){ e.preventDefault(); t.blur(); } }
+const fitTa=ta=>{ if(!ta)return; ta.style.height='auto'; ta.style.height=ta.scrollHeight+'px'; requestAnimationFrame(()=>{ if(ta.scrollHeight){ ta.style.height='auto'; ta.style.height=ta.scrollHeight+'px'; } }); };   // 한 줄 textarea 를 내용만큼 늘림
 function openSheet(html){ runSheetHook(); q('.lgsheet .lgin',ov).innerHTML=`<div class="lggrab"></div>`+html; q('.lgsheet',ov).classList.add('lgopen'); q('.lgscrim',ov).classList.add('lgopen'); document.body.style.overflow='hidden'; qa('[data-close]',ov).forEach(b=>b.onclick=closeSheet); q('.lgsheet',ov).scrollTop=0; }
 function closeSheet(){ runSheetHook(); q('.lgsheet').classList.remove('lgopen'); q('.lgscrim').classList.remove('lgopen'); document.body.style.overflow=''; }
 
@@ -1069,16 +1067,35 @@ function mount(el,memoEl){
   if(memoRoot){ memoRoot.classList.add('lg'); memoRoot.innerHTML=`<div class="lg-view"></div>`; memoView=q('.lg-view',memoRoot); }
   roots().forEach(r=>{const p=r.closest('.panel'); if(p)p.classList.add('lg-haspad')});
   render(); boot();
+  const tb=document.getElementById('tripinfo'); if(tb)tb.onclick=()=>openTripInfo();
   const visible=()=>roots().some(r=>!r.closest('[hidden]'));
   clearInterval(pollT); pollT=setInterval(()=>{if(document.visibilityState==='visible'&&S.screen==='main'&&!S.saving&&visible())load()},POLL_MS);
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&S.screen==='main')load()});
   window.addEventListener('online',()=>{ if(S.screen==='main')load(); });
 }
+/* ---------- 항공·숙소: 헤더 오른쪽 버튼(#tripinfo) → 여행 정보 시트. 공용 메모(항공편·숙소)를 그대로 보여주고 거기서 수정·추가 ---------- */
+let tiTab=null;
+const tripDocs=()=>{ const live=S.screen==='main'&&S.memos.some(m=>m.cat==='info'); const src=live?S.memos.filter(m=>m.cat==='info'&&isShared(m)):(window.NOTE_SEED||[]); return {live,flight:src.filter(m=>m.type==='flight'),hotel:src.filter(m=>m.type==='hotel')}; };
+// 도쿄 시간 기준: 10/24 낮 ~ 10/27 은 숙소, 그 외(출국 전·마지막 날)는 항공
+const tiDefault=()=>{ const j=new Date(Date.now()+9*36e5), md=(j.getUTCMonth()+1)*100+j.getUTCDate(); return ((md===1024&&j.getUTCHours()>=12)||(md>=1025&&md<=1027))?'hotel':'flight'; };
+function openTripInfo(tab){ const d=tripDocs(); tiTab=tab||tiDefault(); const list=d[tiTab]; const lbl=tiTab==='flight'?'항공편':'숙소';
+  openSheet(`<h2>여행 정보<button type="button" data-close>닫기</button></h2><div class="lgseg2 lgtiseg"><button type="button" data-ti="flight" aria-pressed="${tiTab==='flight'}">✈ 항공</button><button type="button" data-ti="hotel" aria-pressed="${tiTab==='hotel'}">🏨 숙소</button></div>
+    <div class="lgtiwrap">${list.length?list.map(m=>infoCardHtml(m,true)).join(''):`<p class="lghint">아직 ${lbl} 정보가 없어요.</p>`}</div>${d.live?`<button type="button" class="lglink" data-tiadd>+ ${lbl} 추가</button>`:''}`);
+  const sh=q('.lgsheet',ov);
+  qa('[data-ti]',sh).forEach(b=>b.onclick=()=>openTripInfo(b.dataset.ti));
+  qa('details[data-accm] > summary',sh).forEach(sm=>sm.onclick=ev=>ev.preventDefault());   // 시트 안에선 항상 펼친 채로
+  qa('[data-memoedit]',sh).forEach(b=>{ const m=d.live&&S.memos.find(x=>x.id===b.dataset.memoedit); if(!m){b.remove();return} b.onclick=()=>{closeSheet(); setTimeout(()=>openInfoEditor(m),200)}; });
+  const add=q('[data-tiadd]',sh); if(add)add.onclick=()=>{closeSheet(); setTimeout(()=>openInfoEditor(null,tiTab),200)};
+  qa('[data-copy]',sh).forEach(b=>b.onclick=async ev=>{ev.preventDefault(); ev.stopPropagation(); const ok=await copyText(b.dataset.copy); toast(ok?'복사했어요':'복사가 안 돼요. 길게 눌러 직접 복사해 주세요'); if(ok){b.classList.add('lgcpok'); setTimeout(()=>b.classList.remove('lgcpok'),1200);} });
+  qa('.lgthumb',sh).forEach(t=>t.onclick=ev=>{ev.stopPropagation(); ev.preventDefault(); openThumb(t)});
+  fillImages(sh);
+}
+document.addEventListener('click',ev=>{ const b=ev.target.closest('[data-cptoggle]'); if(!b)return; ev.preventDefault(); const w=b.closest('.lgcpwrap'); const on=w.classList.toggle('lgopen'); b.textContent=on?'복사용 정보 접기':'복사용 정보 자세히 보기'; });
 function scrollToMemo(id){ const d=q(`details[data-accm="${id}"]`); if(!d)return; const sec=d.closest('details.lgsecacc'); if(sec&&!sec.open){sec.open=true;} d.open=true; S.openMemos.add(id); setTimeout(()=>d.scrollIntoView({behavior:'smooth',block:'start'}),50); }
 /* 다른 모듈용 쓰기: 성공 'ok', 끊김이면 대기열에 넣고 'queued', 영구 실패면 throw */
 async function writeOrQueue(ops){ try{ if(outbox().length)throw {code:'network'}; await api({action:'write',ops}); S.v=''; return 'ok'; }
   catch(e){ if(transient(e)&&S.token){ if(queueOps(ops)){ S.offline=true; paintSync(); flushOutbox(); return 'queued'; } } throw e; } }
-window.Ledger={writeOrQueue,pendingOps,flushOutbox,mount,state:S,reload:load,openExpense,openSettle,openLogin,API,api,openSheet,closeSheet,toast,arm,pickImages,imgSrc,fillImages,imgTag,scrollToMemo,bodyHtml};
+window.Ledger={writeOrQueue,pendingOps,flushOutbox,mount,state:S,reload:load,openExpense,openSettle,openLogin,API,api,openSheet,closeSheet,toast,arm,pickImages,imgSrc,fillImages,imgTag,scrollToMemo,bodyHtml,openTripInfo};
 const auto=document.getElementById('ledger-root');
 if(auto){ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>mount(auto)); else mount(auto); }
 })();
