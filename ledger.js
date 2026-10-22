@@ -253,7 +253,7 @@ function render(){
   if(memoView){ memoView.innerHTML=S.screen==='main'?viewMemo():viewMemoLocked(); bind(memoView); fillImages(memoView); if(window.TripSite&&TripSite.renderChips&&TripSite.state.tab==='memo')TripSite.renderChips(); }
 }
 function userHtml(){
-  if(S.screen==='main') return `<span class="lguser lguser-name">${svgUser}<span>${esc(pname(S.me))}</span></span><button class="lguser lguser-gear" data-act="settings" aria-label="설정">${svgGear}</button><button class="lguser lguser-gear lguser-out" data-act="logout" aria-label="로그아웃" title="로그아웃">${svgOut}</button>`;
+  if(S.screen==='main') return `<span class="lguser lguser-name">${svgUser}<span>${esc(pname(S.me))}</span></span><button class="lguser lguser-gear" data-act="settings" aria-label="설정">${svgGear}</button>`;
   if(S.screen==='login'||S.screen==='setup') return `<button class="lguser lguser-off" data-act="login" aria-label="${S.screen==='setup'?'정산 노트 시작':'로그인'}" title="${S.screen==='setup'?'시작하기':'로그인'}">${svgIn}</button>`;
   return '';
 }
@@ -450,7 +450,7 @@ function infoCardHtml(m0,open){
     body=coverHtml(m.cover)+legs.map(x=>`<div class="flight"><div><div class="ap">${esc(x.f)}</div><div class="tm">${esc(x.ft)}</div><div class="sm">${esc([x.d,x.fs].filter(Boolean).join(' · '))}</div></div><div class="arrow">${x.no?`<button type="button" class="lgcpno" data-copy="${esc(x.no)}" aria-label="편명 복사">${esc(x.no)}</button>`:''}<br>→</div><div class="r"><div class="ap">${esc(x.t)}</div><div class="tm">${esc(x.tt)}</div><div class="sm">${esc(x.ts||'')}</div></div></div>`).join('')+(legs.length?`<div class="lgcpbar"><button type="button" class="lgcpbtn" data-copy="${esc(flightText(m))}">항공편 정보 전체 복사</button></div>`:'')+(String(m.body||'').trim()?`<div style="margin-top:10px">${infoSub(m.body)}</div>`:'')+linksBtns(m.links); }
   else if(m.type==='hotel'){ const h=m.hotel||{}; const mapq=h.q||h.addrJa||h.addr||m.title;
     body=coverHtml(m.cover)+`<div class="lgcpl">${cpRow('호텔 이름 · 현지',h.nameJa)}${cpRow('호텔 이름 · 영어',h.nameEn)}${cpRow('우편번호',h.zip)}${cpRow('주소 · 현지',h.addrJa)}${cpRow('주소 · 영어',h.addrEn)}${cpRow('전화',h.tel,h.tel?`<a class="lgcpbtn" href="tel:${esc(h.tel)}">전화</a>`:'')}</div><dl class="kv">${h.addr?`<dt>위치</dt><dd>${esc(h.addr)}</dd>`:''}${(h.cin||h.cout)?`<dt>체크인·아웃</dt><dd>${esc([h.cin&&'체크인 '+h.cin,h.cout&&'체크아웃 '+h.cout].filter(Boolean).join(' · '))}</dd>`:''}</dl>`+(String(m.body||'').trim()?`<div style="margin-top:10px">${infoSub(m.body)}</div>`:'')+`<div class="lginfo-links">${mapq?`<a class="btn map" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapq)}" target="_blank" rel="noopener">지도 열기 ↗</a>`:''}${(m.links||[]).filter(x=>x&&x.u).map(x=>`<a class="btn link" href="${esc(x.u)}" target="_blank" rel="noopener">${esc(x.l||x.u)} ↗</a>`).join('')}</div>`; }
-  else { const blocks=Array.isArray(m.blocks)?m.blocks:[]; let items=[]; const flush=()=>{ if(!items.length)return ''; const h=`<div class="cl">${doneLast(items).map(it=>`<label><input type="checkbox" data-blk="${esc(m.id)}|${esc(it.id)}" ${it.done?'checked':''}>${it.img?`<span class="lgthumb lgthumb-xs" data-img="${esc(it.img)}">${imgTag(it.img,'thumb')}</span>`:''}<span><b>${esc(it.title||'')}</b>${it.desc?`<span class="lgcldesc">${mdLinks(it.desc)}</span>`:''}${it.link&&it.link.u?`<a class="lginfo-il" href="${esc(it.link.u)}" target="_blank" rel="noopener">${esc(it.link.l||'링크')} ↗</a>`:''}</span><span class="lgclgrip" data-clgrip aria-label="끌어서 순서 바꾸기">⋮⋮</span></label>`).join('')}</div>`; items=[]; return h; };
+  else { const blocks=Array.isArray(m.blocks)?m.blocks:[]; let items=[]; const flush=()=>{ if(!items.length)return ''; const h=`<div class="cl">${items.map(it=>`<label><input type="checkbox" data-blk="${esc(m.id)}|${esc(it.id)}" ${it.done?'checked':''}>${it.img?`<span class="lgthumb lgthumb-xs" data-img="${esc(it.img)}">${imgTag(it.img,'thumb')}</span>`:''}<span><b>${esc(it.title||'')}</b>${it.desc?`<span class="lgcldesc">${mdLinks(it.desc)}</span>`:''}${it.link&&it.link.u?`<a class="lginfo-il" href="${esc(it.link.u)}" target="_blank" rel="noopener">${esc(it.link.l||'링크')} ↗</a>`:''}</span><span class="lgclgrip" data-clgrip aria-label="끌어서 순서 바꾸기">⋮⋮</span></label>`).join('')}</div>`; items=[]; return h; };
     body=coverHtml(m.cover)+(String(m.body||'').trim()?infoSub(m.body):'')+linksBtns(m.links);
     blocks.forEach(b=>{ if(b.k==='item'){items.push(b);return} body+=flush(); body+=`<div class="sub-h">${esc(b.title||'')}</div>`+(b.img?`<span class="lgthumb lgthumb-cover lgthumb-sec" data-img="${esc(b.img)}">${imgTag(b.img)}</span>`:'')+(b.body?infoSub(b.body):'')+linksBtns(b.links); });
     body+=flush(); const its=blocks.filter(b=>b.k==='item'); if(its.length)body+=`<div class="lgsub" style="text-align:right">${its.filter(i=>i.done).length}/${its.length} 완료</div>`; }
@@ -1033,24 +1033,31 @@ function openRecord(t){
     ops.push({op:'delete',col:'transfers',id:t.id});
     await write(ops,isSettle?'되돌렸어요':'지웠어요'); });
 }
+function confirmLogout(){
+  openSheet(`<h2>로그아웃<button type="button" data-close>닫기</button></h2><p class="lgconfirm">${esc(pname(S.me))}(으)로 로그인한 상태에서 <b>로그아웃할까요?</b><br><span class="lghint">다시 들어오려면 내 비밀번호가 필요해요.</span></p>
+    <div class="lgactions"><button type="button" class="lgbtn lgghost" data-close style="flex:1">취소</button><button type="button" class="lgbtn lgprimary" id="cLogout" style="flex:1">로그아웃</button></div>`);
+  q('#cLogout',ov).onclick=()=>{ closeSheet(); logout(); toast('로그아웃했어요'); };
+}
 function openSettings(){
-  openSheet(`<h2>설정<button type="button" data-close>닫기</button></h2><form id="setForm">
-    <div class="lgf"><label>멤버 이름</label><div class="lgmrows" id="sNames">${S.people.map((p,i)=>`<div class="mr" style="grid-template-columns:1fr auto"><input type="text" data-n="${i}" value="${esc(p.name)}" maxlength="12"><span class="lghint" style="margin:0;align-self:center;width:52px;text-align:right">${i===S.me?'나':''}</span></div>`).join('')}</div></div>
+  openSheet(`<h2>설정<button type="button" data-close>닫기</button></h2><div class="lgset"><h3>이름 · 환율</h3><form id="setForm">
+    <div class="lgf"><label>멤버 이름</label><div class="lgmrows" id="sNames">${S.people.map((p,i)=>`<div class="mr" style="grid-template-columns:1fr auto"><input type="text" data-n="${i}" value="${esc(p.name)}" maxlength="12"><span class="lghint" style="margin:0;align-self:center;width:24px;text-align:right">${i===S.me?'나':''}</span></div>`).join('')}</div></div>
     <div class="lgf"><div class="lgtoggle"><span>환율 매일 자동으로 받기</span><input type="checkbox" id="sAuto" ${S.rateInfo&&S.rateInfo.mode==='manual'?'':'checked'}></div>
       <div class="lghint" id="sAutoHint">${S.rateInfo&&S.rateInfo.auto?`지금 자동값: 1엔 = ${esc(S.rateInfo.auto.value)}원 (${esc(S.rateInfo.auto.date||'')} ${esc(S.rateInfo.auto.src||'')} 기준). 하루 한 번 갱신돼요. 카드사 환율과는 조금 달라요.`:'아직 자동 환율을 못 받아왔어요. 네트워크가 되면 하루 한 번 받아와요.'}</div></div>
     <div class="lgf" id="sRateBox" ${S.rateInfo&&S.rateInfo.mode==='manual'?'':'hidden'}><label>직접 입력 (1엔 = 원)</label><input type="number" id="sRate" step="0.01" min="1" value="${esc(S.rate)}"></div>
     <div class="lgactions" style="margin-top:4px"><button type="submit" class="lgbtn lgprimary">저장</button></div></form>
-    <hr style="border:0;border-top:1px solid var(--line);margin:18px 0">
+    <h3>멤버</h3>
     <form id="pinForm"><div class="lgf"><label>비밀번호 바꾸기</label><div class="lgmrows"><div class="mr"><select id="pWho">${S.people.map((p,i)=>`<option value="${i}" ${i===S.me?'selected':''}>${esc(p.name)}${i===S.me?' (나)':''}</option>`).join('')}</select><input type="text" inputmode="numeric" class="lgpin" id="pNew" placeholder="새 비밀번호" maxlength="8"></div></div><div class="lghint">동행이 잊었을 때 대신 정해줄 수 있어요.</div></div><div class="lgactions" style="margin-top:4px"><button type="submit" class="lgbtn lgghost" style="flex:1">비밀번호 저장</button></div></form>
-    <form id="addForm" ${S.people.length>=6?'hidden':''}><div class="lgf" style="margin-top:14px"><label>멤버 추가</label><div class="lgmrows"><div class="mr"><input type="text" id="aName" placeholder="이름" maxlength="12"><input type="text" inputmode="numeric" class="lgpin" id="aPin" placeholder="비밀번호" maxlength="8"></div></div></div><div class="lgactions" style="margin-top:4px"><button type="submit" class="lgbtn lgghost" style="flex:1">추가</button></div></form>
-    <div class="lgactions" style="margin-top:18px"><button type="button" class="lgbtn lgdanger" id="sLogout" style="flex:1">이 폰에서 로그아웃</button></div>`);
+    <form id="addForm" ${S.people.length>=6?'hidden':''}><div class="lgf" style="margin-top:18px"><label>멤버 추가</label><div class="lgmrows"><div class="mr"><input type="text" id="aName" placeholder="이름" maxlength="12"><input type="text" inputmode="numeric" class="lgpin" id="aPin" placeholder="비밀번호" maxlength="8"></div></div></div><div class="lgactions" style="margin-top:4px"><button type="submit" class="lgbtn lgghost" style="flex:1">추가</button></div></form>
+    <h3>계정</h3>
+    <div class="lgsetme"><span>${svgUser}<b>${esc(pname(S.me))}</b>(으)로 로그인 중</span><button type="button" class="lgbtn lgdanger" id="sLogout">로그아웃</button></div>
+    <div class="lghint">이 폰에서만 로그아웃돼요. 다시 들어오려면 내 비밀번호가 필요해요.</div></div>`);
   const sh=q('.lgsheet'); const g=s=>q(s,sh);
   const applySettings=async body=>{try{const j=await api({action:'settings',...body});S.people=j.people;S.rate=+j.rate||S.rate;S.rateInfo=j.rateInfo||S.rateInfo;return true}catch(e){toast(e.message||'실패했어요');return false}};
   g('#sAuto').onchange=()=>{g('#sRateBox').hidden=g('#sAuto').checked};
   g('#setForm').onsubmit=async ev=>{ev.preventDefault();const names=qa('#sNames input',sh).map(i=>i.value.trim());const body={names};if(g('#sAuto').checked)body.rateAuto=true;else body.rate=parseFloat(g('#sRate').value)||S.rate;if(await applySettings(body)){toast('저장했어요');closeSheet();load()}};
   g('#pinForm').onsubmit=async ev=>{ev.preventDefault();const pin=g('#pNew').value.trim();if(!/^\d{4,8}$/.test(pin)){toast('숫자 4~8자리');return}if(await applySettings({setPin:{me:+g('#pWho').value,pin}})){toast('비밀번호를 바꿨어요');g('#pNew').value=''}};
   g('#addForm').onsubmit=async ev=>{ev.preventDefault();const name=g('#aName').value.trim(),pin=g('#aPin').value.trim();if(!name||!/^\d{4,8}$/.test(pin)){toast('이름과 숫자 4~8자리');return}if(await applySettings({addMember:{name,pin}})){toast('추가했어요');closeSheet();render()}};
-  g('#sLogout').onclick=()=>{closeSheet();logout()};
+  g('#sLogout').onclick=()=>confirmLogout();
 }
 
 /* ---------- mount ---------- */

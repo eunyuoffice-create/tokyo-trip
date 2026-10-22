@@ -832,3 +832,17 @@ body.body-edit .ev,body.body-edit .card{-webkit-user-select:none;user-select:non
 .lg .lgf .lgit.lgitdisc textarea.lgitname{color:var(--accent)}
 .lg .lgitlist{max-height:none}
 
+/* 설정 시트 (2026-10-22): 저장 버튼 줄이 여러 개라 아래 고정(sticky) 끔 · 칸 높이 통일 · 구역 제목 · 로그아웃은 맨 아래 */
+.lg .lgsheet .lgset form > .lgactions,.lg .lgsheet .lgset .lgactions{position:static;margin:10px 0 0;padding:0;background:none;box-shadow:none;border:0}
+.lg .lgset h3{font-size:13px;font-weight:700;color:var(--muted);margin:22px 0 10px;padding-top:16px;border-top:1px solid var(--line)}
+.lg .lgset h3:first-child{margin-top:0;padding-top:0;border-top:0}
+.lg .lgset .lgmrows input,.lg .lgset .lgmrows select{height:44px !important;font-size:16px;min-width:0;width:100%}
+.lg .lgset .lgmrows input.lgpin{letter-spacing:.1em;font-size:16px}
+.lg .lgset .lgmrows .mr{grid-template-columns:minmax(0,1fr) 120px}
+.lg .lgset #sNames .mr{grid-template-columns:minmax(0,1fr) 24px}
+.lg .lgsetme{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.lg .lgsetme > span{display:inline-flex;align-items:center;gap:6px;font-size:14px;min-width:0}
+.lg .lgsetme > span svg{width:16px;height:16px;flex:none}
+.lg .lgsetme .lgbtn{flex:none;width:auto;padding:0 18px;height:40px;background:var(--accent-soft);color:var(--accent)}
+.lg .lgconfirm{font-size:15px;line-height:1.6;margin:4px 0 6px}
+
