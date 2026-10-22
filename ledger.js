@@ -397,6 +397,8 @@ function viewMemo(){
   h+=`<div class="lgbar"><div class="lgadd2 lgadd3"><button class="lgaddexp lgaddmine" data-newmemo="mine">${svgPlus}내 메모</button><button class="lgaddexp lgaddmine" data-newmemo="shared">${svgPlus}공용 메모</button><button class="lgaddexp lgaddinfo" data-newmemo="info">${svgPlus}정보</button></div></div>`;
   return h;
 }
+/* 체크 완료된 항목은 묶음 맨 아래로 (저장 순서는 그대로, 보여 줄 때만) */
+const doneLast=a=>[...a.filter(x=>!x.done),...a.filter(x=>x.done)];
 function memoRow(m){
   // 아코디언: 머리글을 누르면 쓴 내용이 펼쳐지고, 체크는 바로, 나머지 수정은 "수정" 팝업에서
   const list=m.type!=='text'&&m.type!=='flight'; const items=m.items||[]; const done=items.filter(i=>i.done).length; const priv=!isShared(m);
@@ -405,15 +407,16 @@ function memoRow(m){
   const open=S.openMemos.has(m.id); const mdone=memoDone(m); const info=m.cat==='info';
   let inner;
   if(list){
-    const li=it=>`<div class="lgli ${it.done?'lgdone':''}"><button type="button" class="lgbox" data-tgl-m="${esc(m.id)}|${esc(it.id)}" aria-label="완료">${svgCheck}</button>${it.img?`<span class="lgthumb" data-img="${esc(it.img)}">${imgTag(it.img,'lgimg lgimg-sm')}</span>`:''}<span class="lgtx">${mdLinks(it.text)}</span></div>`;
+    const li=it=>`<div class="lgli ${it.done?'lgdone':''}"><button type="button" class="lgbox" data-tgl-m="${esc(m.id)}|${esc(it.id)}" aria-label="완료">${svgCheck}</button>${it.img?`<span class="lgthumb" data-img="${esc(it.img)}">${imgTag(it.img,'lgimg lgimg-sm')}</span>`:''}<span class="lgtx">${mdLinks(it.text)}</span><span class="lgclgrip" data-clgrip aria-label="끌어서 순서 바꾸기">⋮⋮</span></div>`;
+    const rows=a=>`<div class="lgclrows">${doneLast(a).map(li).join('')}</div>`;
     if(!items.length) inner=`<div class="lghint" style="margin:0 0 6px">아직 항목이 없어요.</div>`;
-    else if(priv) inner=items.map(li).join('');
+    else if(priv) inner=rows(items);
     else{
       // 공용 체크리스트: 담당자별로 묶어서 (나 → 다른 멤버 → 담당 없음)
       const groups=[]; const order=[S.me,...S.people.map((p,i)=>i).filter(i=>i!==S.me),null];
       order.forEach(w=>{const sub=items.filter(it=>whoOf(it)===w); if(sub.length)groups.push({w,sub})});
-      if(groups.length===1&&groups[0].w===null) inner=groups[0].sub.map(li).join('');
-      else inner=groups.map(g=>`<div class="lgwgrp"><div class="lgwgrp-h"><span class="lgwho ${g.w===null?'lgwho-none':g.w===S.me?'lgwho-me':''}">${g.w===null?'담당 없음':esc(pname(g.w))}</span><span class="lgsub">${g.sub.filter(i=>i.done).length}/${g.sub.length}</span></div>${g.sub.map(li).join('')}</div>`).join('');
+      if(groups.length===1&&groups[0].w===null) inner=rows(groups[0].sub);
+      else inner=groups.map(g=>`<div class="lgwgrp"><div class="lgwgrp-h"><span class="lgwho ${g.w===null?'lgwho-none':g.w===S.me?'lgwho-me':''}">${g.w===null?'담당 없음':esc(pname(g.w))}</span><span class="lgsub">${g.sub.filter(i=>i.done).length}/${g.sub.length}</span></div>${rows(g.sub)}</div>`).join('');
     }
   }else inner=body.trim()?`<div class="lgmemobody">${bodyHtml(body)}</div>`:`<div class="lghint" style="margin:0 0 6px">내용이 없어요.</div>`;
   if(m.images&&m.images.length){ if(list) inner=`<div class="lgcover"><span class="lgthumb lgthumb-cover" data-img="${esc(m.images[0])}">${imgTag(m.images[0])}</span></div>`+inner; else inner+=`<div class="lgimgs">${m.images.map(id=>`<span class="lgthumb" data-img="${esc(id)}">${imgTag(id)}</span>`).join('')}</div>`; }
@@ -441,7 +444,7 @@ function infoCardHtml(m0,open){
     body=coverHtml(m.cover)+legs.map(x=>`<div class="flight"><div><div class="ap">${esc(x.f)}</div><div class="tm">${esc(x.ft)}</div><div class="sm">${esc([x.d,x.fs].filter(Boolean).join(' · '))}</div></div><div class="arrow">${esc(x.no||'')}<br>→</div><div class="r"><div class="ap">${esc(x.t)}</div><div class="tm">${esc(x.tt)}</div><div class="sm">${esc(x.ts||'')}</div></div></div>`).join('')+(String(m.body||'').trim()?`<div style="margin-top:10px">${infoSub(m.body)}</div>`:'')+linksBtns(m.links); }
   else if(m.type==='hotel'){ const h=m.hotel||{}; const mapq=h.q||h.addr||m.title;
     body=coverHtml(m.cover)+`<dl class="kv">${h.addr?`<dt>주소</dt><dd>${esc(h.addr)}</dd>`:''}${(h.cin||h.cout)?`<dt>체크인·아웃</dt><dd>${esc([h.cin&&'체크인 '+h.cin,h.cout&&'체크아웃 '+h.cout].filter(Boolean).join(' · '))}</dd>`:''}${h.tel?`<dt>전화</dt><dd><a href="tel:${esc(h.tel)}">${esc(h.tel)}</a></dd>`:''}</dl>`+(String(m.body||'').trim()?`<div style="margin-top:10px">${infoSub(m.body)}</div>`:'')+`<div class="lginfo-links">${mapq?`<a class="btn map" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapq)}" target="_blank" rel="noopener">지도 열기 ↗</a>`:''}${(m.links||[]).filter(x=>x&&x.u).map(x=>`<a class="btn link" href="${esc(x.u)}" target="_blank" rel="noopener">${esc(x.l||x.u)} ↗</a>`).join('')}</div>`; }
-  else { const blocks=Array.isArray(m.blocks)?m.blocks:[]; let items=[]; const flush=()=>{ if(!items.length)return ''; const h=`<div class="cl">${items.map(it=>`<label><input type="checkbox" data-blk="${esc(m.id)}|${esc(it.id)}" ${it.done?'checked':''}>${it.img?`<span class="lgthumb lgthumb-xs" data-img="${esc(it.img)}">${imgTag(it.img,'thumb')}</span>`:''}<span><b>${esc(it.title||'')}</b>${it.desc?mdLinks(it.desc):''}${it.link&&it.link.u?`<a class="lginfo-il" href="${esc(it.link.u)}" target="_blank" rel="noopener">${esc(it.link.l||'링크')} ↗</a>`:''}</span>${items.length>1?`<span class="lgclgrip" data-clgrip aria-label="끌어서 순서 바꾸기">⋮⋮</span>`:''}</label>`).join('')}</div>`; items=[]; return h; };
+  else { const blocks=Array.isArray(m.blocks)?m.blocks:[]; let items=[]; const flush=()=>{ if(!items.length)return ''; const h=`<div class="cl">${doneLast(items).map(it=>`<label><input type="checkbox" data-blk="${esc(m.id)}|${esc(it.id)}" ${it.done?'checked':''}>${it.img?`<span class="lgthumb lgthumb-xs" data-img="${esc(it.img)}">${imgTag(it.img,'thumb')}</span>`:''}<span><b>${esc(it.title||'')}</b>${it.desc?mdLinks(it.desc):''}${it.link&&it.link.u?`<a class="lginfo-il" href="${esc(it.link.u)}" target="_blank" rel="noopener">${esc(it.link.l||'링크')} ↗</a>`:''}</span><span class="lgclgrip" data-clgrip aria-label="끌어서 순서 바꾸기">⋮⋮</span></label>`).join('')}</div>`; items=[]; return h; };
     body=coverHtml(m.cover)+(String(m.body||'').trim()?infoSub(m.body):'')+linksBtns(m.links);
     blocks.forEach(b=>{ if(b.k==='item'){items.push(b);return} body+=flush(); body+=`<div class="sub-h">${esc(b.title||'')}</div>`+(b.img?`<span class="lgthumb lgthumb-cover lgthumb-sec" data-img="${esc(b.img)}">${imgTag(b.img)}</span>`:'')+(b.body?infoSub(b.body):'')+linksBtns(b.links); });
     body+=flush(); const its=blocks.filter(b=>b.k==='item'); if(its.length)body+=`<div class="lgsub" style="text-align:right">${its.filter(i=>i.done).length}/${its.length} 완료</div>`; }
@@ -534,7 +537,7 @@ function openMemoEditor(m,opts={}){
   const info=d.cat==='info';
   const shared=()=>d.owner===null;
   const whoBtn=(who,attr)=>`<button type="button" class="lgwho ${who===null?'lgwho-none':who===me?'lgwho-me':''}" ${attr}>${who===null?'담당':esc(pname(who))}</button>`;
-  const itemsHtml=()=>d.items.length?d.items.map(it=>{const who=whoOf(it); return `<div class="lgli ${it.done?'lgdone':''}"><button type="button" class="lgbox" data-tgl="${esc(it.id)}" aria-label="완료">${svgCheck}</button>${it.img?`<span class="lgthumb lgthumb-xs" data-iimg="${esc(it.id)}" title="사진 바꾸기">${imgTag(it.img,'lgimg')}</span>`:`<button type="button" class="lgcam" data-iimg="${esc(it.id)}" aria-label="사진 추가">📷</button>`}<input type="text" class="lgtxin" data-txt="${esc(it.id)}" value="${esc(it.text)}" maxlength="200">${shared()?whoBtn(who,`data-who="${esc(it.id)}"`):''}<button type="button" class="lgx" data-del="${esc(it.id)}" aria-label="삭제">${svgX}</button></div>`}).join(''):`<div class="lghint" style="margin:2px 0 8px">아직 항목이 없어요. 아래에 쓰고 "입력"을 눌러요.</div>`;
+  const itemsHtml=()=>d.items.length?d.items.map(it=>{const who=whoOf(it); return `<div class="lgli ${it.done?'lgdone':''}"><button type="button" class="lgbox" data-tgl="${esc(it.id)}" aria-label="완료">${svgCheck}</button>${it.img?`<span class="lgthumb lgthumb-xs" data-iimg="${esc(it.id)}" title="사진 바꾸기">${imgTag(it.img,'lgimg')}</span>`:`<button type="button" class="lgcam" data-iimg="${esc(it.id)}" aria-label="사진 추가">📷</button>`}<input type="text" class="lgtxin" data-txt="${esc(it.id)}" value="${esc(it.text)}" maxlength="200">${shared()?whoBtn(who,`data-who="${esc(it.id)}"`):''}<button type="button" class="lgx" data-del="${esc(it.id)}" aria-label="삭제">${svgX}</button><span class="lgclgrip" data-mgrip aria-label="끌어서 순서 바꾸기">⋮⋮</span></div>`}).join(''):`<div class="lghint" style="margin:2px 0 8px">아직 항목이 없어요. 아래에 쓰고 "입력"을 눌러요.</div>`;
   openSheet(`<h2><span id="mHead">${info?(isNew?'여행 정보 쓰기':'여행 정보'):isNew?(shared()?'공용 메모 쓰기':'내 메모 쓰기'):(shared()?'공용 메모':'내 메모')}</span><button type="button" data-close>닫기</button></h2><form id="memoForm" autocomplete="off">
     ${isNew&&!info?`<div class="lgf"><div class="lgchips" id="mType"><button type="button" class="lgchip" data-t="list" aria-pressed="${d.type==='list'}">${svgList} 체크 리스트</button><button type="button" class="lgchip" data-t="text" aria-pressed="${d.type==='text'}">${svgText} 글</button></div></div>`:''}
     <div class="lgf"><input type="text" id="mTitle" placeholder="제목" value="${esc(d.title)}" maxlength="60"></div>
@@ -556,6 +559,7 @@ function openMemoEditor(m,opts={}){
     qa('[data-who]',sh).forEach(b=>b.onclick=()=>{d.items=d.items.map(it=>it.id===b.dataset.who?{...it,who:nextWho(whoOf(it))}:it);paintItems();persistItems()});
     qa('[data-iimg]',sh).forEach(b=>b.onclick=async()=>{ const iid=b.dataset.iimg; const cur=d.items.find(x=>x.id===iid); if(cur&&cur.img&&!confirmReplace(b))return; const ids=await pickImages(1); if(!ids.length)return; d.items=d.items.map(it=>it.id===iid?{...it,img:ids[0]}:it); paintItems(); fillImages(sh); persistItems(); });
     qa('[data-txt]',sh).forEach(inp=>{inp.onchange=()=>{const t=inp.value.trim(); d.items=t?d.items.map(it=>it.id===inp.dataset.txt?{...it,text:t}:it):d.items.filter(it=>it.id!==inp.dataset.txt); if(!t)paintItems(); persistItems()}; inp.onkeydown=ev=>{if(ev.key==='Enter'){ev.preventDefault();inp.blur()}}});
+    qa('[data-mgrip]',sh).forEach(h=>h.onpointerdown=ev=>rowDrag(ev,h,{scroller:sh,onDrop:(rows,row,from,to)=>{ const [x]=d.items.splice(from,1); d.items.splice(to,0,x); paintItems(); persistItems(); }}));
     const wb=g('#mAddWhoBtn'); if(wb)wb.onclick=()=>{d.addWho=nextWho(d.addWho); g('#mAddWho').innerHTML=whoBtn(d.addWho,'id="mAddWhoBtn"'); wireItems();};
   };
   const addItem=()=>{const inp=g('#mAdd'); const t=inp.value.trim(); if(!t)return; d.items=[...d.items,{id:uid(),text:t,done:false,who:shared()?d.addWho:null,ts:Date.now()}]; inp.value=''; paintItems(); persistItems(); inp.focus();};
@@ -618,23 +622,26 @@ function startDrag(ev,handle){
 }
 /* 머리글을 350ms 길게 누르면 드래그 시작. 그 전에 움직이면 스크롤, 그 전에 떼면 펼치기(기본 동작) */
 /* 메모 체크 항목: 오른쪽 ⋮⋮ 를 끌어서 같은 묶음 안에서 순서 바꾸기 */
-function clDrag(ev,h){ if(ev.button&&ev.button!==0)return; ev.preventDefault(); ev.stopPropagation(); try{h.setPointerCapture(ev.pointerId)}catch(e){}
-  const row=h.closest('label'), list=row.parentElement; const rows=[...list.children]; const from=rows.indexOf(row); if(rows.length<2)return;
-  const se=document.scrollingElement||document.documentElement; const sy=()=>se.scrollTop;
+function clDrag(ev,h){ rowDrag(ev,h,{onDrop:(rows,row,from,to,list)=>clDrop(rows,row,from,to,list)}); }
+/* 줄 끌어서 순서 바꾸기 (공통). scroller 없으면 페이지 스크롤, onDrop(rows,row,from,to,list) 에서 저장 */
+function rowDrag(ev,h,{scroller,onDrop}){ if(ev.button&&ev.button!==0)return; ev.preventDefault(); ev.stopPropagation(); try{h.setPointerCapture(ev.pointerId)}catch(e){}
+  const row=h.closest('label,.lgli'), list=row.parentElement; const rows=[...list.children].filter(r=>r.matches('label,.lgli')); const from=rows.indexOf(row); if(rows.length<2)return;
+  const se=scroller||document.scrollingElement||document.documentElement; const sy=()=>se.scrollTop;
   const rects=rows.map(r=>{const b=r.getBoundingClientRect();return {top:b.top+sy(),h:b.height,mid:b.top+sy()+b.height/2}}); const gap=Math.max(0,rects[1].top-(rects[0].top+rects[0].h)); const step=rects[from].h+gap;
   const startPage=ev.clientY+sy(); let to=from, moved=false, lastY=ev.clientY, alive=true; row.classList.add('lgdragging'); document.body.classList.add('lgnoselect'); window.__dragActive=true;
   const paint=()=>{ const dy=(lastY+sy())-startPage; row.style.transform=`translateY(${dy}px)`; const center=rects[from].mid+dy; let n=0; rows.forEach((r,j)=>{if(j!==from&&rects[j].mid<center)n++}); to=n; rows.forEach((r,j)=>{ if(j===from)return; let d2=0; if(j<from&&j>=to)d2=step; else if(j>from&&j<=to)d2=-step; r.style.transform=d2?`translateY(${d2}px)`:''; }); };
-  const tick=()=>{ if(!alive)return; const H=window.innerHeight; let v=0; if(lastY<80)v=-Math.min(18,(80-lastY)/4+3); else if(lastY>H-100)v=Math.min(18,(lastY-(H-100))/4+3); if(v&&moved){ const b=sy(); se.scrollTop+=v; if(sy()!==b)paint(); } requestAnimationFrame(tick); }; requestAnimationFrame(tick);
+  const tick=()=>{ if(!alive)return; const R=scroller?scroller.getBoundingClientRect():{top:0,bottom:window.innerHeight}; let v=0; if(lastY<R.top+80)v=-Math.min(18,(R.top+80-lastY)/4+3); else if(lastY>R.bottom-100)v=Math.min(18,(lastY-(R.bottom-100))/4+3); if(v&&moved){ const b=sy(); se.scrollTop+=v; if(sy()!==b)paint(); } requestAnimationFrame(tick); }; requestAnimationFrame(tick);
   const move=e=>{ if(e.pointerId!==ev.pointerId)return; lastY=e.clientY; moved=moved||Math.abs(lastY-ev.clientY)>4; paint(); };
   const stopTouch=e=>e.preventDefault();
   const end=e=>{ if(e&&e.pointerId!==undefined&&e.pointerId!==ev.pointerId)return; alive=false; window.removeEventListener('pointermove',move,true); window.removeEventListener('pointerup',end,true); window.removeEventListener('pointercancel',end,true); document.removeEventListener('touchmove',stopTouch);
-    rows.forEach(r=>r.style.transform=''); row.classList.remove('lgdragging'); document.body.classList.remove('lgnoselect'); setTimeout(()=>{window.__dragActive=false},0); if(!moved||to===from)return;
-    const ids=rows.map(r=>r.querySelector('[data-blk]').dataset.blk.split('|')); const mid=ids[0][0]; const order=ids.map(x=>x[1]); const [x]=order.splice(from,1); order.splice(to,0,x);
-    if(to>from)list.insertBefore(row,rows[to].nextSibling); else list.insertBefore(row,rows[to]);
-    const m=S.memos.find(y=>y.id===mid); if(!m)return; const d=infoDocOf(m); const byId=new Map(d.blocks.map(b=>[b.id,b])); const set=new Set(order); let k=0;
-    const blocks=d.blocks.map(b=>set.has(b.id)?byId.get(order[k++]):b);
-    write([{op:'update',col:'memos',id:mid,data:{type:'doc',blocks,cover:d.cover||'',links:d.links||[],items:[]}}]); };
+    rows.forEach(r=>r.style.transform=''); row.classList.remove('lgdragging'); document.body.classList.remove('lgnoselect'); setTimeout(()=>{window.__dragActive=false},0); if(!moved||to===from)return; onDrop(rows,row,from,to,list); };
   window.addEventListener('pointermove',move,true); window.addEventListener('pointerup',end,true); window.addEventListener('pointercancel',end,true); document.addEventListener('touchmove',stopTouch,{passive:false}); }
+function clDrop(rows,row,from,to,list){
+    const info=!!row.querySelector('[data-blk]'); const ids=rows.map(r=>(info?r.querySelector('[data-blk]').dataset.blk:r.querySelector('[data-tgl-m]').dataset.tglM).split('|')); const mid=ids[0][0]; const order=ids.map(x=>x[1]); const [x]=order.splice(from,1); order.splice(to,0,x);
+    if(to>from)list.insertBefore(row,rows[to].nextSibling); else list.insertBefore(row,rows[to]);
+    const m=S.memos.find(y=>y.id===mid); if(!m)return; const set=new Set(order); const fill=arr=>{ const byId=new Map(arr.map(b=>[b.id,b])); let k=0; return arr.map(b=>set.has(b.id)?byId.get(order[k++]):b); };
+    if(info){ const d=infoDocOf(m); write([{op:'update',col:'memos',id:mid,data:{type:'doc',blocks:fill(d.blocks),cover:d.cover||'',links:d.links||[],items:[]}}]); }
+    else write([{op:'update',col:'memos',id:mid,data:{items:fill(memoItems(m))}}]); }
 function pressToDrag(ev,sm){
   if(ev.target.closest('[data-mdone]'))return; if(ev.button&&ev.button!==0)return;
   const x0=ev.clientX,y0=ev.clientY; let fired=false;
