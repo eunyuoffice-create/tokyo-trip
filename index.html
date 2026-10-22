@@ -266,7 +266,14 @@ body{font-size:16px;line-height:1.55}
 .brand h1{font-size:18px;letter-spacing:-.02em}
 .brand .dates{font-size:12.5px}
 .brand h1{white-space:nowrap;min-width:0}
-@media (max-width:374px){.brand h1{font-size:16.5px}.brand .dates{font-size:11px;letter-spacing:-.03em}}
+.brand{align-items:center}
+.brand h1{font-size:16px;display:flex;align-items:baseline;gap:6px}
+.brand .dates{font-size:11.5px}
+.brand .dday{background:none;color:var(--accent);padding:0;font-size:11.5px;font-weight:700}
+.tripbtn{display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 11px 0 9px;border-radius:999px;background:var(--accent);color:var(--accent-fg);font-size:12.5px;font-weight:700;white-space:nowrap;box-shadow:0 3px 10px rgba(217,55,43,.25)}
+.tripbtn svg{width:14px;height:14px;fill:currentColor}
+.tripbtn:active{transform:translateY(1px)}
+@media (max-width:374px){.brand h1{font-size:15px;gap:4px}.brand .dates,.brand .dday{font-size:10.5px;letter-spacing:-.03em}.tripbtn{padding:0 9px 0 7px;font-size:12px}}
 .chip{padding:7px 13px;font-size:13.5px;font-weight:600;border:1px solid transparent}
 .chip[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
 .chip .sub{font-size:11.5px}
@@ -342,7 +349,8 @@ main{padding-block:16px calc(var(--tab-h) + env(safe-area-inset-bottom,0px) + 24
   .top-in{padding-left:32px;padding-right:32px;padding-block:14px 12px}
   .brand h1{font-size:22px}
   .brand .dates{font-size:14px}
-  .dday{font-size:13px;padding:3px 10px}
+  .brand .dday{font-size:14px}
+  .tripbtn{height:34px;font-size:14px;padding:0 14px 0 12px} .tripbtn svg{width:16px;height:16px}
   .chip{font-size:14.5px;padding:8px 16px}
   .chip .sub{font-size:12px}
   main{padding-left:32px;padding-right:32px;padding-block:22px 48px}
@@ -397,8 +405,8 @@ main{padding-block:16px calc(var(--tab-h) + env(safe-area-inset-bottom,0px) + 24
 <header class="top">
   <div class="top-in">
     <div class="brand">
-      <h1>도쿄 여행 <span class="dates">10.24 – 10.28</span></h1>
-      <span class="brand-r"><span id="ledger-user"></span><span class="dday" id="dday"></span></span>
+      <h1>도쿄 여행 <span class="dates">10.24–28</span><span class="dday" id="dday"></span></h1>
+      <span class="brand-r"><span id="ledger-user"></span><button type="button" class="tripbtn" id="tripinfo" aria-label="항공·숙소 정보"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 21l1.5-1v-5l8 2.5v-2l-8-5V4.5a1.5 1.5 0 0 0-3 0V10.5l-8 5v2l8-2.5v5l1.5 1z"/></svg>항공·숙소</button></span>
     </div>
     <div class="chips" id="subchips"></div>
   </div>
