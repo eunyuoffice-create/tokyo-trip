@@ -866,7 +866,7 @@ function renderChips(){
  else if(state.tab==='food'){ const base=getFood().filter(f=>(state.ftype==='전체'||foodType(f)===state.ftype)&&tagMatch(f)); list=['전체',...FOOD_AREAS].map(a=>({id:a,label:a,sub:a==='전체'?base.length:base.filter(f=>f.a===a).length,on:a===state.farea})); }
  else if(state.tab==='place') list=['전체',...PLACE_CHIPS].map(a=>({id:a,label:a,sub:getPlaces().filter(p=>placeMatch(p,a)).length,on:a===state.pgroup}));
  else if(state.tab==='ledger') list=[];
- else { const ms=(window.Ledger&&Ledger.state&&Ledger.state.screen==='main')?Ledger.state.memos.filter(m=>m.cat==='info'&&m.type!=='flight'&&m.type!=='hotel').sort((a,b)=>(b.order||b.ts||0)-(a.order||a.ts||0)):[]; list=[{id:'mine',label:'내 메모'},...ms.map(m=>({id:'memo:'+m.id,label:(m.title||'제목 없음').slice(0,14)}))]; }
+ else { const ms=(window.Ledger&&Ledger.state&&Ledger.state.screen==='main')?Ledger.state.memos.filter(m=>m.cat==='info'&&m.type!=='flight'&&m.type!=='hotel'&&m.id!=='note-move').sort((a,b)=>(b.order||b.ts||0)-(a.order||a.ts||0)):[]; list=[{id:'mine',label:'내 메모'},...ms.map(m=>({id:'memo:'+m.id,label:(m.title||'제목 없음').slice(0,14)}))]; }
  if(!list.length){box.style.display='none';return} box.style.display='';
  list.forEach(c=>{
   const b=document.createElement('button'); b.className='chip'; b.setAttribute('aria-pressed',String(!!c.on));

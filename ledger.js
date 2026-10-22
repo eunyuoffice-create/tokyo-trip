@@ -385,7 +385,8 @@ function rowHtml(e){
 const svgDrag='<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.8"/><circle cx="15" cy="6" r="1.8"/><circle cx="9" cy="12" r="1.8"/><circle cx="15" cy="12" r="1.8"/><circle cx="9" cy="18" r="1.8"/><circle cx="15" cy="18" r="1.8"/></svg>';
 const svgList='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="7" height="7" rx="1.5"/><path d="M5 7.5l1.5 1.5L9 6"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 7.5h7M14 17.5h7"/></svg>';
 const svgText='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17v3z"/><path d="M13.5 6.5l3 3"/><path d="M4 4h7"/></svg>';
-const isTripDoc=m=>m.type==='flight'||m.type==='hotel';   // 항공편·숙소는 메모 탭에 안 보이고 헤더 '항공·숙소' 시트에서만
+const TRIP_MOVE='note-move';   // '공항 ↔ 이케부쿠로' 메모 = 시트의 이동 탭
+const isTripDoc=m=>m.type==='flight'||m.type==='hotel'||m.id===TRIP_MOVE;   // 항공편·이동·숙소는 메모 탭에 안 보이고 헤더 '항공·숙소' 시트에서만
 function viewMemo(){
   let h=`<div class="lgsync-slot">${syncHtml()}</div>`;
   const isInfo=m=>m.cat==='info';
@@ -1076,12 +1077,13 @@ function mount(el,memoEl){
 }
 /* ---------- 항공·숙소: 헤더 오른쪽 버튼(#tripinfo) → 여행 정보 시트. 공용 메모(항공편·숙소)를 그대로 보여주고 거기서 수정·추가 ---------- */
 let tiTab=null;
-const tripDocs=()=>{ const live=S.screen==='main'&&S.memos.some(m=>m.cat==='info'); const src=live?S.memos.filter(m=>m.cat==='info'&&isShared(m)):(window.NOTE_SEED||[]); return {live,flight:src.filter(m=>m.type==='flight'),hotel:src.filter(m=>m.type==='hotel')}; };
-// 도쿄 시간 기준: 10/24 낮 ~ 10/27 은 숙소, 그 외(출국 전·마지막 날)는 항공
-const tiDefault=()=>{ const j=new Date(Date.now()+9*36e5), md=(j.getUTCMonth()+1)*100+j.getUTCDate(); return ((md===1024&&j.getUTCHours()>=12)||(md>=1025&&md<=1027))?'hotel':'flight'; };
-function openTripInfo(tab){ const d=tripDocs(); tiTab=tab||tiDefault(); const list=d[tiTab]; const lbl=tiTab==='flight'?'항공편':'숙소';
-  openSheet(`<h2>여행 정보<button type="button" data-close>닫기</button></h2><div class="lgseg2 lgtiseg"><button type="button" data-ti="flight" aria-pressed="${tiTab==='flight'}">✈ 항공</button><button type="button" data-ti="hotel" aria-pressed="${tiTab==='hotel'}">🏨 숙소</button></div>
-    <div class="lgtiwrap">${list.length?list.map(m=>infoCardHtml(m,true)).join(''):`<p class="lghint">아직 ${lbl} 정보가 없어요.</p>`}</div>${d.live?`<button type="button" class="lglink" data-tiadd>+ ${lbl} 추가</button>`:''}`);
+const tripDocs=()=>{ const live=S.screen==='main'&&S.memos.some(m=>m.cat==='info'); const src=live?S.memos.filter(m=>m.cat==='info'&&isShared(m)):(window.NOTE_SEED||[]); return {live,flight:src.filter(m=>m.type==='flight'),move:src.filter(m=>m.id===TRIP_MOVE),hotel:src.filter(m=>m.type==='hotel')}; };
+// 도쿄 시간 기준: 출국 전·10/24 오전은 항공, 10/24 낮(공항→호텔)은 이동, 그 뒤 ~10/27 은 숙소, 10/28 새벽(리무진)은 이동, 그 뒤 항공
+const tiDefault=()=>{ const j=new Date(Date.now()+9*36e5), md=(j.getUTCMonth()+1)*100+j.getUTCDate(), h=j.getUTCHours();
+  if(md<1024||(md===1024&&h<12)) return 'flight'; if(md===1024&&h<15) return 'move'; if(md<=1027) return 'hotel'; if(md===1028&&h<8) return 'move'; return 'flight'; };
+function openTripInfo(tab){ const d=tripDocs(); tiTab=tab||tiDefault(); const list=d[tiTab]; const lbl={flight:'항공편',move:'이동',hotel:'숙소'}[tiTab];
+  openSheet(`<h2>여행 정보<button type="button" data-close>닫기</button></h2><div class="lgseg2 lgtiseg"><button type="button" data-ti="flight" aria-pressed="${tiTab==='flight'}">✈ 항공</button><button type="button" data-ti="move" aria-pressed="${tiTab==='move'}">🚌 이동</button><button type="button" data-ti="hotel" aria-pressed="${tiTab==='hotel'}">🏨 숙소</button></div>
+    <div class="lgtiwrap">${list.length?list.map(m=>infoCardHtml(m,true)).join(''):`<p class="lghint">아직 ${lbl} 정보가 없어요.</p>`}</div>${d.live&&tiTab!=='move'?`<button type="button" class="lglink" data-tiadd>+ ${lbl} 추가</button>`:''}`);
   const sh=q('.lgsheet',ov);
   qa('[data-ti]',sh).forEach(b=>b.onclick=()=>openTripInfo(b.dataset.ti));
   qa('details[data-accm] > summary',sh).forEach(sm=>sm.onclick=ev=>ev.preventDefault());   // 시트 안에선 항상 펼친 채로
