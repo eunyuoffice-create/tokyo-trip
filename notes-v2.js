@@ -290,7 +290,7 @@ window.NOTE_V2={ver:2,docs:{
 
 'note-gift-more':{remove:true},
 
-'note-gift-ike':{v:3,blocks:[
+'note-gift-ike':{v:4,blocks:[
 {k:'sec',title:'매장 · 영업시간',body:
 `- **세이부 이케부쿠로 식품관 B1** 월~토 10:00~21:00 · 일 ~20:00 (2026년 리뉴얼 중이라 매장 위치가 바뀔 수 있음)
 - **도부백화점 B1** 10:00~20:00
@@ -318,33 +318,33 @@ window.NOTE_V2={ver:2,docs:{
 `5개 약 1,100엔
 **어디서** 도부 B1 10:00~20:00
 **메모** 도쿄역에서 품절이면 여기서`},
-{k:'item',img:'',title:'케이신도 · 桂新堂',desc:
-`이케후쿠로 새우 센베이 (세이부 이케부쿠로 한정)
+{k:'item',img:'img/gift/keishindo.jpg',title:'케이신도 · 桂新堂',desc:
+`「池袋の池ふくろう」 새우 센베이 9봉 약 1,404엔 (세이부 이케부쿠로 한정)
 **어디서** 세이부 B1
 **메모** 부엉이 그림 센베이, 가벼워서 선물용`},
 {k:'item',img:'',title:'후지야 · 不二家',desc:
 `긴자 포켓 쇼트케이크 540엔 (세이부 한정)
 **어디서** 세이부 B1
 **메모** 손바닥 크기 쇼트케이크, 당일 소비 → 호텔 간식`},
-{k:'item',img:'',title:'에쉬레 · ÉCHIRÉ',desc:
+{k:'item',img:'img/gift/echire.jpg',title:'에쉬레 · ÉCHIRÉ',desc:
 `봉브 에쉬레 540~648엔 (나튀르 · 피스타치오 · 몽블랑, 세이부 한정)
 **어디서** 세이부 B1
-**메모** 당일 소비 → 호텔 간식`},
+**메모** 냉장 · 당일 소비 → 호텔 간식 · 1인 6개 제한`},
 {k:'item',img:'',title:'클럽 하리에 · CLUB HARIE',desc:
 `바움쿠헨 mini 4개 2,117엔 · "이케후쿠로" 부엉이 패키지 (도부 한정)
 **어디서** 도부 B1
 **메모** 현재 판매 여부는 매장에서 확인`},
-{k:'item',img:'',title:'타르틴 · TARTINE',desc:
-`딸기 타르틴 · 딸기 모양 콘 과자
+{k:'item',img:'img/gift/tartine.jpg',title:'타르틴 · TARTINE',desc:
+`스트로베리 타르틴 · 딸기 모양 콘 과자 (4개 약 843엔 · 9개 약 1,653엔, 예전 가격)
 **어디서** 도부 B1
 **메모** 포장 예쁨`},
-{k:'item',img:'',title:'핫텐도 · 八天堂',desc:
-`크림빵
+{k:'item',img:'img/gift/hattendo.jpg',title:'핫텐도 · 八天堂',desc:
+`크림빵 커스터드 · 3개입 1,100엔
 **어디서** JR 이케부쿠로 중앙개찰 바로 앞
 **메모** 당일 먹는 호텔 간식`},
-{k:'item',img:'',title:'스즈메야 · すずめや',desc:
+{k:'item',img:'img/gift/suzumeya.jpg',title:'스즈메야 · すずめや',desc:
 `도라야키 1개 약 250엔
-**어디서** 히가시이케부쿠로
+**어디서** 미나미이케부쿠로 2-18-5 (호텔에서 가까움)
 **메모** !!목 · 금 · 토 11:00~18:00만 영업, 매진 시 종료!! → 우리 일정에선 10/24 토요일만`},
 {k:'sec',title:'정리',body:
 `## 선물용 (며칠 둬도 되는 것)
@@ -356,7 +356,7 @@ window.NOTE_V2={ver:2,docs:{
 - 밤에 급하면 JR 중앙통로 프레스 버터 샌드 (~22:00)`}
 ]},
 
-'note-gift-haneda':{create:true,v:1,title:'하네다 3터미널 · 출국 선물 (10/28)',tag:'10/28',order:4500,blocks:[
+'note-gift-haneda':{create:true,v:2,title:'하네다 3터미널 · 출국 선물 (10/28)',tag:'10/28',order:4500,blocks:[
 {k:'sec',title:'타임라인',body:
 `- 07:35 3F 출발층 하차
 - 07:40~08:00 대한항공 체크인 (!!08:45 마감!!)
@@ -364,6 +364,39 @@ window.NOTE_V2={ver:2,docs:{
 - 08:25~08:50 보안 · 출국심사
 - 08:50~09:15 면세점
 - 09:15 게이트`},
+{k:'sec',title:'살 것 체크',body:
+`가격은 하네다 온라인 숍 · 공식 숍 기준 · 매장 재고는 그날 확인`},
+{k:'item',img:'img/gift/toraya.jpg',title:'도라야 공항 한정 양갱 · とらや 空港限定 小形羊羹',desc:
+`7개입 2,484엔 · 10개입 3,456엔
+**어디서** 보안검색 전 4F 江戸食賓館`},
+{k:'item',img:'img/gift/skybanana.jpg',title:'하늘 나는 도쿄바나나 · 空とぶ東京ばな奈',desc:
+`8개입 1,404엔 · 하네다 한정 (꿀 바나나 맛)
+**어디서** 보안검색 전 4F 江戸食賓館`},
+{k:'item',img:'img/donki/royce.jpg',title:'로이스 생초콜릿 · ロイズ 生チョコレート',desc:
+`20개입 약 1,215엔
+**어디서** 4F 江戸食賓館 · 3F ANA FESTA · 출국 후 SOUTH
+**메모** !!냉장!! → 출국 후 마지막에`},
+{k:'item',img:'img/gift/shiroikoibito.jpg',title:'시로이코이비토 · 白い恋人',desc:
+`12매 1,144엔
+**어디서** 출국 후 TIAT 듀티프리 · SOUTH`},
+{k:'item',img:'img/gift/yokumoku.jpg',title:'요쿠모쿠 시가르 · ヨックモック シガール',desc:
+`20개입 1,998엔
+**어디서** 출국 후 TIAT 듀티프리`},
+{k:'item',img:'img/gift/hiyoko.jpg',title:'도쿄 히요코 · ひよ子',desc:
+`7개입 1,371엔
+**어디서** 출국 후 TIAT 듀티프리`},
+{k:'item',img:'img/gift/goma.jpg',title:'고마타마고 · ごまたまご',desc:
+`**어디서** 출국 후 TIAT 듀티프리 (도쿄역 다이마루에도)`},
+{k:'item',img:'img/gift/tmcf.jpg',title:'도쿄 밀크치즈 공장 · 東京ミルクチーズ工場',desc:
+`**어디서** 출국 후 TIAT 듀티프리`},
+{k:'item',img:'img/gift/sbt.jpg',title:'슈가 버터의 나무 · シュガーバターの木',desc:
+`**어디서** 출국 후 TIAT 듀티프리`},
+{k:'item',img:'img/gift/jagapokkuru.jpg',title:'자가포쿠루 · じゃがポックル',desc:
+`10봉 · 홋카이도 감자 스틱
+**메모** !!하네다 판매는 확인 못 함!! (원래 홋카이도 한정) → 있으면 사기`},
+{k:'item',img:'img/gift/nycsand.jpg',title:'N.Y. 캐러멜 샌드 사전예약 · N.Y.キャラメルサンド',desc:
+`하네다 한정 어소트 20개입 4,400엔
+**메모** 3터미널 매장엔 없음 → TIAT 사전예약 (10/25~26) 후 출국 후 픽업 · 공용 메모 "N.Y 사전예약"에 링크`},
 {k:'sec',title:'보안검색 전',body:
 `- **4F 에도코지 江戸食賓館** 06:30~ · 도라야 공항 한정 양갱 · 하늘 나는 도쿄바나나 · 로이스 · Tax Free
 - **3F ANA FESTA** 06:00~ · 전국 과자 · 로이스
@@ -380,7 +413,7 @@ window.NOTE_V2={ver:2,docs:{
 - 10/24 도착 때 2F 도착 면세점은 주류 · 담배뿐`}
 ]},
 
-'note-shop-donki':{v:4,blocks:[
+'note-shop-donki':{v:6,blocks:[
 {k:'sec',title:'매장 · 면세',body:
 `- 이케부쿠로 동구역앞점 24시간
 - 5,000엔 이상 면세, 여권 지참. 앱 쿠폰 (5% 등) 받아서 계산대에서 같이 제시
@@ -420,12 +453,10 @@ window.NOTE_V2={ver:2,docs:{
 `주류는 면세 포장 (밀봉) · 한국 반입 한도는 일정 탭 "한국 반입 주의" 참고`},
 {k:'item',img:'img/donki/horoyoi.jpg',title:'호로요이 · ほろよい',desc:
 `350ml 캔 · 포도 · 복숭아 등 과일 맛 저도수`},
-{k:'item',img:'',title:'산토리 생맥주 · サントリー生ビール',desc:
-`350ml 캔 · 2023 출시 신브랜드
-**메모** 사진은 산토리 사이트가 막아서 못 가져옴`},
-{k:'item',img:'',title:'산토리 -196 더블 레몬 · -196 ダブルレモン',desc:
-`츄하이 캔
-**메모** 사진은 산토리 사이트가 막아서 못 가져옴`},
+{k:'item',img:'img/donki/suntorynama.jpg',title:'산토리 생맥주 · サントリー生ビール',desc:
+`350ml 캔 · 2023 출시 신브랜드`},
+{k:'item',img:'img/donki/m196.jpg',title:'산토리 -196 더블 레몬 · -196 ダブルレモン',desc:
+`츄하이 캔 · 5% (2026.5 리뉴얼)`},
 {k:'sec',title:'라멘 · 카레',body:
 `!!고기 성분 (豚 · 牛 · 鶏 · 肉エキス) 들어간 건 한국 반입 금지!! → 사기 전에 성분표 확인 (못 가져가면 숙소에서 먹기)`},
 {k:'item',img:'img/donki/ichiran.jpg',title:'이치란 라멘 치지레멘 · 一蘭ラーメン ちぢれ麺',desc:
@@ -464,7 +495,7 @@ window.NOTE_V2={ver:2,docs:{
 `12mL 약 605엔
 **메모** 강한 청량감 안약`},
 {k:'sec',title:'스킨케어 · 세안 · 선크림',body:
-`색조는 **화장품 · 부탁받는 색조** 메모, 화장수 · 세럼은 **드럭스토어** 메모 참고`},
+`색조는 **색조 화장품** 메모, 화장수 · 세럼은 **드럭스토어** 메모 참고`},
 {k:'item',img:'img/donki/biore-uv.jpg',title:'비오레 UV 아쿠아리치 워터리 에센스 · ビオレUV アクアリッチ',desc:
 `70g 약 1,078엔`},
 {k:'item',img:'img/donki/senka.jpg',title:'센카 퍼펙트 휩 · 専科 パーフェクトホイップ',desc:
