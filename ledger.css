@@ -570,6 +570,16 @@ body.body-edit .ev,body.body-edit .card{-webkit-user-select:none;user-select:non
 
 /* 여행 정보 문서 */
 .lg .lginfo-links{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 10px}
+.lg .lgcpl{display:flex;flex-direction:column;gap:6px;margin:0 0 10px}
+.lg .lgcprow{display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--bg);border-radius:10px}
+.lg .lgcpv{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.lg .lgcpv b{font-size:14px;font-weight:600;overflow-wrap:anywhere;-webkit-user-select:text;user-select:text}
+.lg .lgcpa{display:flex;gap:6px;flex-shrink:0}
+.lg .lgcpbtn{font:inherit;font-size:12.5px;font-weight:600;padding:6px 11px;border-radius:8px;border:1px solid var(--line);background:var(--card,#fff);color:var(--fg);cursor:pointer;text-decoration:none;white-space:nowrap}
+.lg .lgcpbtn.lgcpok,.lg .lgcpno.lgcpok{border-color:var(--accent);color:var(--accent)}
+.lg .lgcpno{font:inherit;font-family:var(--mono);font-size:12px;font-weight:600;padding:2px 7px;border-radius:6px;border:1px dashed var(--line);background:transparent;color:inherit;cursor:pointer}
+.lg .lgcpno::after{content:" ⧉";opacity:.6}
+.lg .lgcpbar{display:flex;justify-content:flex-end;margin:6px 0 4px}
 .lg .lginfo-b .btn{display:inline-flex;align-items:center;gap:5px;padding:6px 11px;border-radius:999px;border:1px solid var(--line);font-size:12.5px;font-weight:500;text-decoration:none;background:var(--surface);color:var(--fg)}
 .lg .lginfo-b .btn.map{border-color:transparent;background:var(--accent-soft);color:var(--accent);font-weight:600}
 .lg .lginfo-b .btn.link{border-color:transparent;background:#E3ECFB;color:#2F5FB3;font-weight:600}

@@ -36,11 +36,17 @@ window.NOTE_SEED=[
 "title": "숙소",
 "body": "마지막 날은 06:10 전에 나가야 해서 전날 밤에 짐 싸두고 프런트에 키만 반납.",
 "hotel": {
-"addr": "이케부쿠로역 동쪽 출구 도보권 (정확한 주소는 예약 메일 참고)",
+"hv": 2,
+"nameJa": "ホテルリソル池袋",
+"nameEn": "Hotel Resol Ikebukuro",
+"zip": "171-0022",
+"addrJa": "東京都豊島区南池袋2-30-14",
+"addrEn": "2-30-14 Minami-Ikebukuro, Toshima-ku, Tokyo",
+"addr": "JR 이케부쿠로역 도보 6분 · 東池袋역 1번 출구 도보 1분",
 "cin": "15:00",
 "cout": "11:00",
 "q": "ホテルリソル池袋",
-"tel": ""
+"tel": "03-3984-7700"
 }
 },
 {
