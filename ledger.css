@@ -875,3 +875,8 @@ body.body-edit .ev,body.body-edit .card{-webkit-user-select:none;user-select:non
 .lg .lgsheet .lgfullx{width:36px;height:36px;border-radius:50%;background:var(--chip);display:grid;place-items:center;color:var(--fg)}
 .lg .lgsheet .lgfullx svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
 @media (min-width:900px){ .lg .lgsheet.lgfull{left:0;right:0;bottom:0;width:auto;max-width:none;max-height:none;border-radius:0;transform:translateY(105%);padding:0 32px 32px} .lg .lgsheet.lgfull.lgopen{transform:none} .lg .lgsheet.lgfull .lgin{max-width:760px} }
+/* 여행 정보 팝업: 제목·× 와 항공|이동|숙소 탭을 한 덩어리로 위에 고정 */
+.lg .lgsheet .lgtihead{position:sticky;top:calc(-1 * env(safe-area-inset-top,0px));z-index:3;background:var(--surface);margin:0 -16px 12px;padding:0 16px 10px;box-shadow:0 6px 10px -8px rgba(23,28,40,.18)}
+.lg .lgsheet .lgtihead h2{position:static;box-shadow:none;margin:0 -16px 8px;padding:12px 16px 4px}
+.lg .lgsheet .lgtihead .lgtiseg{margin:0}
+@media (min-width:900px){ .lg .lgsheet .lgtihead{margin:0 -32px 16px;padding:0 32px 12px} .lg .lgsheet .lgtihead h2{margin:0 -32px 8px;padding:16px 32px 4px} }
