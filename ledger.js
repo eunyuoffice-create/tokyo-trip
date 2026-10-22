@@ -792,19 +792,24 @@ async function scanReceipt(){
     if(e.imgId){ if(e.queued)toast('연결 안 됨 — 사진만 붙였어요. 금액을 넣어 저장하세요'); else if(e.code==='quota')toast('자동 읽기 한도 초과 — 사진만 붙였어요. 금액을 넣어 저장하세요'); openExpense(null,{priv,newImg:e.imgId,prefill:{receipt:e.imgId}}); }
   }finally{ hideLoading(); scanning=false; const b=q('[data-act="receipt"]'); if(b){b.disabled=false;b.classList.remove('lgbusy')} }
 }
-/* 품목 자동 합산: 고른 품목 합계. 영수증 합계(세금 포함·쿠폰 반영)를 알면 그 비율로 맞춤
-   (품목이 세전가거나 전체 쿠폰이 있어도 전부 고르면 영수증 합계와 같고, 일부만 고르면 비율대로 나눔)
-   품목 가격이 영수증에 0원으로 찍혀 있으면(세트 구성품 등) 품목 합계를 믿을 수 없으니: 전부 골랐거나 가격이 하나도 없으면 영수증 합계 그대로 */
-function autoCalc(items,rcTotal){ const sel=items.filter(x=>x.sel!==false).reduce((a,x)=>a+(+x.price||0),0); const all=items.reduce((a,x)=>a+(+x.price||0),0);
-  if(+rcTotal>0&&(all<=0||items.every(x=>x.sel!==false)))return +rcTotal;
-  if(+rcTotal>0&&all>0){ const r=rcTotal/all; if(r>0.5&&r<1.5)return sel*r; } return sel; }
+/* 품목 자동 합산 = 영수증 품목 몫 + 직접 넣은 품목(man) 몫
+   영수증 품목: 영수증 합계(실제 낸 돈)가 기준. 전부 고르면 합계 그대로, 일부를 빼면 그 품목 가격 비율만큼 합계에서 뺀다(세금·쿠폰도 같이).
+     품목 가격이 하나도 없으면 나눌 수 없으니 하나라도 고르면 합계 그대로. 합계를 못 읽었으면 고른 품목 가격 그대로.
+   직접 넣은 품목: 가격 그대로 더함 (영수증에 없던 것) */
+function autoCalc(items,rcTotal){ const on=x=>x.sel!==false; const sum=a=>a.reduce((t,x)=>t+(+x.price||0),0);
+  const rc=items.filter(x=>!x.man), man=sum(items.filter(x=>x.man&&on(x))); if(!rc.length)return man;
+  const all=sum(rc), sel=sum(rc.filter(on)); if(!(+rcTotal>0))return sel+man;
+  const part=rc.every(on)?+rcTotal:all>0?rcTotal*sel/all:(rc.some(on)?+rcTotal:0);
+  return part+man; }
+/* 품목 합이 영수증 합계와 크게 다르면(합계를 잘못 읽었을 수 있음) 알림 */
+const rcMismatch=(items,rcTotal)=>{ const rc=items.filter(x=>!x.man); const all=rc.reduce((t,x)=>t+(+x.price||0),0); if(!(+rcTotal>0&&all>0))return null; const r=rcTotal/all; return (r<0.7||r>1.4)?all:null; };
 function openExpense(e,opts={}){
   const isNew=!e; const n=S.people.length; const today=todayKey();
   const d={id:e?.id,title:e?.title||'',amount:e?.amount||'',cur:e?.cur||'JPY',day:e?.day||today,cat:e?.cat||'식비',
     priv:e?!isShared(e):!!opts.priv,payer:e?e.payer:S.me,parts:e?(e.parts&&e.parts.length?e.parts.slice():[...Array(n).keys()]):[...Array(n).keys()],custom:e?.custom?{...e.custom}:null,memo:e?.memo||'',settled:!!(e&&e.settled),
     receipt:e?.receipt||'',items:Array.isArray(e?.items)?e.items.map(it=>({...it})):[],rcTotal:e?.rcTotal||0,autoSum:e?e.autoSum:true};
   if(opts.prefill)Object.assign(d,opts.prefill);
-  d.items=(d.items||[]).map(it=>({name:it.name||'',nameKo:it.nameKo||'',qty:+it.qty||1,price:+it.price||0,sel:it.sel!==false}));
+  d.items=(d.items||[]).map(it=>({name:it.name||'',nameKo:it.nameKo||'',qty:+it.qty||1,price:+it.price||0,sel:it.sel!==false,...(it.man?{man:true}:{})}));
   if(d.autoSum===undefined||d.autoSum===null) d.autoSum=!d.items.length||Math.round(autoCalc(d.items,d.rcTotal))===Math.round(+d.amount||0);   // 예전 지출: 금액이 품목 합계와 같으면 자동 합산으로 간주
   const newImgs=new Set(opts.newImg?[opts.newImg]:[]); let saved=false;   // 이 폼에서 새로 올린 영수증 사진: 저장 안 하고 닫으면 지움
   let itEdit=false;   // 영수증 품목: 보기(기본) ↔ 수정
@@ -852,7 +857,7 @@ function openExpense(e,opts={}){
   const touched=new Set(); g('#fAmt').addEventListener('input',()=>{ touched.add('amount'); if(d.autoSum&&d.items.length){ d.autoSum=false; const au=g('#fAuto'); if(au)au.checked=false; toast('금액을 직접 넣어서 자동 합산을 껐어요'); } }); g('#fTitle').addEventListener('input',()=>touched.add('title'));
   ['#fCur','#fDay','#fCat'].forEach(id=>g(id).addEventListener('click',()=>touched.add(id)));
   const itTotal=()=>d.items.filter(x=>x.sel).reduce((a,x)=>a+(+x.price||0),0);
-  const itSumText=()=>{ const sel=d.items.filter(x=>x.sel).length; if(!d.items.length)return ''; const v=autoCalc(d.items,d.rcTotal); return `${sel===d.items.length?`품목 ${sel}개`:`품목 ${sel}/${d.items.length}개`} · 합계 ${fmt(v,d.cur)}${d.rcTotal&&sel<d.items.length?` <span class="lgsub">(영수증 ${fmt(d.rcTotal,d.cur)})</span>`:''}`; };
+  const itSumText=()=>{ const sel=d.items.filter(x=>x.sel).length; if(!d.items.length)return ''; const v=autoCalc(d.items,d.rcTotal); return `${sel===d.items.length?`품목 ${sel}개`:`품목 ${sel}/${d.items.length}개`} · 합계 ${fmt(v,d.cur)}${d.rcTotal&&(sel<d.items.length||Math.round(v)!==Math.round(d.rcTotal))?` <span class="lgsub">(영수증 ${fmt(d.rcTotal,d.cur)})</span>`:''}${(()=>{ const mm=rcMismatch(d.items,d.rcTotal); return mm?`<br><span style="color:var(--accent)">품목 합 ${fmt(mm,d.cur)} · 영수증 ${fmt(d.rcTotal,d.cur)} — 합계를 잘못 읽었을 수 있어요. 확인해 보세요</span>`:''; })()}`; };
   // 품목: 한 목록. 평소엔 잠긴 입력칸(글자처럼 보임), "수정"이면 그 자리에서 입력
   // 할인 줄: 가격이 마이너스. 상품 바로 아래 붙은 할인은 그 상품 몫(같이 넣고 뺌), 쿠폰·포인트 같은 전체 할인은 따로
   const WIDE=/クーポン|coupon|쿠폰|ポイント|포인트|会計|合計|総額|全品|전체|まとめ/i;
@@ -872,14 +877,14 @@ function openExpense(e,opts={}){
       :`<div class="lgrcdesc">영수증 자동 읽기${u?` · 오늘 ${u.n}회`:''} · 매일 ${rcReset()} 초기화 (구글 무료 한도)</div>`;
     const rd=reading?`<div class="lgrcreading" role="status"><span class="lgspin lgspin-sm" aria-hidden="true"></span>영수증인지 읽는 중… 그동안 입력해도 돼요</div>`:'';
     return `<div class="lgf lgrcbox">${head}${body}${rd}${auto}${links}${note}</div>`; };
-  const ratioNote=()=>{ const all=d.items.reduce((a,x)=>a+(+x.price||0),0); if(d.rcTotal>0&&d.items.some(x=>!(+x.price))&&(all<=0||d.items.every(x=>x.sel!==false)))return '(0원 품목이 있어 영수증 합계로)'; if(!(d.rcTotal>0&&all>0))return ''; const r=d.rcTotal/all; return Math.abs(r-1)>0.005&&r>0.5&&r<1.5?'(세금·쿠폰 포함해 영수증 합계에 맞춤)':''; };
+  const ratioNote=()=>{ const rc=d.items.filter(x=>!x.man); if(!(d.rcTotal>0&&rc.length))return ''; const plus=d.items.some(x=>x.man&&x.sel!==false)?' + 직접 넣은 품목':''; return rc.every(x=>x.sel!==false)?`(영수증 합계${plus})`:`(뺀 품목 몫만큼 영수증 합계에서 뺌${plus})`; };
   const applyAuto=()=>{ if(!d.autoSum||!d.items.length)return; const v=Math.round(autoCalc(d.items,d.rcTotal)); g('#fAmt').value=v?String(v):''; partsHint(); customHint(); };
   const refreshSum=()=>{ applyAuto(); const el=g('#fItSum'); if(el)el.innerHTML=itSumText(); sum(); };
   const clickChip=(box,attr,val)=>{ const b=qa(`${box} button`,sh).find(x=>x.dataset[attr]===val); if(b)b.click(); };
   const applyReceipt=R=>{ const F=R.rc&&R.rc.isReceipt===false?{}:(R.fields||{});
     if(d.receipt&&newImgs.has(d.receipt)&&d.receipt!==R.imgId){ dropImage(d.receipt); newImgs.delete(d.receipt); }
     if(R.imgId){ d.receipt=R.imgId; newImgs.add(R.imgId); }
-    if(R.items.length){ d.items=R.items; }
+    if(R.items.length){ d.items=[...R.items,...d.items.filter(x=>x.man)]; }
     d.rcTotal=F.amount||d.rcTotal;
     // 금액·제목은 비어 있을 때만 채움 (이미 쓴 값·기존 지출은 그대로. 영수증 합계는 품목 줄에 보임)
     if(F.amount>0&&!amt()&&!(d.autoSum&&d.items.length)){ g('#fAmt').value=String(F.amount); }
@@ -910,7 +915,7 @@ function openExpense(e,opts={}){
     const del=g('#fRcDel'); if(del)del.onclick=()=>{ if(newImgs.has(d.receipt)){dropImage(d.receipt);newImgs.delete(d.receipt)} d.receipt=''; paintRc(); };
     const clean=()=>{ d.items=d.items.filter(x=>(x.nameKo||x.name||'').trim()||+x.price); };
     const ed=g('#fItEdit'); if(ed)ed.onclick=()=>{ if(itEdit)clean(); itEdit=!itEdit; paintRc(); };
-    g('#fAddItem').onclick=()=>{ d.items.push({name:'',nameKo:'',qty:1,price:0,sel:true}); itEdit=true; paintRc(); const ins=box.querySelectorAll('.lgitname'); if(ins.length)ins[ins.length-1].focus(); };
+    g('#fAddItem').onclick=()=>{ d.items.push({name:'',nameKo:'',qty:1,price:0,sel:true,man:true}); if(!d.autoSum){ d.autoSum=true; toast('품목 합계로 금액 자동 입력을 다시 켰어요'); } itEdit=true; paintRc(); const ins=box.querySelectorAll('.lgitname'); if(ins.length)ins[ins.length-1].focus(); };
     box.querySelectorAll('.lgit').forEach(row=>{ const it=d.items[+row.dataset.i];
       row.querySelector('.lgitck').onclick=()=>{ const i=+row.dataset.i; it.sel=!it.sel; const linked=attached(i); linked.forEach(k=>{d.items[k].sel=it.sel}); [i,...linked].forEach(k=>{ const r=box.querySelector(`.lgit[data-i="${k}"]`); if(!r)return; r.classList.toggle('lgitoff',!d.items[k].sel); const b=r.querySelector('.lgitck'); b.setAttribute('aria-pressed',d.items[k].sel); b.textContent=d.items[k].sel?'✓':''; }); refreshSum(); if(linked.length&&!it.sel)toast(`붙어 있던 할인 ${linked.length}줄도 같이 뺐어요`); };
       const nm=row.querySelector('.lgitname'); const fitN=()=>{ nm.style.height='auto'; nm.style.height=nm.scrollHeight+'px'; }; requestAnimationFrame(fitN);
@@ -934,7 +939,7 @@ function openExpense(e,opts={}){
     const a=amt(); if(!(a>0)){toast('금액을 넣어주세요');g('#fAmt').focus();return}
     let body;
     const links=readExpLinks(sh);
-    const its=d.items.filter(x=>(x.nameKo||x.name||'').trim()||+x.price).map(x=>({name:(x.name||x.nameKo).trim(),nameKo:(x.nameKo||'').trim(),qty:+x.qty||1,price:+x.price||0,sel:!!x.sel}));
+    const its=d.items.filter(x=>(x.nameKo||x.name||'').trim()||+x.price).map(x=>({name:(x.name||x.nameKo).trim(),nameKo:(x.nameKo||'').trim(),qty:+x.qty||1,price:+x.price||0,sel:!!x.sel,...(x.man?{man:true}:{})}));
     const extra={receipt:d.receipt||null,items:its.length?its:null,rcTotal:d.rcTotal||null,autoSum:its.length?!!d.autoSum:null};
     if(d.priv) body={owner:S.me,title:g('#fTitle').value.trim(),amount:a,cur:d.cur,day:d.day,cat:d.cat,payer:S.me,parts:[S.me],custom:null,memo:g('#fMemo').value.trim(),links,ts:e?.ts||Date.now(),...extra};
     else{ if(!d.parts.length){toast('나눌 사람을 골라주세요');g('#fMore').open=true;return}
