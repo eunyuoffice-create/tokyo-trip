@@ -377,6 +377,145 @@ window.NOTE_V2={ver:2,docs:{
 `도시락 용품 · 젓가락 · 실리콘 조리도구 · 오니기리 틀`},
 {k:'item',img:'',title:'뷰티 · 여행',desc:
 `메이크업 스펀지 · 헤어 집게핀 · 여행용 소분 용기`}
+]},
+
+'note-hot-pick':{create:true,v:1,title:'SNS 핫템 · 마트·드럭스토어',tag:'SNS 핫템',order:3400,blocks:[
+{k:'item',img:'img/hot/cafeole.jpg',title:'다카치호 목장 카페오레 · 高千穂牧場 カフェ・オ・レ',desc:
+`생우유 72% · 향료 무첨가 · 220ml
+**어디서** 편의점·슈퍼 냉장 유제품 칸
+**메모** 냉장 보관이라 현지에서 마시기`},
+{k:'item',img:'img/hot/brownie.jpg',title:'부르봉 미니 농후 초코브라우니 시오밀크 · 濃厚チョコブラウニー 塩ミルク',desc:
+`106g · 개별 포장 8개 · 소금우유 한정 맛
+**어디서** 슈퍼·돈키 과자 코너
+**메모** 같은 줄에 레몬 치즈케이크(レモンチーズケーキ)도 있음`},
+{k:'item',img:'img/hot/elise.jpg',title:'부르봉 에리제 시오밀크 · エリーゼ 塩ミルク',desc:
+`32개입 · 소금우유 크림 웨하스 스틱
+**어디서** 슈퍼·돈키 과자 코너
+**메모** 개별 포장이라 나눠 주기 좋음`},
+{k:'item',img:'img/hot/eyemask.jpg',title:'치이카와 나리키리 HOT 아이마스크 · なりきりHOTアイマスク',desc:
+`치이카와 · 하치와레 · 약 40℃로 15~20분 따뜻
+**어디서** 돈키·드럭스토어·잡화점 캐릭터 코너에서 찾아보기
+**메모** 비행기·자기 전에 쓰기 좋음 · 선물용`},
+{k:'item',img:'img/hot/nodonuru.jpg',title:'노도누루 누레마스크 · のどぬ～る ぬれマスク',desc:
+`마스크 안에 젖은 필터를 넣어 자는 동안 최대 10시간 목 촉촉
+**어디서** 드럭스토어 (마츠키요 등)
+**메모** 호텔 에어컨 · 비행기 탈 때 · 목이 잘 붓는 사람 추천 · 귀가 덜 아픔`}
+]},
+
+'note-hot-sauce':{create:true,v:1,title:'소스 & 가루',tag:'SNS 핫템',order:3300,blocks:[
+{k:'item',img:'img/hot/s-mentai.jpg',title:'야마야 명란 마요네즈 · やまや めんたいマヨネーズ',desc:
+`**메모** 명란 좋아하면 일단 담기`},
+{k:'item',img:'img/hot/s-umatare.jpg',title:'쿠바라 우마타레 양배추 소스 · キャベツのうまたれ',desc:
+`**메모** 생양배추에 뿌리면 이자카야 맛`},
+{k:'item',img:'img/hot/s-rayu.jpg',title:'모모야 먹는 라유 · 辛そうで辛くない少し辛いラー油',desc:
+`**메모** 매운 요리에 넣으면 감칠맛`},
+{k:'item',img:'img/hot/s-gomaninniku.jpg',title:'참깨마늘 소스 · ごまにんにくだれ',desc:
+`**어디서** 돈키호테 (ド 마크 상품)
+**메모** 샤부샤부·고기 요리에 두루`},
+{k:'item',img:'img/hot/s-tamagoshoyu.jpg',title:'타마고 간장 · たまごにかけるお醤油',desc:
+`**메모** 날달걀 밥(TKG)용 간장 · 많이 짜지 않음`},
+{k:'item',img:'img/hot/s-kewpie.jpg',title:'간장계란 소스 · 卵かけご飯の素',desc:
+`**어디서** 돈키호테 (ド 마크 상품)
+**메모** 돈키 화제의 소스 · 품절 잦음`},
+{k:'item',img:'img/hot/s-furikake.jpg',title:'마늘참깨 후리카케 · ごまにんにく',desc:
+`**어디서** 돈키호테 (ド 마크 상품)
+**메모** !!꼭 마늘참깨 맛인지 확인!! · 맨밥에 뿌려 먹기만 해도 맛있음`},
+{k:'item',img:'img/hot/s-goldencurry.jpg',title:'S&B 골든커리 바리카라 · ゴールデンカレー バリ辛',desc:
+`고체 카레 · 아주 매운맛
+**메모** 이름보다 덜 매움`},
+{k:'item',img:'img/hot/s-yakiimo.jpg',title:'군고구마 스프레드 · 焼き芋スプレッド',desc:
+`**어디서** 돈키호테 한정
+**메모** 빵에 발라 먹기`}
+]},
+
+'note-hot-7':{create:true,v:1,title:'세븐일레븐 간식',tag:'SNS 핫템',order:3200,blocks:[
+{k:'item',img:'img/hot/7-1.jpg',title:'오하요 크림브륄레 · OHAYO ブリュレ',desc:
+`¥375 · 아이스크림
+**메모** 설탕 코팅을 깨 먹는 부드러운 아이스크림`},
+{k:'item',img:'img/hot/7-2.jpg',title:'고구마 모찌볼 · さつまいもボール',desc:
+`¥390
+**메모** 쫀득한 모찌 안에 고구마 필링`},
+{k:'item',img:'img/hot/7-3.jpg',title:'생초콜릿 아이스크림 · 生チョコアイス',desc:
+`¥289
+**메모** 생초콜릿이 듬뿍 올라간 초코 아이스크림`},
+{k:'item',img:'img/hot/7-4.jpg',title:'초코나마산도',desc:
+`¥205
+**메모** 얇은 초코 코팅 + 폭신한 빵 + 바닐라 크림`},
+{k:'item',img:'img/hot/7-5.jpg',title:'키미다케노 푸딩 · きみだけのプリン',desc:
+`가격 미확인
+**메모** 크림치즈 같은 진한 바닐라 푸딩`},
+{k:'item',img:'img/hot/7-6.jpg',title:'베리베리 요거트 스무디',desc:
+`¥330
+**메모** 매장 기계로 바로 갈아 마시는 스무디`},
+{k:'item',img:'img/hot/7-7.jpg',title:'타마고산도 · たまごサンド',desc:
+`¥259
+**메모** 편의점 타마고산도 일티어`},
+{k:'item',img:'img/hot/7-8.jpg',title:'초코바나나 크레이프',desc:
+`¥270
+**메모** 크레이프 속 바나나 + 초코 + 크림`},
+{k:'item',img:'img/hot/7-9.jpg',title:'슈가버터샌드트리 · シュガーバターサンドの木',desc:
+`¥289
+**메모** 슈가버터트리 콜라보 샌드쿠키`}
+]},
+
+'note-hot-fm':{create:true,v:1,title:'패밀리마트 간식',tag:'SNS 핫템',order:3100,blocks:[
+{k:'item',img:'img/hot/fm-1.jpg',title:'크림 커피 젤리 · クリームコーヒーゼリー',desc:
+`¥145
+**메모** 부드러운 크림 + 쌉싸름한 커피 젤리`},
+{k:'item',img:'img/hot/fm-2.jpg',title:'수플레 푸딩',desc:
+`¥338
+**메모** 푸딩 위에 폭신한 수플레`},
+{k:'item',img:'img/hot/fm-3.jpg',title:'더블 슈크림',desc:
+`¥192
+**메모** 커스터드 + 생크림 두 가지`},
+{k:'item',img:'img/hot/fm-4.jpg',title:'시미 초코콘 · しみチョココーン',desc:
+`¥158
+**메모** 겉바속촉 · 안까지 초코가 스며든 과자`},
+{k:'item',img:'img/hot/fm-5.jpg',title:'단호박 몽블랑 푸딩',desc:
+`¥298
+**메모** 단호박 푸딩 + 생크림 + 단호박 무스`},
+{k:'item',img:'img/hot/fm-6.jpg',title:'홋카이도 멜론빵',desc:
+`¥135
+**메모** 멜론 과즙 커스터드가 든 멜론빵`},
+{k:'item',img:'img/hot/fm-7.jpg',title:'UFO 야끼소바빵',desc:
+`¥298
+**메모** 닛신 UFO 야끼소바를 넣은 빵`},
+{k:'item',img:'img/hot/fm-8.jpg',title:'초콜릿 슈크림 · チョコシュー',desc:
+`¥150
+**메모** 홈런볼 비슷 · 초코가 꽉 찬 슈 과자`},
+{k:'item',img:'img/hot/fm-9.jpg',title:'파미마 더 크레페 생초콜릿',desc:
+`¥258
+**메모** 크레페에 생크림 + 생초콜릿`}
+]},
+
+'note-hot-ms':{create:true,v:1,title:'미니스톱 간식',tag:'SNS 핫템',order:3000,blocks:[
+{k:'item',img:'img/hot/ms-1.jpg',title:'홋카이도 밀크 소프트',desc:
+`¥313
+**메모** 미니스톱 대표 소프트아이스크림`},
+{k:'item',img:'img/hot/ms-2.jpg',title:'테린느 프로마주 · テリーヌ フロマージュ',desc:
+`¥257
+**메모** 프랑스산 크림치즈 · 진한 맛`},
+{k:'item',img:'img/hot/ms-3.jpg',title:'푸딩 롤케이크 · プリンロールケーキ',desc:
+`¥246
+**메모** 폭신한 롤케이크 속 푸딩`},
+{k:'item',img:'img/hot/ms-4.jpg',title:'대만 꿀고구마 소프트',desc:
+`¥410
+**메모** 꿀고구마 + 소프트아이스크림`},
+{k:'item',img:'img/hot/ms-5.jpg',title:'꿀고구마 버터 도라야키',desc:
+`¥268
+**메모** 꿀고구마 앙금 + 버터`},
+{k:'item',img:'img/hot/ms-6.jpg',title:'테린느 쇼콜라 · テリーヌ ショコラ',desc:
+`¥257
+**메모** 프랑스산 초콜릿 · 진하고 고급진 맛`},
+{k:'item',img:'img/hot/ms-7.jpg',title:'말차 버터 도라야키',desc:
+`¥268
+**메모** 우지 말차 앙금 + 버터`},
+{k:'item',img:'img/hot/ms-8.jpg',title:'벨기에 초콜릿 파르페',desc:
+`¥332
+**메모** 미니스톱 직원이 뽑은 베스트 디저트`},
+{k:'item',img:'img/hot/ms-9.jpg',title:'모찌타마 밀크',desc:
+`¥127
+**메모** 쫀득한 빵 속 홋카이도 연유 우유크림`}
 ]}
 
 }};
