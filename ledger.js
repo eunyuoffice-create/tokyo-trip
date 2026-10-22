@@ -793,8 +793,10 @@ async function scanReceipt(){
   }finally{ hideLoading(); scanning=false; const b=q('[data-act="receipt"]'); if(b){b.disabled=false;b.classList.remove('lgbusy')} }
 }
 /* 품목 자동 합산: 고른 품목 합계. 영수증 합계(세금 포함·쿠폰 반영)를 알면 그 비율로 맞춤
-   (품목이 세전가거나 전체 쿠폰이 있어도 전부 고르면 영수증 합계와 같고, 일부만 고르면 비율대로 나눔) */
+   (품목이 세전가거나 전체 쿠폰이 있어도 전부 고르면 영수증 합계와 같고, 일부만 고르면 비율대로 나눔)
+   품목 가격이 영수증에 0원으로 찍혀 있으면(세트 구성품 등) 품목 합계를 믿을 수 없으니: 전부 골랐거나 가격이 하나도 없으면 영수증 합계 그대로 */
 function autoCalc(items,rcTotal){ const sel=items.filter(x=>x.sel!==false).reduce((a,x)=>a+(+x.price||0),0); const all=items.reduce((a,x)=>a+(+x.price||0),0);
+  if(+rcTotal>0&&(all<=0||items.every(x=>x.sel!==false)))return +rcTotal;
   if(+rcTotal>0&&all>0){ const r=rcTotal/all; if(r>0.5&&r<1.5)return sel*r; } return sel; }
 function openExpense(e,opts={}){
   const isNew=!e; const n=S.people.length; const today=todayKey();
@@ -870,7 +872,7 @@ function openExpense(e,opts={}){
       :`<div class="lgrcdesc">영수증 자동 읽기${u?` · 오늘 ${u.n}회`:''} · 매일 ${rcReset()} 초기화 (구글 무료 한도)</div>`;
     const rd=reading?`<div class="lgrcreading" role="status"><span class="lgspin lgspin-sm" aria-hidden="true"></span>영수증인지 읽는 중… 그동안 입력해도 돼요</div>`:'';
     return `<div class="lgf lgrcbox">${head}${body}${rd}${auto}${links}${note}</div>`; };
-  const ratioNote=()=>{ const all=d.items.reduce((a,x)=>a+(+x.price||0),0); if(!(d.rcTotal>0&&all>0))return ''; const r=d.rcTotal/all; return Math.abs(r-1)>0.005&&r>0.5&&r<1.5?'(세금·쿠폰 포함해 영수증 합계에 맞춤)':''; };
+  const ratioNote=()=>{ const all=d.items.reduce((a,x)=>a+(+x.price||0),0); if(d.rcTotal>0&&d.items.some(x=>!(+x.price))&&(all<=0||d.items.every(x=>x.sel!==false)))return '(0원 품목이 있어 영수증 합계로)'; if(!(d.rcTotal>0&&all>0))return ''; const r=d.rcTotal/all; return Math.abs(r-1)>0.005&&r>0.5&&r<1.5?'(세금·쿠폰 포함해 영수증 합계에 맞춤)':''; };
   const applyAuto=()=>{ if(!d.autoSum||!d.items.length)return; const v=Math.round(autoCalc(d.items,d.rcTotal)); g('#fAmt').value=v?String(v):''; partsHint(); customHint(); };
   const refreshSum=()=>{ applyAuto(); const el=g('#fItSum'); if(el)el.innerHTML=itSumText(); sum(); };
   const clickChip=(box,attr,val)=>{ const b=qa(`${box} button`,sh).find(x=>x.dataset[attr]===val); if(b)b.click(); };
