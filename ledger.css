@@ -868,3 +868,10 @@ body.body-edit .ev,body.body-edit .card{-webkit-user-select:none;user-select:non
 .lgslot .lguser.lguser-name{gap:4px}
 .lgslot .lguser .lgminigear{display:inline-flex;margin-left:1px;color:var(--muted)}
 .lgslot .lguser .lgminigear svg{width:11px;height:11px}
+/* 여행 정보 시트는 화면 꽉 찬 팝업 (openTripInfo 가 .lgfull 을 붙이고 openSheet 가 뗌) */
+.lg .lgsheet.lgfull{top:0;max-height:none;height:100dvh;border-radius:0;padding-top:env(safe-area-inset-top,0px)}
+.lg .lgsheet.lgfull .lggrab{display:none}
+.lg .lgsheet.lgfull h2{top:calc(-1 * env(safe-area-inset-top,0px));padding-top:12px;margin-top:0}
+.lg .lgsheet .lgfullx{width:36px;height:36px;border-radius:50%;background:var(--chip);display:grid;place-items:center;color:var(--fg)}
+.lg .lgsheet .lgfullx svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
+@media (min-width:900px){ .lg .lgsheet.lgfull{left:0;right:0;bottom:0;width:auto;max-width:none;max-height:none;border-radius:0;transform:translateY(105%);padding:0 32px 32px} .lg .lgsheet.lgfull.lgopen{transform:none} .lg .lgsheet.lgfull .lgin{max-width:760px} }

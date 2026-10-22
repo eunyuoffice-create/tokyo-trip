@@ -715,7 +715,7 @@ let sheetCloseHook=null; const runSheetHook=()=>{const f=sheetCloseHook; sheetCl
 const NO_ENTER_SUBMIT=new Set(['expForm','infoForm','memoForm','cForm','stForm','setForm']);
 function guardEnter(e){ if(e.key!=='Enter'||e.isComposing||e.keyCode===229)return; const t=e.target; if(!t||!t.matches||!t.matches('input')||/^(checkbox|radio|button|submit)$/.test(t.type))return; const f=t.closest('form'); if(f&&NO_ENTER_SUBMIT.has(f.id)){ e.preventDefault(); t.blur(); } }
 const fitTa=ta=>{ if(!ta)return; ta.style.height='auto'; ta.style.height=ta.scrollHeight+'px'; requestAnimationFrame(()=>{ if(ta.scrollHeight){ ta.style.height='auto'; ta.style.height=ta.scrollHeight+'px'; } }); };   // 한 줄 textarea 를 내용만큼 늘림
-function openSheet(html){ runSheetHook(); q('.lgsheet .lgin',ov).innerHTML=`<div class="lggrab"></div>`+html; q('.lgsheet',ov).classList.add('lgopen'); q('.lgscrim',ov).classList.add('lgopen'); document.body.style.overflow='hidden'; qa('[data-close]',ov).forEach(b=>b.onclick=closeSheet); q('.lgsheet',ov).scrollTop=0; }
+function openSheet(html){ runSheetHook(); q('.lgsheet',ov).classList.remove('lgfull'); q('.lgsheet .lgin',ov).innerHTML=`<div class="lggrab"></div>`+html; q('.lgsheet',ov).classList.add('lgopen'); q('.lgscrim',ov).classList.add('lgopen'); document.body.style.overflow='hidden'; qa('[data-close]',ov).forEach(b=>b.onclick=closeSheet); q('.lgsheet',ov).scrollTop=0; }
 function closeSheet(){ runSheetHook(); q('.lgsheet').classList.remove('lgopen'); q('.lgscrim').classList.remove('lgopen'); document.body.style.overflow=''; }
 
 const expLinkRow=(l,u)=>`<div class="lgclink"><input type="text" placeholder="이름" value="${esc(l||'')}" maxlength="40"><input type="text" inputmode="url" autocapitalize="off" placeholder="https://…" value="${esc(u||'')}"><button type="button" class="lgx" data-dellink aria-label="삭제">×</button></div>`;
@@ -1082,9 +1082,9 @@ const tripDocs=()=>{ const live=S.screen==='main'&&S.memos.some(m=>m.cat==='info
 const tiDefault=()=>{ const j=new Date(Date.now()+9*36e5), md=(j.getUTCMonth()+1)*100+j.getUTCDate(), h=j.getUTCHours();
   if(md<1024||(md===1024&&h<12)) return 'flight'; if(md===1024&&h<15) return 'move'; if(md<=1027) return 'hotel'; if(md===1028&&h<8) return 'move'; return 'flight'; };
 function openTripInfo(tab){ const d=tripDocs(); tiTab=tab||tiDefault(); const list=d[tiTab]; const lbl={flight:'항공편',move:'이동',hotel:'숙소'}[tiTab];
-  openSheet(`<h2>여행 정보<button type="button" data-close>닫기</button></h2><div class="lgseg2 lgtiseg"><button type="button" data-ti="flight" aria-pressed="${tiTab==='flight'}">✈ 항공</button><button type="button" data-ti="move" aria-pressed="${tiTab==='move'}">🚌 이동</button><button type="button" data-ti="hotel" aria-pressed="${tiTab==='hotel'}">🏨 숙소</button></div>
+  openSheet(`<h2>여행 정보<button type="button" class="lgfullx" data-close aria-label="닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2><div class="lgseg2 lgtiseg"><button type="button" data-ti="flight" aria-pressed="${tiTab==='flight'}">✈ 항공</button><button type="button" data-ti="move" aria-pressed="${tiTab==='move'}">🚌 이동</button><button type="button" data-ti="hotel" aria-pressed="${tiTab==='hotel'}">🏨 숙소</button></div>
     <div class="lgtiwrap">${list.length?list.map(m=>infoCardHtml(m,true)).join(''):`<p class="lghint">아직 ${lbl} 정보가 없어요.</p>`}</div>${d.live&&tiTab!=='move'?`<button type="button" class="lglink" data-tiadd>+ ${lbl} 추가</button>`:''}`);
-  const sh=q('.lgsheet',ov);
+  const sh=q('.lgsheet',ov); sh.classList.add('lgfull');   // 항공·이동·숙소는 화면 꽉 찬 팝업 + 오른쪽 위 ×
   qa('[data-ti]',sh).forEach(b=>b.onclick=()=>openTripInfo(b.dataset.ti));
   qa('details[data-accm] > summary',sh).forEach(sm=>sm.onclick=ev=>ev.preventDefault());   // 시트 안에선 항상 펼친 채로
   qa('[data-memoedit]',sh).forEach(b=>{ const m=d.live&&S.memos.find(x=>x.id===b.dataset.memoedit); if(!m){b.remove();return} b.onclick=()=>{closeSheet(); setTimeout(()=>openInfoEditor(m),200)}; });
