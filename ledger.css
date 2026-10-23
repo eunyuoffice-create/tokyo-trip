@@ -549,6 +549,8 @@ body.body-edit .ev,body.body-edit .card{-webkit-user-select:none;user-select:non
 .lg .lginfo-b .cl label:last-child{border-bottom:0}
 .lg .lginfo-b .cl label > span:not(.lgthumb):not(.lgclgrip){flex:1 1 auto;min-width:0}
 .lg .lgclgrip{flex:none;align-self:center;margin:-6px -6px -6px 0;padding:6px 8px;color:var(--muted);font-size:13px;letter-spacing:-2px;opacity:.55;touch-action:none;cursor:grab;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;border-radius:6px}
+/* 사진 있는 큰 항목: 손잡이를 줄 높이 전체로 (오른쪽 띠 아무 데나 잡으면 됨) */
+.lg .lginfo-b .cl label .lgclgrip{align-self:stretch;display:flex;align-items:center;margin:-9px -8px -9px 0;padding:0 10px 0 12px;opacity:.7}
 .lg .lgclgrip:active{background:var(--chip);opacity:1;cursor:grabbing}
 .lg .cl > label:only-child .lgclgrip,.lg .lgclrows > .lgli:only-child .lgclgrip{display:none}
 .lg #mItems > .lgli:only-child .lgclgrip{display:none}

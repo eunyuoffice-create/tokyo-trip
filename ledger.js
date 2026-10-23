@@ -628,14 +628,18 @@ function startDrag(ev,handle){
 /* 머리글을 350ms 길게 누르면 드래그 시작. 그 전에 움직이면 스크롤, 그 전에 떼면 펼치기(기본 동작) */
 /* 메모 체크 항목: 오른쪽 ⋮⋮ 를 끌어서 같은 묶음 안에서 순서 바꾸기 */
 function clDrag(ev,h){ rowDrag(ev,h,{onDrop:(rows,row,from,to,list)=>clDrop(rows,row,from,to,list)}); }
+/* 페이지 스크롤일 때 위 헤더 · 아래 버튼 줄·탭바에 가리지 않는 영역. 자동 스크롤 구간을 여기 안쪽에 둔다 */
+function viewBox(){ let top=0,bottom=window.innerHeight; document.querySelectorAll('header.top,.lgbar,nav.tabs').forEach(e=>{ const b=e.getBoundingClientRect(); if(!b.height)return; if(b.top<window.innerHeight/3)top=Math.max(top,b.bottom); else bottom=Math.min(bottom,b.top); }); return {top,bottom}; }
 /* 줄 끌어서 순서 바꾸기 (공통). scroller 없으면 페이지 스크롤, onDrop(rows,row,from,to,list) 에서 저장 */
 function rowDrag(ev,h,{scroller,onDrop}){ if(ev.button&&ev.button!==0)return; ev.preventDefault(); ev.stopPropagation(); try{h.setPointerCapture(ev.pointerId)}catch(e){}
   const row=h.closest('label,.lgli'), list=row.parentElement; const rows=[...list.children].filter(r=>r.matches('label,.lgli')); const from=rows.indexOf(row); if(rows.length<2)return;
   const se=scroller||document.scrollingElement||document.documentElement; const sy=()=>se.scrollTop;
   const rects=rows.map(r=>{const b=r.getBoundingClientRect();return {top:b.top+sy(),h:b.height,mid:b.top+sy()+b.height/2}}); const gap=Math.max(0,rects[1].top-(rects[0].top+rects[0].h)); const step=rects[from].h+gap;
   const startPage=ev.clientY+sy(); let to=from, moved=false, lastY=ev.clientY, alive=true; row.classList.add('lgdragging'); document.body.classList.add('lgnoselect'); window.__dragActive=true;
-  const paint=()=>{ const dy=(lastY+sy())-startPage; row.style.transform=`translateY(${dy}px)`; const center=rects[from].mid+dy; let n=0; rows.forEach((r,j)=>{if(j!==from&&rects[j].mid<center)n++}); to=n; rows.forEach((r,j)=>{ if(j===from)return; let d2=0; if(j<from&&j>=to)d2=step; else if(j>from&&j<=to)d2=-step; r.style.transform=d2?`translateY(${d2}px)`:''; }); };
-  const tick=()=>{ if(!alive)return; const R=scroller?scroller.getBoundingClientRect():{top:0,bottom:window.innerHeight}; let v=0; if(lastY<R.top+80)v=-Math.min(18,(R.top+80-lastY)/4+3); else if(lastY>R.bottom-100)v=Math.min(18,(lastY-(R.bottom-100))/4+3); if(v&&moved){ const b=sy(); se.scrollTop+=v; if(sy()!==b)paint(); } requestAnimationFrame(tick); }; requestAnimationFrame(tick);
+  const last=rects[rects.length-1], lo=rects[0].top-rects[from].top, hi=(last.top+last.h)-(rects[from].top+rects[from].h); /* 같은 묶음 밖으로는 안 나가게 */
+  const paint=()=>{ const dy=Math.min(hi,Math.max(lo,(lastY+sy())-startPage)); row.style.transform=`translateY(${dy}px)`; const t0=rects[from].top+dy, b0=t0+rects[from].h; let dn=0, up=0; /* 끄는 줄의 아래 끝이 다음 줄 가운데를 넘으면 내려가고, 위 끝이 윗줄 가운데를 넘으면 올라감 (큰 항목·작은 항목 섞여도 끝까지 감) */ rects.forEach((r,j)=>{ if(j>from&&b0>r.mid)dn++; else if(j<from&&t0<r.mid)up++; }); to=from+dn-up; rows.forEach((r,j)=>{ if(j===from)return; let d2=0; if(j<from&&j>=to)d2=step; else if(j>from&&j<=to)d2=-step; r.style.transform=d2?`translateY(${d2}px)`:''; }); };
+  const R=scroller?scroller.getBoundingClientRect():viewBox();
+  const tick=()=>{ if(!alive)return; let v=0; if(lastY<R.top+80)v=-Math.min(18,(R.top+80-lastY)/4+3); else if(lastY>R.bottom-100)v=Math.min(18,(lastY-(R.bottom-100))/4+3); if(v){ const lb=list.getBoundingClientRect(); if((v>0&&lb.bottom<R.bottom)||(v<0&&lb.top>R.top))v=0; } if(v&&moved){ const b=sy(); se.scrollTop+=v; if(sy()!==b)paint(); } requestAnimationFrame(tick); }; requestAnimationFrame(tick);
   const move=e=>{ if(e.pointerId!==ev.pointerId)return; lastY=e.clientY; moved=moved||Math.abs(lastY-ev.clientY)>4; paint(); };
   const stopTouch=e=>e.preventDefault();
   const end=e=>{ if(e&&e.pointerId!==undefined&&e.pointerId!==ev.pointerId)return; alive=false; window.removeEventListener('pointermove',move,true); window.removeEventListener('pointerup',end,true); window.removeEventListener('pointercancel',end,true); document.removeEventListener('touchmove',stopTouch);
