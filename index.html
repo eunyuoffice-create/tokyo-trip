@@ -929,6 +929,17 @@ const KC_ROWS=[
  {n:'고가품 (전자기기·명품·시계)',note:'US$800 초과 신고',r:'r',c:'o',k:'o',d:'1인 US$800을 넘으면 입국 때 자진신고. 신고하면 세금 30% 감면(최대 20만원), 숨기다 걸리면 40% 가산. 둘이 각자 $800이니 영수증을 사람별로 나눠 결제하면 유리.'},
 ];
 const kcSym=v=>({o:['ok','○'],x:['no','✕'],d:['mid','△'],r:['mid','신고'],l:['ok','한도']})[v];
+/* 일본 면세 (2026-10-23 정리, 메모 "면세 참고" + 쇼핑 메모에 흩어져 있던 내용 모음). 11/1 부터 환급 방식으로 바뀜 → 이번 여행은 해당 없음 */
+const TAXFREE_HTML=`<div class="kcbanner"><div class="kcb-k">한 매장 하루 합계 <small>세금 빼기 전 가격</small></div><div class="kcb-v">5,000엔 이상</div><div class="kcb-s">여권 원본 꼭 들고 다니기 · 계산할 때 소비세 (10%, 음식 8%) 를 바로 빼 줌</div></div>
+<h3 class="ib-h">이번 여행 방식 (10/24~28)</h3>
+<ul class="ib-ul"><li>매장 계산대에서 바로 세금을 빼 주는 방식. 11월 1일부터 바뀌는 "공항에서 환급" 방식은 우리는 해당 없음.</li><li>여권 원본을 보여 줘야 해요 (사진·사본 ✕). Visit Japan Web 면세 QR 있으면 더 빠름.</li></ul>
+<h3 class="ib-h">살 때 알아둘 것</h3>
+<ul class="ib-ul"><li>화장품·간식·약 같은 소모품은 밀봉 봉투에 넣어 줘요. 일본 안에서 뜯으면 안 됨 (출국할 때까지 그대로).</li><li>돈키호테 · 마츠키요는 앱 쿠폰 (5% 등) 을 면세랑 같이 쓸 수 있어요. 계산대에서 쿠폰 화면을 같이 보여 주기.</li><li>면세 카운터가 따로 있는 매장이 많아요. 계산 전에 "Tax free" 안내를 먼저 확인.</li></ul>
+<h3 class="ib-h">하네다 공항</h3>
+<ul class="ib-ul"><li>출국 후 TIAT 듀티프리는 금액 제한 없이 면세 (시로이코이비토 · 요쿠모쿠 같은 과자도 있음).</li><li>10/24 도착 때 2F 도착 면세점은 주류 · 담배만.</li></ul>
+<h3 class="ib-h">한국 들어올 때</h3>
+<ul class="ib-ul"><li>1인 US$800 (둘이 따로 계산) · 술 2병·2L·$400 · 향수는 1인 총 100mL 이하 (개수 상관없음).</li></ul>
+<p style="margin:10px 0 0"><button type="button" class="btn tool" data-go-kc>한국 반입 주의 자세히 보기 →</button></p>`;
 function kcHtml(){
  const cell=v=>{const [c,t]=kcSym(v);return `<div><span class="kc ${c}">${t}</span></div>`};
  return `<div class="kcbanner"><div class="kcb-k">1인 면세 한도 <small>둘이 따로 계산</small></div><div class="kcb-v">US$800 <small>≈ 110만원</small></div><div class="kcb-s">술 2병·2L·$400 별도 · 담배 200개비 · 향수 100ml · 넘으면 자진신고(세금 30% 감면)</div></div>
@@ -984,10 +995,11 @@ function routeHtml(r){
 function renderPlan(){
  const box=document.getElementById('p-plan');
  const days=getDays(); const day=days.find(d=>d.date===state.day)||days[0];
- box.innerHTML=`<div class="toolrow"><div class="tools" id="tools"><button type="button" class="btn tool" id="outfit-btn">기온별 옷차림</button><button type="button" class="btn tool" id="restrict-btn">기내 반입 제한물품</button><button type="button" class="btn tool" id="kcustoms-btn">한국 반입 주의</button><button type="button" class="btn tool" id="esim-btn">eSIM 설치</button></div><div class="wx-at" id="wx-at"></div><div class="wx" id="wx-strip"></div></div><div class="sec-h"><h2>${day.n}일차 · ${day.date.slice(5).replace('-','월 ')}일 ${day.w}요일</h2><span class="cnt">${day.items.length}개</span></div><div class="tl"></div>`;
+ box.innerHTML=`<div class="toolrow"><div class="tools" id="tools"><button type="button" class="btn tool" id="outfit-btn">기온별 옷차림</button><button type="button" class="btn tool" id="restrict-btn">기내 반입 제한물품</button><button type="button" class="btn tool" id="taxfree-btn">일본 면세</button><button type="button" class="btn tool" id="kcustoms-btn">한국 반입 주의</button><button type="button" class="btn tool" id="esim-btn">eSIM 설치</button></div><div class="wx-at" id="wx-at"></div><div class="wx" id="wx-strip"></div></div><div class="sec-h"><h2>${day.n}일차 · ${day.date.slice(5).replace('-','월 ')}일 ${day.w}요일</h2><span class="cnt">${day.items.length}개</span></div><div class="tl"></div>`;
  wireChipScroll(box.querySelector('#tools'));
  box.querySelector('#outfit-btn').onclick=()=>openLightbox('img/outfit.png','기온별 옷차림');
  box.querySelector('#restrict-btn').onclick=()=>openInfo('기내 반입 제한물품',RESTRICTED_HTML);
+ box.querySelector('#taxfree-btn').onclick=()=>{openInfo('일본에서 살 때 면세',TAXFREE_HTML); const k=document.querySelector('#infobox [data-go-kc]'); if(k)k.onclick=()=>{openInfo('일본에서 사 올 때 주의 (한국 반입)',kcHtml()); bindKc(document.getElementById('infobox'));};};
  box.querySelector('#kcustoms-btn').onclick=()=>{openInfo('일본에서 사 올 때 주의 (한국 반입)',kcHtml()); bindKc(document.getElementById('infobox'));};
  box.querySelector('#esim-btn').onclick=()=>openInfo('eSIM 설치 (iPhone)','<p class="ib-note">아래로 스크롤하면서 순서대로 따라 하면 돼요. 한국에서는 설치만 하고 데이터 로밍은 하네다 도착 후에 켜기.</p><img class="ib-img" src="img/esim-guide-ios.jpg" alt="iPhone eSIM 설치 가이드" loading="lazy">');
  renderWx();

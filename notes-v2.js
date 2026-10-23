@@ -289,6 +289,7 @@ window.NOTE_V2={ver:2,docs:{
 ]},
 
 'note-gift-more':{remove:true},
+'note-tax':{remove:true}, /* 2026-10-23 일정 탭 "일본 면세" 팝업으로 옮김 */
 
 'note-gift-ike':{v:4,blocks:[
 {k:'sec',title:'매장 · 영업시간',body:

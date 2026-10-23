@@ -9,7 +9,7 @@
 - `index.html` 한 파일이 사이트 전체다. 다른 세션이 추가한 블록(메모 탭의 eSIM, 도쿄역·선물, 쇼핑 등)을 모를 수 있으니, 어떤 블록을 통째로 지우기 전에 `git log -p`로 누가 왜 넣었는지 확인한다.
 - 커밋 후 GitHub Pages 반영까지 1~2분. 확인은 `gh run list --limit 1`.
 - `.omc/state/hud-state.json`은 커밋하지 않는다.
-- 일정 탭 상단 도구 버튼: 기온별 옷차림(이미지 라이트박스) · 기내 반입 제한물품(`RESTRICTED_HTML`) · 한국 반입 주의(`KC_ROWS`+`kcHtml()`, 면세 배너 + 품목별 반입/기내/캐리어 표, 줄을 누르면 상세 아코디언) · eSIM 설치 가이드(`img/esim-guide-ios.jpg`) · 도쿄 5일 예보(Open-Meteo, 30분 캐시). 모두 `openInfo`/`openLightbox` 팝업.
+- 일정 탭 상단 도구 버튼: 기온별 옷차림(이미지 라이트박스) · 기내 반입 제한물품(`RESTRICTED_HTML`) · 일본 면세(`TAXFREE_HTML`, 5,000엔·여권·밀봉·쿠폰·하네다, 맨 아래 버튼으로 한국 반입 주의 열기. 메모 "면세 참고"(note-tax)는 2026-10-23 여기로 옮기고 remove) · 한국 반입 주의(`KC_ROWS`+`kcHtml()`, 면세 배너 + 품목별 반입/기내/캐리어 표, 줄을 누르면 상세 아코디언) · eSIM 설치 가이드(`img/esim-guide-ios.jpg`) · 도쿄 5일 예보(Open-Meteo, 30분 캐시). 모두 `openInfo`/`openLightbox` 팝업.
 - UI v2(2026-10-20): index.html `/* UI v2 */` 블록이 토큰·카드·타임라인·메모 3줄 접기를 덮어쓴다. 맛집 카드 메모는 `.note` 탭하면 펼침.
 - PC(900px 이상) 레이아웃: index.html 과 ledger.css 끝의 `@media (min-width:900px)` 블록. 하단 탭 바가 상단 내비로 올라가고(`--tab-h:0`, `--pc-nav`), 글자 17px 기준으로 커지고, 맛집·갈 곳 카드는 2열, 시트는 가운데 모달(680px). 폰 스타일을 고칠 때 이 블록도 같이 확인한다.
 - 테마는 기기 다크 모드와 무관하게 항상 밝은 배경(2026-10-20 사용자 결정). `prefers-color-scheme` 블록을 다시 넣지 않는다 (index.html, ledger.html, ledger.css, middleware.js 입장 화면 모두).
