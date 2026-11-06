@@ -5,6 +5,6 @@ export function SyncLine({ err, at }: { err: ApiError | null; at?: number }) {
   if (!err) return null
   const when = at ? new Date(at).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''
   return <div className={'sync' + (err.offline ? '' : ' bad')}>
-    {err.offline ? `연결 안 됨 · 저장된 내용${when ? ` (${when})` : ''}` : err.message}
+    {err.code === 'offline' ? `연결 안 됨 · 저장된 내용${when ? ` (${when})` : ''}` : `${err.message}${err.offline && when ? ` · 저장된 내용 (${when})` : ''}`}
   </div>
 }

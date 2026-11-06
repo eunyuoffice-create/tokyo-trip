@@ -46,7 +46,10 @@ export async function api<T = Record<string, unknown>>(action: string, body: Rec
       body: JSON.stringify({ action, token: session.token, ...body }) }).finally(() => clearTimeout(timer))
   } catch { throw new ApiError('offline', '연결 안 됨', true) }
   if (r.status === 401) throw new ApiError('gate', '사이트 입장 비밀번호가 필요해요')   // middleware.js 쿠키 없음/만료
-  if (r.status >= 500) throw new ApiError('server', '서버 오류 (' + r.status + ')', true)
+  if (r.status >= 500) {   // 서버 오류: 저장 대기열 입장에선 '나중에 다시'(offline=true)지만, 화면엔 서버가 준 이유를 보여 줌
+    const j = await r.json().catch(() => null)
+    throw new ApiError('server', '서버 오류 (' + r.status + ')' + (j && j.error ? ': ' + j.error : ''), true)
+  }
   const j = await r.json().catch(() => ({ ok: false, error: 'bad_json' }))
   if (!j.ok) {
     if (j.error === 'auth') session.clear()

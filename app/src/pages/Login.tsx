@@ -19,7 +19,7 @@ export default function Login({ onLogin }: { onLogin: (u: User) => void }) {
   }, [])
   function loadUsers() {
     return api<{ users: U[]; legacy?: string[] }>('users').then(j => { setUsers(j.users); setLegacy(j.legacy || null); cache.set('v2_users', j.users) })
-      .catch((e: ApiError) => setErr(e.offline ? '인터넷 연결이 필요해요 (처음 로그인할 때만)' : e.message))
+      .catch((e: ApiError) => setErr(e.code === 'offline' ? '인터넷 연결이 필요해요 (처음 로그인할 때만)' : e.message))
   }
   async function importLegacy(e: React.FormEvent) {
     e.preventDefault(); setBusy(true); setErr('')
