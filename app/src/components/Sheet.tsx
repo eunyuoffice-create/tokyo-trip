@@ -10,7 +10,9 @@ export function Sheet({ title, onClose, children, footer }: { title: string; onC
     return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = prev }
   }, [onClose])
   return createPortal(
-    <div className="sheet-ov" onMouseDown={e => { if (e.target === e.currentTarget) onClose() }}>
+    // 포털이어도 React 이벤트는 부모 컴포넌트로 올라가므로(카드 안에서 연 시트), 끌기 감지가 시트 안 누름을 받지 않게 막음
+    <div className="sheet-ov" onMouseDown={e => { e.stopPropagation(); if (e.target === e.currentTarget) onClose() }}
+      onPointerDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()} onClick={e => e.stopPropagation()}>
       <div className="sheet" role="dialog" aria-modal="true" aria-label={title}>
         <div className="sheet-h"><h2>{title}</h2><button type="button" className="btn ghost sm" onClick={onClose}>닫기</button></div>
         <div className="sheet-b">{children}</div>

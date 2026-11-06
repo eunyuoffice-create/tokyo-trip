@@ -178,3 +178,4 @@ h1, h2, h3, h4, p { margin: 0; }
   .addbar { bottom: 0; }
   .toast { bottom: 90px; }
 }
+.lightbox { display: block; width: 100%; height: auto; border-radius: 12px; }

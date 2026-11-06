@@ -22,7 +22,7 @@ export class ApiError extends Error { code: string; offline: boolean
 
 const store = {
   get<T>(k: string): T | null { try { const s = localStorage.getItem(k); return s ? JSON.parse(s) as T : null } catch { return null } },
-  set(k: string, v: unknown) { try { localStorage.setItem(k, JSON.stringify(v)) } catch { /* 저장 공간 없음·사생활 모드 */ } },
+  set(k: string, v: unknown): boolean { try { localStorage.setItem(k, JSON.stringify(v)); return true } catch { return false /* 저장 공간 없음·사생활 모드 */ } },
   del(k: string) { try { localStorage.removeItem(k) } catch { /* */ } },
 }
 export const cache = store
@@ -32,9 +32,9 @@ export const session = {
   get user() { return store.get<User>('v2_user') },
   save(token: string, user: User) { store.set('v2_token', token); store.set('v2_user', user) },
   // 로그아웃·토큰 만료: 다른 사람이 같은 기기로 들어와도 이전 사람의 목록·여행 내용이 안 보이게 v2_ 저장분을 모두 지움
-  // (로그인 화면의 이름 목록 v2_users 만 남김)
+  // (로그인 화면의 이름 목록 v2_users 와, 아직 못 보낸 수정 v2_outbox_<사람> 은 남김 — 그 사람이 다시 로그인하면 보냄)
   clear() {
-    try { const ks: string[] = []; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i) || ''; if (k.startsWith('v2_') && k !== 'v2_users') ks.push(k) } ks.forEach(k => localStorage.removeItem(k)) } catch { /* */ }
+    try { const ks: string[] = []; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i) || ''; if (k.startsWith('v2_') && k !== 'v2_users' && !k.startsWith('v2_outbox_')) ks.push(k) } ks.forEach(k => localStorage.removeItem(k)) } catch { /* */ }
   },
 }
 

@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from 'react'
 import { Link, NavLink, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import type { ColName, Food, Place, PlanItem, Route as R, User } from '../api'
 import { FoodEditor, PlaceEditor, PlanEditor, type EditTarget } from '../components/Editors'
-import { useToast } from '../components/Sheet'
+import { Sheet, useToast } from '../components/Sheet'
 import { SortableItem, SortableList } from '../components/Sortable'
 import { Img } from '../images'
 import type { Op } from '../outbox'
@@ -120,6 +120,7 @@ function PlanView({ plan, days, day, setDay, start, onEdit, onReorder }: {
 
 function PlanCard({ it, onEdit }: { it: PlanItem; onEdit: () => void }) {
   const [open, setOpen] = useState(false)
+  const [big, setBig] = useState('')
   const routes = it.r ? (Array.isArray(it.r) ? it.r : [it.r]) : []
   const d = it.d || []
   return (
@@ -130,7 +131,7 @@ function PlanCard({ it, onEdit }: { it: PlanItem; onEdit: () => void }) {
         {it.p && <div className="ev-p">{it.p}</div>}
         {it.title && <h3 className="ev-title">{it.title}</h3>}
         {it.pills && it.pills.length > 0 && <div className="pills">{it.pills.map(p => <span key={p} className="pill">{p}</span>)}</div>}
-        {it.images && it.images.length > 0 && <div className="thumbs view">{it.images.map(id => <Img key={id} id={id} className="photo" onClick={src => window.open(src, '_blank')} />)}</div>}
+        {it.images && it.images.length > 0 && <div className="thumbs view">{it.images.map(id => <Img key={id} id={id} className="photo" onClick={setBig} />)}</div>}
         {routes.map((r, i) => <RouteRow key={i} r={r} />)}
         {it.links && it.links.length > 0 && <div className="links">{it.links.map((l, i) => <a key={i} className="btn sm" href={l.u} target="_blank" rel="noreferrer">{l.l || l.u.replace(/^https?:\/\//, '')}</a>)}</div>}
         {d.length > 0 && <>
@@ -142,6 +143,7 @@ function PlanCard({ it, onEdit }: { it: PlanItem; onEdit: () => void }) {
           <button className="more" onClick={() => setOpen(!open)}>{open ? '접기' : '자세히'}</button>
         </>}
       </div>
+      {big && <Sheet title={it.title || '사진'} onClose={() => setBig('')}><img className="lightbox" src={big} alt="" /></Sheet>}
     </article>
   )
 }

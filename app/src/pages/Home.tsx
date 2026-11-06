@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api, ApiError, cache, type Trip, type User } from '../api'
 import { SyncLine } from '../ui'
+import { ArmButton } from '../components/Sheet'
+import { pendingCount } from '../outbox'
 import { dateRange, dday, todayLocal } from '../util'
 
 type Me = { trips: Trip[]; at: number }
@@ -27,7 +29,9 @@ export default function Home({ user, onLogout }: { user: User; onLogout: () => v
         <h1>내 여행</h1>
         <div className="top-r">
           {user.admin && <Link className="btn ghost sm" to="/admin">관리</Link>}
-          <button className="btn ghost sm" onClick={onLogout}>{user.name} · 로그아웃</button>
+          {pendingCount() > 0
+            ? <ArmButton className="btn ghost sm" label={`${user.name} · 로그아웃`} armedLabel={`보내지 않은 수정 ${pendingCount()}개가 있어요 · 그래도 로그아웃`} onConfirm={onLogout} />
+            : <button className="btn ghost sm" onClick={onLogout}>{user.name} · 로그아웃</button>}
         </div>
       </header>
       <SyncLine err={err} at={me?.at} />
