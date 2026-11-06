@@ -25,7 +25,7 @@
 //   admin.saveTrip    (관리자) {trip:{id?, title, city, country, start, end, members, currency}}
 //   admin.deleteTrip  (관리자) {tripId}   → 여행 문서만 지움 (내용은 남김, 실수 복구용)
 import { createHmac, createHash, randomBytes, timingSafeEqual } from 'node:crypto';
-import { store, dbEnvNames, hasDbUrl } from './_lib/store.js';
+import { store, dbEnvNames, hasDbUrl, dbHost } from './_lib/store.js';
 export const config = { maxDuration: 30 };
 
 const TRIP_COLS = new Set(['plan', 'food', 'places', 'meta', 'memos', 'expenses', 'transfers']);
@@ -85,7 +85,7 @@ export default async function handler(req, res) {
     const action = String(body.action || 'ping');
     if (action === 'ping') {
       let db = false; try { await store(); db = true; } catch (_) {}
-      return ok(res, { db, hasUrl: hasDbUrl(), envNames: dbEnvNames() });
+      return ok(res, { db, hasUrl: hasDbUrl(), envNames: dbEnvNames(), dbHost: dbHost(), env: process.env.VERCEL_ENV || 'local' });
     }
     const db = await store();
 
