@@ -5,7 +5,13 @@ function dbUrl() {
   const env = process.env;
   // Vercel 미리보기 배포: Neon 연동이 운영 DB 변수를 Preview 에도 넣어 두고(수정 불가) 있으므로, 미리보기에서는 그걸 절대 쓰지 않고
   // Preview 전용 PREVIEW_DATABASE_URL(Neon 테스트 브랜치)만 쓴다. 없으면 DB 없음 오류 → 운영 DB에 쓰는 일이 없음 (2026-11-06)
-  if (env.VERCEL_ENV === 'preview') return /^postgres(ql)?:\/\//.test(env.PREVIEW_DATABASE_URL || '') ? env.PREVIEW_DATABASE_URL : '';
+  if (env.VERCEL_ENV === 'preview') {
+    const pg = v => /^postgres(ql)?:\/\//.test(v || '');
+    if (pg(env.PREVIEW_DATABASE_URL)) return env.PREVIEW_DATABASE_URL;
+    // Vercel Storage 에서 접두어 PREVIEW 로 연결한 DB (PREVIEW_DATABASE_URL 이 아닌 PREVIEW_POSTGRES_URL 등으로 생길 수 있음)
+    const k = Object.keys(env).sort().find(k => k.startsWith('PREVIEW_') && pg(env[k]));
+    return k ? env[k] : '';
+  }
   for (const k of ['DATABASE_URL', 'POSTGRES_URL', 'DATABASE_URL_UNPOOLED', 'POSTGRES_URL_NON_POOLING'])
     if (env[k] && /^postgres(ql)?:\/\//.test(env[k])) return env[k];
   const keys = Object.keys(env).filter(k => /^postgres(ql)?:\/\//.test(env[k] || ''));
