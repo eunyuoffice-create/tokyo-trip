@@ -26,6 +26,7 @@
 //   admin.deleteTrip  (관리자) {tripId}   → 여행 문서만 지움 (내용은 남김, 실수 복구용)
 import { createHmac, createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { store, dbEnvNames, hasDbUrl, dbHost } from './_lib/store.js';
+import { migrateLegacy } from './_lib/migrate.js';
 export const config = { maxDuration: 30 };
 
 const TRIP_COLS = new Set(['plan', 'food', 'places', 'meta', 'memos', 'expenses', 'transfers']);
@@ -91,7 +92,22 @@ export default async function handler(req, res) {
 
     if (action === 'users') {
       const users = await usersMap(db);
-      return ok(res, { users: Object.entries(users).map(([id, u]) => ({ id, name: u.name })).sort((a, b) => a.name.localeCompare(b.name, 'ko')) });
+      const list = Object.entries(users).map(([id, u]) => ({ id, name: u.name })).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+      // 아직 아무도 없고 옛 도쿄 데이터가 있으면 '가져오기'를 보여 줄 수 있게 멤버 이름만 알려 줌
+      let legacy;
+      if (!list.length) { const t = await db.get('settings', 'trip'); if (t) legacy = (t.people || []).map(p => p.name); }
+      return ok(res, { users: list, legacy });
+    }
+
+    // 옛 도쿄 데이터 → 새 구조 (사용자가 하나도 없을 때 한 번만). 사이트 입장 비밀번호로 확인
+    if (action === 'migrateLegacy') {
+      if (Object.keys(await usersMap(db)).length) return fail(res, 409, 'already_setup');
+      const sitePw = process.env.SITE_PASSWORD || '';
+      if (!sitePw) return fail(res, 400, 'no_site_pw');
+      const a = createHash('sha256').update(String(body.sitePw || '')).digest(), b = createHash('sha256').update(sitePw).digest();
+      if (!timingSafeEqual(a, b)) return fail(res, 200, 'site_pw');
+      const r = await migrateLegacy(db, { adminName: String(body.admin || ''), apply: true });
+      return ok(res, { writes: r.writes, log: r.log });
     }
 
     if (action === 'bootstrap') {
