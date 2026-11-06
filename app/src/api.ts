@@ -5,14 +5,16 @@ export type Trip = {
   id: string; title: string; city: string; country: string; start: string; end: string
   currency: string; rate: number | null; cover: string; members: Member[]; joined?: boolean
 }
+export type Link = { l: string; u: string }
+export type DItem = string | { k?: string; l?: string; u?: string }
+export type Route = { f: string; t: string; how?: string; fq?: string; tq?: string; mode?: string; price?: string; url?: string }
 export type PlanItem = {
   id: string; day: string; t?: string; ts?: string; p?: string; title?: string; pills?: string[]; big?: boolean
-  d?: (string | { k?: string; l?: string; u?: string })[]
-  r?: Route | Route[]; links?: { l: string; u: string }[]; order?: number
+  d?: DItem[]; r?: Route | Route[]; links?: Link[]; images?: string[]; order?: number
 }
-export type Route = { f: string; t: string; how?: string; fq?: string; tq?: string; mode?: string }
-export type Food = { id: string; a?: string; n: string; k?: string; t?: string; h?: string; pr?: string; s?: number; note?: string; q?: string; order?: number; links?: { l: string; u: string }[] }
-export type Place = { id: string; g?: string; area?: string; n: string; k?: string; h?: string; res?: string; loc?: string; q?: string; order?: number; links?: { l: string; u: string }[] }
+export type Food = { id: string; a?: string; n: string; k?: string; t?: string; h?: string; closed?: string; pr?: string; s?: number; note?: string; tag?: string; q?: string; link?: string; links?: Link[]; order?: number }
+export type Place = { id: string; g?: string; area?: string; n: string; k?: string; h?: string; res?: string; loc?: string; tag?: string; q?: string; link?: string; links?: Link[]; u?: boolean; order?: number }
+export type ColName = 'plan' | 'food' | 'places'
 export type Content = { v: string; me: number | null; trip: Trip; plan: PlanItem[]; food: Food[]; places: Place[]; at: number }
 
 export class ApiError extends Error { code: string; offline: boolean
