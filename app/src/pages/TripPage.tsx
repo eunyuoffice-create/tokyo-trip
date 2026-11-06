@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, NavLink, Navigate, Route, Routes, useParams } from 'react-router-dom'
 import { ApiError, cache, contentKey, fetchContent, type Content, type Food, type Place, type PlanItem, type Route as R, type User } from '../api'
 import { SyncLine } from '../ui'
-import { dateRange, dday, dirUrl, mapUrl, md, weekday } from '../util'
+import { dateRange, dday, dirUrl, mapUrl, md, weekday, todayLocal } from '../util'
 
 export default function TripPage({ user }: { user: User }) {
   const { tripId = '' } = useParams()
@@ -26,7 +26,7 @@ export default function TripPage({ user }: { user: User }) {
     </div>
   )
   const t = c.trip
-  const today = new Date().toISOString().slice(0, 10)
+  const today = todayLocal()
   const tab = (to: string, label: string) => <NavLink to={to} end className={({ isActive }) => 'tab' + (isActive ? ' on' : '')}>{label}</NavLink>
 
   return (

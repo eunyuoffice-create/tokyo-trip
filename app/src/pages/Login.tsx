@@ -58,6 +58,7 @@ export default function Login({ onLogin }: { onLogin: (u: User) => void }) {
         </form>
       )}
       {err && <p className="error">{err}</p>}
+      {err === '사이트 입장 비밀번호가 필요해요' && <a className="btn" href="/__gate?next=/">사이트 비밀번호 입력</a>}
     </div>
   )
 }

@@ -17,7 +17,7 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
         navigateFallback: '/index.html',
-        navigateFallbackDenylist: [/^\/api\//],   // API 는 절대 캐시하지 않음
+        navigateFallbackDenylist: [/^\/api\//, /^\/__gate/],   // API 는 절대 캐시하지 않음. __gate = 사이트 입장 비밀번호 화면(middleware.js)
         cleanupOutdatedCaches: true,
         runtimeCaching: [
           { urlPattern: ({ url }) => url.origin === 'https://fonts.googleapis.com' || url.origin === 'https://fonts.gstatic.com',

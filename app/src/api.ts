@@ -29,7 +29,11 @@ export const session = {
   get token() { return store.get<string>('v2_token') },
   get user() { return store.get<User>('v2_user') },
   save(token: string, user: User) { store.set('v2_token', token); store.set('v2_user', user) },
-  clear() { store.del('v2_token'); store.del('v2_user') },
+  // 로그아웃·토큰 만료: 다른 사람이 같은 기기로 들어와도 이전 사람의 목록·여행 내용이 안 보이게 v2_ 저장분을 모두 지움
+  // (로그인 화면의 이름 목록 v2_users 만 남김)
+  clear() {
+    try { const ks: string[] = []; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i) || ''; if (k.startsWith('v2_') && k !== 'v2_users') ks.push(k) } ks.forEach(k => localStorage.removeItem(k)) } catch { /* */ }
+  },
 }
 
 export async function api<T = Record<string, unknown>>(action: string, body: Record<string, unknown> = {}): Promise<T> {
@@ -39,6 +43,7 @@ export async function api<T = Record<string, unknown>>(action: string, body: Rec
     r = await fetch('/api/v2', { method: 'POST', headers: { 'content-type': 'application/json' }, signal: c.signal,
       body: JSON.stringify({ action, token: session.token, ...body }) }).finally(() => clearTimeout(timer))
   } catch { throw new ApiError('offline', '연결 안 됨', true) }
+  if (r.status === 401) throw new ApiError('gate', '사이트 입장 비밀번호가 필요해요')   // middleware.js 쿠키 없음/만료
   if (r.status >= 500) throw new ApiError('server', '서버 오류 (' + r.status + ')', true)
   const j = await r.json().catch(() => ({ ok: false, error: 'bad_json' }))
   if (!j.ok) {

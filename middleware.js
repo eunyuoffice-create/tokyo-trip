@@ -1,8 +1,9 @@
 // 사이트 입장 비밀번호 (Vercel Edge Middleware)
 // Vercel 환경변수 SITE_PASSWORD 가 있으면 첫 접속 때 비밀번호를 묻고, 맞으면 쿠키(1년)를 남겨 다시 묻지 않는다.
-// 비어 있으면 아무 것도 막지 않는다. /api/* 는 자체 토큰 인증이라 제외.
+// 비어 있으면 아무 것도 막지 않는다. /api/ledger 는 옛 사이트(깃허브 페이지 등 다른 출처에서도 부름)라 제외.
+// /api/v2 는 같은 출처에서만 쓰므로 막는다 (로그인 전 이름 목록·비밀번호 대입을 사이트 비밀번호 뒤로).
 import { next } from '@vercel/edge';
-export const config = { matcher: ['/((?!api/).*)'] };
+export const config = { matcher: ['/((?!api/ledger).*)'] };
 
 const COOKIE = 'trip_gate';
 

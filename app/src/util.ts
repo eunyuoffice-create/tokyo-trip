@@ -16,3 +16,6 @@ export function dday(start: string, end: string, today: string) {
 export const mapUrl = (q: string) => 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q)
 export const dirUrl = (f: string, t: string, mode = 'transit') =>
   `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(f)}&destination=${encodeURIComponent(t)}&travelmode=${mode}`
+
+/* 기기 시간 기준 오늘 (toISOString 은 UTC 라 한국·일본 오전 9시 전엔 어제가 됨) */
+export function todayLocal() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` }

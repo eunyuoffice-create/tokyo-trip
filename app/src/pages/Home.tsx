@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api, ApiError, cache, type Trip, type User } from '../api'
 import { SyncLine } from '../ui'
-import { dateRange, dday } from '../util'
+import { dateRange, dday, todayLocal } from '../util'
 
 type Me = { trips: Trip[]; at: number }
 
@@ -16,7 +16,7 @@ export default function Home({ user, onLogout }: { user: User; onLogout: () => v
       .catch((e: ApiError) => { if (e.code === 'auth') onLogout(); else setErr(e) })
   }, [onLogout])
 
-  const today = new Date().toISOString().slice(0, 10)
+  const today = todayLocal()
   const trips = me?.trips || []
   const upcoming = trips.filter(t => !t.end || t.end >= today).sort((a, b) => a.start.localeCompare(b.start))
   const past = trips.filter(t => t.end && t.end < today)

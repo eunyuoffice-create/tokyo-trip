@@ -222,7 +222,7 @@ export default async function handler(req, res) {
           const next = op.op === 'update' ? { ...(existing || {}), ...data } : data;
           const o = ownerOf(next);
           if (o !== null && o !== me) return fail(res, 403, 'forbidden');
-          if (existing && ownerOf(existing) === null && o === me && existing.by !== undefined && existing.by !== me) return fail(res, 403, 'forbidden');
+          if (me !== null && existing && ownerOf(existing) === null && o === me && existing.by !== undefined && existing.by !== me) return fail(res, 403, 'forbidden');
         }
         if (op.op === 'update') { if (!existing) return fail(res, 409, `missing ${op.col}/${id}`); await db.patch(col, id, { ...data, upd: Date.now() }); }
         else await db.put(col, id, { ...data, by: existing ? (existing.by ?? by) : by, upd: Date.now() });
